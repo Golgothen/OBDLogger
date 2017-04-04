@@ -107,10 +107,10 @@ def driveRatio(p):
   r = p['RPM'].val
   if s is None or r is None: return None
   if s == 0: return None                           #Avoid Divide by Zero
-  sideWall=TIRE_WIDTH * ASPECT_RATIO               # in mm
+  sideWall=TYRE_WIDTH * ASPECT_RATIO               # in mm
   wheelDiameter = sideWall + (RIM_SIZE * 25.4)     # in mm
-  whelCirc = wheelDiameter * 3.14159 / 1000.0      # in m
-  wheel_rpm = s*1000.0/60/wheel_circ               # in rpm
+  wheelCirc = wheelDiameter * 3.14159 / 1000.0     # in m
+  wheel_rpm = s*1000.0/60/wheelCirc                # in rpm
   return r / wheel_rpm                             # ratio Engine RPM : Wheel RPM
 
 def LPH(p):
@@ -168,16 +168,16 @@ def gear(p):
   r=p['DRIVE_RATIO'].val
   if r is None: return None
   if r > 13.5 and r < 17.2:
-    return "1st"
+    return '1st'
   if r > 7.4 and r < 9.1:
-    return "2nd"
+    return '2nd'
   if r > 4.7 and r < 5.8:
-    return "3rd"
+    return '3rd'
   if r > 3.2 and r < 3.9:
-    return "4th"
+    return '4th'
   if r > 2.3 and r < 2.9:
-    return "5th"
-  return "Neutal"
+    return '5th'
+  return 'Neutal'
 
 def duration(p):
   if 'RPM' not in p: return None

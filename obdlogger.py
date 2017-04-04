@@ -10,8 +10,8 @@ import sys, logging
 
 logger = logging.getLogger('root')
 logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
-#file_handler = logging.FileHandler('./'+logName) # sends output to file
-file_handler = logging.StreamHandler() # sends output to stderr
+file_handler = logging.FileHandler('./'+logName) # sends output to file
+#file_handler = logging.StreamHandler() # sends output to stderr
 file_handler.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s - [%(module)s.%(funcName)s:%(lineno)s] %(message)s'))
 logger.addHandler(file_handler)
 
@@ -216,48 +216,30 @@ if __name__ == '__main__':
       while ecu.isConnected() == True:
         if not journey:
           journey=True
-          logger.debug('Creating new log file')
-          if disconnected is not None:
-            if (datetime.now() - disconnected).total_seconds() > TRIP_TIMEOUT:
-              logger.info('Restarting new log after trip timeout')
-              ecu.restart()
-              disconnected = None
-            else:
-              logger.info('Resuming trip')
-              disconnected = None
-          else:
-            logger.info('Starting new trip')
           ecu.resume()
-        loopts=datetime.now()
-        #print(type(ecu.summary['SPEED']['VAL']))
-        #print("{:4.0f}".format(ecu.summary['SPEED']['VAL']))
-        #print(ecu.status())
         print(ecu.status())
         #print(ecu.status()['Worker Status'])
         #printFullTable(ecu.summary)
-        timer=datetime.now()-loopts
-        sleep(1.0-(timer.microseconds/1000000.0))
+        sleep(1)
       while not ecu.isConnected():
         if journey: 
           journey=False
-          disconnected = datetime.now()
           ecu.pause()
-        logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
-        #assume engine is off
-        if disconnected is not None:
-          if ecu.sum('DURATION') > 0:
+          disconnected = datetime.now()
+          if ecu.sum('DURATION') == 0:
+            ecu.discard()
+          else:
             if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
               logger.debug('Finalising trip....')
               #tripstats = updateTripStats(kpis)
               #writeTripHistory(SETTINGS_PATH + 'TripHistory.csv',tripstats)
               #writeTripHistory(SETTINGS_PATH + 'TankHistory.csv',tripstats)
               #writeLastTrip(SETTINGS_PATH + 'LastTrip.csv',tripstats)
-              ecu.save()
               history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
               tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
               disconnected=None
-          else:
-            ecu.discard()
+        logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
+        #assume engine is off
         #printIdleScreen()
         print(ecu.status())
         #print(ecu.status()['Worker Status'])

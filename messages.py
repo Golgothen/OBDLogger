@@ -13,4 +13,4 @@ class Message():
     self.params = dict()
     for k in kwargs:
       self.params[k] = kwargs[k]
-    logger.debug("Message: " + str(self.message) + " : " + str(self.params))
+    logger.debug('Message: ' + str(self.message) + ' : ' + str(self.params))
