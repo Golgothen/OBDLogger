@@ -183,12 +183,12 @@ if __name__ == '__main__':
     ecu = Monitor(OBD_PORT,OBD_BAUD)
   
     ecu.logPath(LOG_PATH)
-    ecu.logHeadings(['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
-                     'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
-                     'BAROMETRIC_PRESSURE','INTAKE_PRESSURE','BOOST_PRESSURE',
-                     'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
-                     'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
-                     'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR'])
+    logHeadings(['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
+                 'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
+                 'BAROMETRIC_PRESSURE','INTAKE_PRESSURE','BOOST_PRESSURE',
+                 'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
+                 'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
+                 'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR'])
 
     ecu.addQue('HI',10)
     ecu.addQue('MED',1)
@@ -216,6 +216,16 @@ if __name__ == '__main__':
       while ecu.isConnected() == True:
         if not journey:
           journey=True
+          l = ecu.getQueCommands('ONCE')
+          if 'WARMUPS_SINCE_DTC_CLEAR' not in l:
+            ecu.addCommand('ONCD','WARMUPS_SINCE_DTC_CLEAR')
+          sc = ecu.supportedcommands()
+          for c in sc:
+            if c not in commands['HI'] + commands['MED'] + commands['LOW'] + commands['ONCE']:
+              commands['LOW'].append(c)
+              ecu.addCommand('LOW',c)
+              logHeadings.append(c)
+          ecu.logHeadings(logHeadings)
           ecu.resume()
         print(ecu.status())
         #print(ecu.status()['Worker Status'])

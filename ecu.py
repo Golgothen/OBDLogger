@@ -46,16 +46,17 @@ class ECU(Process):
       m=self.__controlPipe.recv()
       logger.info('Received ' + str(m.message) + ' on controller pipe')
 
-      if m.message == 'PAUSE':                self.__pause()
-      if m.message == 'RESUME':               self.__resume()
-      if m.message == 'STOP':                 self.__stop()
-      if m.message == 'CONNECTED':            self.__controlPipe.send(          Message(m.message,CONNECTED=self.__isConnected()))
-      if m.message == 'STATUS':               self.__controlPipe.send(          Message(m.message,STATUS=self.__status()))
-      if m.message == 'ADDQUE':               self.__addQue(m.params)
-      if m.message == 'GETQUEUES':            self.__controlPipe.send(          Message(m.message,QUEUES=self.__getQueues()))
-      if m.message == 'ADDCOMMAND':           self.__addCommand(m.params)
-      if m.message == 'SETFREQUENCY':         self.__setFrequency(m.params)
-      if m.message == 'DELETEAFTERPOLL':      self.__deleteAfterPoll(m.params)
+      if m.message == 'PAUSE'          : self.__pause()
+      if m.message == 'RESUME'         : self.__resume()
+      if m.message == 'STOP'           : self.__stop()
+      if m.message == 'CONNECTED'      : self.__controlPipe.send(Message(m.message,CONNECTED = self.__isConnected()))
+      if m.message == 'STATUS'         : self.__controlPipe.send(Message(m.message,STATUS = self.__status()))
+      if m.message == 'ADDQUE'         : self.__addQue(m.params)
+      if m.message == 'GETQUEUES'      : self.__controlPipe.send(Message(m.message,QUEUES = self.__getQueues()))
+      if m.message == 'ADDCOMMAND'     : self.__addCommand(m.params)
+      if m.message == 'SETFREQUENCY'   : self.__setFrequency(m.params)
+      if m.message == 'DELETEAFTERPOLL': self.__deleteAfterPoll(m.params)
+      if .m.essage == 'GETCOMMANDS'    : self.__controlPipe.send(Message(m.message,COMMANDS = self.__getQueCommands(m.params['QUE'])))
 
     # Check commands comming from the worker process
     while self.__workerPipe.poll():
@@ -104,13 +105,8 @@ class ECU(Process):
       queues.append(q)
     return queues
 
-#  def __isConnected(self):
-
-    #return True # todo: Delete after testing
-
-#    if self.__OBD is None: return False
-#    if self.__OBD.status() != 'Car Connected': return False
-#    return True
+  def __getQueCommands(self, que):
+    return self.__Que[que].getCommands()
 
   def __status(self):
     d = dict()

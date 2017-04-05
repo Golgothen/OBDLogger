@@ -146,7 +146,6 @@ class DataLogger(threading.Thread):
         line+=l+','
       with open(self.__logName + '.log','wb') as f:    # Clobber output file if it exists
         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
-      #self.__dataPipe.send(Message('RESET'))           # Reset data collector when starting a new trip
 
   def __colHeadings(self,headings):
     #Set the log headings
@@ -164,6 +163,7 @@ class DataLogger(threading.Thread):
       if (datetime.now() - self.__pausedAt).total_seconds() > self.__tripTimeout:
         if self.__logName is not None:
           self.__save()
+          self.__dataPipe.send(Message('RESET'))           # Reset data collector when starting a new trip
         self.__setName()
     #else:
     if self.__logName is None:

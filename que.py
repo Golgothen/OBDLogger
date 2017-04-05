@@ -45,13 +45,19 @@ class Que(Thread):
         sleep(0.5)
     logger.info('Que ' + self.name + ' stopped')
 
-  def setFrequency(frequency):
+  def setFrequency(self, frequency):
     self.__frequency = frequency
 
   def addCommand(self, command, override):
-    logger.debug('Appending command ' + command + ' to que ' + self.name)
+    logger.info('Appending command ' + command + ' to que ' + self.name)
     self.__commands[command]=override
     self.ready = True
+
+  def getCommands(self):
+    l = []
+    for c in self.__commands:
+      l.append(d)
+    return l
 
   def removeCommand(self,command):
     logger.debug('Removing sensor ' + command + ' from que ' + self.name)
