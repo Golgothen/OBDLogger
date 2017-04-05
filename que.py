@@ -19,6 +19,7 @@ class Que(Thread):
     self.__que = que
     self.ready = False
     self.paused = True
+    self.pauseReady = False
     self.daemon=True
     self.name=name
     self.deleteAfterPoll = False
@@ -32,6 +33,7 @@ class Que(Thread):
     while self.running:
       self.__lastPolled = datetime.now()
       if self.ready and not self.paused:
+        self.pauseReady = False
         for s in self.__commands:
           self.__que.put(s)
           if self.deleteAfterPoll:
@@ -42,6 +44,8 @@ class Que(Thread):
           else:
             sleep(1.0/self.__frequency)
       else:
+        if self.paused:
+          self.pauseReady = True
         sleep(0.5)
     logger.info('Que ' + self.name + ' stopped')
 
@@ -50,13 +54,17 @@ class Que(Thread):
 
   def addCommand(self, command, override):
     logger.info('Appending command ' + command + ' to que ' + self.name)
+    self.paused = True             # Pause the que when making changes
+    while not self.pauseReady:     # Wait for pause ready flag to ensure dict will not be accessed
+      sleep(0.01)
     self.__commands[command]=override
     self.ready = True
+    self.paused=False              # Resume que after update
 
   def getCommands(self):
     l = []
     for c in self.__commands:
-      l.append(d)
+      l.append(c)
     return l
 
   def removeCommand(self,command):

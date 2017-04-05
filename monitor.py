@@ -132,7 +132,7 @@ class Monitor():
   def getQueCommands(self, que):
     self.__ecuComm.send(Message('GETCOMMANDS', QUE = que))
     r = self.__checkECUPipe('GETCOMMANDS',PIPE_TIMEOUT)
-    if r is notNone:
+    if r is not None:
       return r['COMMANDS']
     else:
       logger.warning('ECU timeout requesting que commands')

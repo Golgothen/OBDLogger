@@ -75,6 +75,7 @@ class Worker(Process):
               if self.__firstPoll is None: 
                 self.__firstPoll = datetime.now()
               if not q.is_null():                                                 #todo: uncomment after testing
+                logger.info(str(m) + ' - ' + str(q.value))
                 self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
               #self.__resultQue.put(Message(m, VALUE = 0.0))                                 #todo: delete after testing
             self.__pollRate = self.__pollCount / (datetime.now()-self.__firstPoll).total_seconds()

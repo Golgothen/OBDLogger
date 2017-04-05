@@ -37,7 +37,6 @@ def printIdleScreen():
   global currentIdleScreen
 
 #  os.system('clear')
-    
   screentime=datetime.now()-lastScreenUpdate
   if screentime.seconds>=IDLE_SCREEN_TIME:
     currentIdleScreen+=1
@@ -217,14 +216,15 @@ if __name__ == '__main__':
         if not journey:
           journey=True
           l = ecu.getQueCommands('ONCE')
-          if 'WARMUPS_SINCE_DTC_CLEAR' not in l:
-            ecu.addCommand('ONCD','WARMUPS_SINCE_DTC_CLEAR')
+          for c in Commands['ONCE']:      # Add all the ONCE commands back into the ONCE que if they do not already exist
+            if c not in l:
+              ecu.addCommand('ONCE',c)
           sc = ecu.supportedcommands()
-          for c in sc:
-            if c not in commands['HI'] + commands['MED'] + commands['LOW'] + commands['ONCE']:
-              commands['LOW'].append(c)
+          for c in sc:                    # Add all supported commands that arent already in a que to the LOW que
+            if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
+              Commands['LOW'].append(c)
               ecu.addCommand('LOW',c)
-              logHeadings.append(c)
+              logHeadings.append(c)       # Add any added commands to the log headings so they get logged
           ecu.logHeadings(logHeadings)
           ecu.resume()
         print(ecu.status())
