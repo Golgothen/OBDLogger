@@ -22,13 +22,13 @@ class Que(Thread):
     self.daemon=True
     self.name=name
     self.deleteAfterPoll = False
-    logger.debug("Que " + self.name + " declared")
+    logger.debug('Que ' + self.name + ' declared')
 
 
   def run(self):
     self.running = True
     self.__lastPolled = datetime.now()
-    logger.info("Que " + self.name + " starting")
+    logger.info('Que ' + self.name + ' starting')
     while self.running:
       self.__lastPolled = datetime.now()
       if self.ready and not self.paused:
@@ -45,21 +45,27 @@ class Que(Thread):
         sleep(0.5)
     logger.info('Que ' + self.name + ' stopped')
 
-  def setFrequency(frequency):
+  def setFrequency(self, frequency):
     self.__frequency = frequency
 
   def addCommand(self, command, override):
-    logger.debug("Appending command " + command + " to que " + self.name)
+    logger.info('Appending command ' + command + ' to que ' + self.name)
     self.__commands[command]=override
     self.ready = True
 
+  def getCommands(self):
+    l = []
+    for c in self.__commands:
+      l.append(d)
+    return l
+
   def removeCommand(self,command):
-    logger.debug("Removing sensor " + command + " from que " + self.name)
+    logger.debug('Removing sensor ' + command + ' from que ' + self.name)
     if command in self.__commands:
       del self.__commands[command]
       if len(self.__commands)==0: 
         self.ready=False
-        logger.info("Que " + self.name + " not ready due to zero length")
+        logger.info('Que ' + self.name + ' not ready due to zero length')
 
   def status(self):
     #returns a dict of que status

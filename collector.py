@@ -52,10 +52,12 @@ class Collector(Process):
     # Main function for process.  Runs continully until instructed to stop.
     self.__running = True
     self.__pid = os.getpid()
+    logger.info('Collector running on PID ' + str(self.__pid))
     try:
       while self.__running:                                   # Running set to False by STOP command
         self.__checkPipe()                                    # Check all pipes for commands
         if self.__ready:                                      # Ready set to True when data dictonary has been built
+          logger.debug('Collector is ready')
           if not self.__paused:                               # Paused set True/False by PAUSE/RESUME commands
             while self.__results.qsize() > 0:                 # Loop while there are results in the que
               m = self.__results.get()                        # Pull result message from que
@@ -64,8 +66,9 @@ class Collector(Process):
           sleep(1.0/self.__frequency)                         # brief sleep so we dont hog the CPU
         else:                                                 # Not ready?
           if not self.__SCreq:                                # Flag if the Supported Commands request has been sent
-            self.__reset()                                    # Empty data dictionary and request a list of supported commands
             self.__SCreq=True                                 # Only send the above request once
+            self.__reset()                                    # Empty data dictionary and request a list of supported commands
+            sleep(0.25)
         sleep(1.0/self.__frequency)                           # Release CPU
       logger.info('Collector process stopped')                # Running has been set to False
     except (KeyboardInterrupt, SystemExit):                   # Pick up interrups and system shutdown
@@ -77,35 +80,36 @@ class Collector(Process):
       m = self.__ecuPipe.recv()                               # Grab the first message in the pipe
       logger.info('Received ' + str(m.message) + ' on ECU pipe')
 
-      if m.message == 'PAUSE'   : self.__pause()              
-      if m.message == 'RESUME'  : self.__resume()
-      if m.message == 'STOP'    : self.__stop()
-      if m.message == 'RESET'   : self.__reset()
+      if m.message == 'PAUSE'              : self.__pause()              
+      if m.message == 'RESUME'             : self.__resume()
+      if m.message == 'STOP'               : self.__stop()
+      if m.message == 'RESET'              : self.__reset()
 
     while self.__controlPipe.poll():                          # Loop through all messages on the Application pipe
       m = self.__controlPipe.recv()
       logger.debug('Received ' + str(m.message) + ' on controller pipe')
 
-      if m.message == 'RESET'   : self.__reset()
-      if m.message == 'SNAPSHOT': self.__controlPipe.send(Message(m.message,SNAPSHOT=self.__snapshot()))
-      if m.message == 'SUMMARY' : self.__controlPipe.send(Message(m.message,SUMMARY=self.__summary()))
-      if m.message == 'SUM'     : self.__controlPipe.send(Message(m.message,SUM=self.__sum(m.params)))
-      if m.message == 'AVG'     : self.__controlPipe.send(Message(m.message,AVG=self.__avg(m.params)))      
-      if m.message == 'MIN'     : self.__controlPipe.send(Message(m.message,MIN=self.__min(m.params)))
-      if m.message == 'MAX'     : self.__controlPipe.send(Message(m.message,MAX=self.__max(m.params)))
-      if m.message == 'STATUS'  : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
+      if m.message == 'RESET'              : self.__reset()
+      if m.message == 'SNAPSHOT'           : self.__controlPipe.send(Message(m.message,SNAPSHOT=self.__snapshot()))
+      if m.message == 'SUMMARY'            : self.__controlPipe.send(Message(m.message,SUMMARY=self.__summary()))
+      if m.message == 'SUM'                : self.__controlPipe.send(Message(m.message,SUM=self.__sum(m.params)))
+      if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message,AVG=self.__avg(m.params)))      
+      if m.message == 'MIN'                : self.__controlPipe.send(Message(m.message,MIN=self.__min(m.params)))
+      if m.message == 'MAX'                : self.__controlPipe.send(Message(m.message,MAX=self.__max(m.params)))
+      if m.message == 'STATUS'             : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
 
     while self.__loggerPipe.poll():                          # Loop through all messages on the Logger pipe
       m = self.__loggerPipe.recv()
       logger.debug('Received ' + str(m.message) + ' on logger pipe')
 
-      if m.message == 'SNAPSHOT':   self.__loggerPipe.send(Message(m.message,DATA=self.__snapshot()))
+      if m.message == 'SNAPSHOT'           : self.__loggerPipe.send(Message(m.message,DATA=self.__snapshot()))
+      if m.message == 'RESET'              : self.__reset()
 
     while self.__workerPipe.poll():                          # Loop through all messages on the Worker pipe
       m = self.__workerPipe.recv()
       logger.debug('Received ' + str(m.message) + ' on Worker pipe')
 
-      if m.message == 'SUPPORTED_COMMANDS': self.__buildDict(m.params['SUPPORTED_COMMANDS']) 
+      if m.message == 'SUPPORTED_COMMANDS' : self.__buildDict(m.params['SUPPORTED_COMMANDS']) 
 
   def __snapshot(self):
     # Returns a dictionary of all KPI current values
@@ -163,8 +167,8 @@ class Collector(Process):
     if 'DISTANCE_SINCE_DTC_CLEAR' in self.__data:
       self.__data['OBD_DISTANCE'] = KPI(FUNCTION=OBDdistance, DISTANCE_SINCE_DTC_CLEAR=self.__data['DISTANCE_SINCE_DTC_CLEAR'])
     logger.debug(str(self.__data))
-    self.__ready=True
-    self.__dirty=False
+    self.__ready = True
+    self.__dirty = False
     logger.info('Dictionary build complete')
 
   def __pause(self):

@@ -27,7 +27,7 @@ class ECU(Process):
     self.__running = False
 
   def run(self):
-    logger.info("Starting ECU process.")
+    logger.info('Starting ECU process.')
     self.__running=True
     self.__pid = os.getpid()
     try:    
@@ -44,34 +44,37 @@ class ECU(Process):
     # Check commands comming from the controlling process
     while self.__controlPipe.poll():
       m=self.__controlPipe.recv()
-      logger.info("Received " + str(m.message) + " on controller pipe")
+      logger.info('Received ' + str(m.message) + ' on controller pipe')
 
-      if m.message == "PAUSE":                self.__pause()
-      if m.message == "RESUME":               self.__resume()
-      if m.message == "STOP":                 self.__stop()
-      if m.message == "CONNECTED":            self.__controlPipe.send(          Message(m.message,CONNECTED=self.__isConnected()))
-      if m.message == "STATUS":               self.__controlPipe.send(          Message(m.message,STATUS=self.__status()))
-      if m.message == "ADDQUE":               self.__addQue(m.params)
-      if m.message == "GETQUEUES":            self.__controlPipe.send(          Message(m.message,QUEUES=self.__getQueues()))
-      if m.message == "ADDCOMMAND":           self.__addCommand(m.params)
-      if m.message == "SETFREQUENCY":         self.__setFrequency(m.params)
-      if m.message == "DELETEAFTERPOLL":      self.__deleteAfterPoll(m.params)
+      if m.message == 'PAUSE'          : self.__pause()
+      if m.message == 'RESUME'         : self.__resume()
+      if m.message == 'STOP'           : self.__stop()
+      if m.message == 'CONNECTED'      : self.__controlPipe.send(Message(m.message,CONNECTED = self.__isConnected()))
+      if m.message == 'STATUS'         : self.__controlPipe.send(Message(m.message,STATUS = self.__status()))
+      if m.message == 'ADDQUE'         : self.__addQue(m.params)
+      if m.message == 'GETQUEUES'      : self.__controlPipe.send(Message(m.message,QUEUES = self.__getQueues()))
+      if m.message == 'ADDCOMMAND'     : self.__addCommand(m.params)
+      if m.message == 'SETFREQUENCY'   : self.__setFrequency(m.params)
+      if m.message == 'DELETEAFTERPOLL': self.__deleteAfterPoll(m.params)
+      if .m.essage == 'GETCOMMANDS'    : self.__controlPipe.send(Message(m.message,COMMANDS = self.__getQueCommands(m.params['QUE'])))
 
     # Check commands comming from the worker process
     while self.__workerPipe.poll():
       m=self.__workerPipe.recv()
-      logger.info("Received " + str(m.message) + " on worker pipe")
+      logger.info('Received ' + str(m.message) + ' on worker pipe')
 
-      if m.message == "CONNECTION":
-        if m.params['STATUS']: self.__resume()
-        else: self.__pause()
+      if m.message == 'CONNECTION':
+        if m.params['STATUS']: 
+          self.__resume()
+        else: 
+          self.__pause()
 
     # Check commands comming from the collector process
     while self.__dataPipe.poll():
       m=self.__dataPipe.recv()
-      logger.info("Received " + str(m.message) + " on data pipe")
+      logger.info('Received ' + str(m.message) + ' on data pipe')
 
-      if m.message == "SUPPORTED_COMMANDS":    self.__dataPipe.send(          Message(m.message,SUPPORTED_COMMANDS = self.__supportedcommands))
+      if m.message == 'SUPPORTED_COMMANDS':    self.__dataPipe.send(          Message(m.message,SUPPORTED_COMMANDS = self.__supportedcommands))
 
   def __shutdown(self):
     logger.info('Stopping ECU process')
@@ -82,17 +85,17 @@ class ECU(Process):
       logger.debug('Stop Wait Que ' + q)
       _thread.start_new_thread(self.__Que[q].join,())
     logger.info('ECU Stopped')
-    self.__workerPipe.send(Message("STOP"))
-    self.__dataPipe.send(Message("STOP"))
+    self.__workerPipe.send(Message('STOP'))
+    self.__dataPipe.send(Message('STOP'))
 
   def __addQue(self, p):
     #Adds a que to the ECU.
     if p['QUE'] in self.__Que: 
-      logger.debug("Que " + p['QUE'] +  " already exists")
+      logger.debug('Que ' + p['QUE'] +  ' already exists')
       return
     self.__Que[p['QUE']] = Que(p['QUE'], p['FREQUENCY'], self.__workerQue)
     if self.__running:
-      logger.info("Starting Que " + p['QUE'])
+      logger.info('Starting Que ' + p['QUE'])
       self.__Que[p['QUE']].start()
 
   def __getQueues(self):
@@ -102,13 +105,8 @@ class ECU(Process):
       queues.append(q)
     return queues
 
-#  def __isConnected(self):
-
-    #return True # todo: Delete after testing
-
-#    if self.__OBD is None: return False
-#    if self.__OBD.status() != 'Car Connected': return False
-#    return True
+  def __getQueCommands(self, que):
+    return self.__Que[que].getCommands()
 
   def __status(self):
     d = dict()
@@ -131,7 +129,7 @@ class ECU(Process):
       self.__Que[que].removeCommand(cmd)
 
   def __setFrequency(self, p):
-    logger.debug("Setting que " + p['QUE'] + " frequency to " + str(p['FREQUENCY']))
+    logger.debug('Setting que ' + p['QUE'] + ' frequency to ' + str(p['FREQUENCY']))
     self.__Que[p['QUE']].setFrequency(p['FREQUENCY'])
 
   def __stop(self):
@@ -139,15 +137,14 @@ class ECU(Process):
 
   def __pause(self):
     if not self.__paused:
-      logger.info("Pausing ECU")
+      logger.info('Pausing ECU')
       self.__paused = True
-      self.__dataPipe.send(Message("PAUSE"))
       for q in self.__Que:
         if self.__Que[q].isAlive(): self.__Que[q].paused=True
 
   def __resume(self):
-    logger.info("Resuming ECU")
-    self.__dataPipe.send(Message("RESUME"))
+    logger.info('Resuming ECU')
+    self.__dataPipe.send(Message('RESUME'))
     self.__paused = False
     for q in self.__Que:
       if self.__Que[q].isAlive(): self.__Que[q].paused=False
