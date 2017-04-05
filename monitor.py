@@ -26,6 +26,7 @@ class Monitor():
     collectorControlPipe = PipeCont() # Collector <-> Application
     loggerControlPipe = PipeCont()    # Logger <-> Application
     loggerDataPipe = PipeCont()       # Logger <-> Collector
+    loggerWorkerPipe = PipeCont()     # Logger <-> Worker
 
     workQue = Queue()
     resultQue = Queue()
@@ -44,6 +45,7 @@ class Monitor():
                            ecuWorkerPipe.r,              # Worker <-> ECU
                            workerControlPipe.r,          # Worker <-> Application
                            workerDataPipe.s,             # Worker <-> Collector
+                           loggerWorkerPipe.s,           # Worker <-> Logger
                            port,
                            baud)
 
@@ -54,7 +56,8 @@ class Monitor():
                                  resultQue)
 
     self.__logger = DataLogger(loggerControlPipe.r,      # Logger <-> Application
-                               loggerDataPipe.s)         # Logger <-> Collector
+                               loggerDataPipe.s,         # Logger <-> Collector
+                               loggerWorkerPipe.r)       # Logger <-> Worker
 
     self.__ecu.start()
     self.__worker.start()

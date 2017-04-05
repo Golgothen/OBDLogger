@@ -56,7 +56,7 @@ class ECU(Process):
       if m.message == 'ADDCOMMAND'     : self.__addCommand(m.params)
       if m.message == 'SETFREQUENCY'   : self.__setFrequency(m.params)
       if m.message == 'DELETEAFTERPOLL': self.__deleteAfterPoll(m.params)
-      if .m.essage == 'GETCOMMANDS'    : self.__controlPipe.send(Message(m.message,COMMANDS = self.__getQueCommands(m.params['QUE'])))
+      if m.message == 'GETCOMMANDS'    : self.__controlPipe.send(Message(m.message,COMMANDS = self.__getQueCommands(m.params['QUE'])))
 
     # Check commands comming from the worker process
     while self.__workerPipe.poll():

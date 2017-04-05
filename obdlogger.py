@@ -183,12 +183,12 @@ if __name__ == '__main__':
     ecu = Monitor(OBD_PORT,OBD_BAUD)
   
     ecu.logPath(LOG_PATH)
-    logHeadings(['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
-                 'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
-                 'BAROMETRIC_PRESSURE','INTAKE_PRESSURE','BOOST_PRESSURE',
-                 'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
-                 'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
-                 'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR'])
+    logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
+                   'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
+                   'BAROMETRIC_PRESSURE','INTAKE_PRESSURE','BOOST_PRESSURE',
+                   'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
+                   'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
+                   'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR']
 
     ecu.addQue('HI',10)
     ecu.addQue('MED',1)
