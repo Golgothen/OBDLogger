@@ -76,10 +76,10 @@ class Monitor():
     return None
 
   def __checkDataPipe(self, message, timeout):
-    # Check Worker pipe
+    # Check Collector pipe
     while self.__dataComm.poll(timeout):
       m = self.__dataComm.recv()
-      logger.debug(m.message + ' received on Collector pipe')
+      logger.info(m.message + ' received on Collector pipe')
       if m.message == message: 
         return m.params
       else:
@@ -87,7 +87,7 @@ class Monitor():
     return None
 
   def __checkECUPipe(self, message, timeout):
-    # Check Worker pipe
+    # Check ECU pipe
     while self.__ecuComm.poll(timeout):
       m = self.__ecuComm.recv()
       logger.debug(m.message + ' received on ECU pipe')
@@ -98,7 +98,7 @@ class Monitor():
     return None
 
   def __checkLoggerPipe(self, message, timeout):
-    # Check Worker pipe
+    # Check Logger pipe
     while self.__logComm.poll(timeout):
       m = self.__logComm.recv()
       logger.debug(m.message + ' received on Logger pipe')

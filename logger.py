@@ -70,8 +70,8 @@ class DataLogger(threading.Thread):
           logger.debug('Recording data')
           for l in self.__logHeadings:
             if l in self.__data:
-              if self.__data[l] is not None:
-                line+=str(self.__data[l])+','
+              if self.__data[l]['VAL'] is not None:
+                line+=str(self.__data[l]['VAL'])+','
               else:
                 line+='-,'
                 logger.debug(l + ' is none')

@@ -112,54 +112,87 @@ def printFuelTable():
 def printFullTable(d):
 #  os.system('clear')
   if 'SPEED' in d:
-    sys.stdout.write(' Speed : {:4.0f}/{:4.0f}/{:9.2f} :'.format(d['SPEED']['VAL'], d['SPEED']['MAX'], d['SPEED']['AVG']))
+    if d['SPEED']['VAL'] is not None:
+      sys.stdout.write(' Speed : {:4.0f}/{:4.0f}/{:9.2f} :'.format(d['SPEED']['VAL'], d['SPEED']['MAX'], d['SPEED']['AVG']))
+    else:
+      sys.stdout.write(' Speed :     /    /          :')
   else:
-    sys.stdout.write(' Speed :     /    /         :')
+    sys.stdout.write(' Speed :     /    /          :')
   if 'RPM' in d:
-    sys.stdout.write('   RPM : {:9,.0f}/{:9,.0f} :'.format(d['RPM']['VAL'], d['RPM']['MAX']))
+    if d['RPM']['VAL'] is not None:
+      sys.stdout.write('   RPM : {:9,.0f}/{:9,.0f} :'.format(d['RPM']['VAL'], d['RPM']['MAX']))
+    else:
+      sys.stdout.write('   RPM :          /          :')
   else:
-    sys.stdout.write('   RPM :          /         :')
+    sys.stdout.write('   RPM :          /          :')
   if 'ENGINE_LOAD' in d:
-    sys.stdout.write('  Load : {:9.2f}/{:9.2f} :'.format(d['ENGINE_LOAD']['VAL'], d['ENGINE_LOAD']['MAX']))
+    if d['ENGINE_LOAD']['VAL'] is not None:
+      sys.stdout.write('  Load : {:9.2f}/{:9.2f} :'.format(d['ENGINE_LOAD']['VAL'], d['ENGINE_LOAD']['MAX']))
+    else:
+      sys.stdout.write('  Load :          /          :')
   else:
-    sys.stdout.write('  Load :          /         :')
+    sys.stdout.write('  Load :          /          :')
   if 'SPEED' in d:
     if d['SPEED']['VAL'] == 0:
       if 'LPH' in d:
-        sys.stdout.write('   LPH : {:9,.3f}/{:9,.3f} :'.format(d['LPH']['VAL'], d['LPH']['AVG']))
+        if d['LPH']['VAL'] is not None:
+          sys.stdout.write('   LPH : {:9,.3f}/{:9,.3f} :'.format(d['LPH']['VAL'], d['LPH']['AVG']))
+        else:
+          sys.stdout.write('   LPH :          /          :')
       else:
-        sys.stdout.write('   LPH :          /         :')
+        sys.stdout.write('   LPH :          /          :')
     else:
       if 'LP100K' in d:
-        sys.stdout.write('L/100K : {:9,.3f}/{:9,.3f} :'.format(d['LP100K']['VAL'], d['LP100K']['AVG']))
+        if d['LP100K']['VAL'] is not None:
+          sys.stdout.write('L/100K : {:9,.3f}/{:9,.3f} :'.format(d['LP100K']['VAL'], d['LP100K']['AVG']))
+        else:
+          sys.stdout.write('L/100K :          /         :')
       else:
         sys.stdout.write('L/100K :          /         :')
   else:
-    sys.stdout.write('   LPH :          /         :')
+    sys.stdout.write('   LPH :          /          :')
   if 'BOOST_PRESSURE' in d:
-    sys.stdout.write(' Boost : {:9.2f}/{:9.2f} :'.format(d['BOOST_PRESSURE']['VAL'], d['BOOST_PRESSURE']['MAX']))
+    if d['BOOST_PRESSURE']['VAL'] is not None:
+      sys.stdout.write(' Boost : {:9.2f}/{:9.2f} :'.format(d['BOOST_PRESSURE']['VAL'], d['BOOST_PRESSURE']['MAX']))
+    else:
+      sys.stdout.write(' Boost :          /          :')
   else:
     sys.stdout.write(' Boost :          /          :')
   if 'COOLANT_TEMP' in d:
-    sys.stdout.write('  Temp : {:9}/{:9} :'.format(d['COOLANT_TEMP']['VAL'], d['COOLANT_TEMP']['MAX']))
+    if d['COOLANT_TEMP']['VAL'] is not None:
+      sys.stdout.write('  Temp : {:9}/{:9} :'.format(d['COOLANT_TEMP']['VAL'], d['COOLANT_TEMP']['MAX']))
+    else:
+      sys.stdout.write('  Temp :          /          :')
   else:
-    sys.stdout.write('  Temp :          /         :')
+    sys.stdout.write('  Temp :          /          :')
   if 'DISTANCE' in d:
-    sys.stdout.write('  Trip : {:9,.2f}           :'.format(d['DISTANCE']['SUM']))
+    if d['DISTANCE']['VAL'] is not None:
+      sys.stdout.write('  Trip : {:9,.2f}           :'.format(d['DISTANCE']['SUM']))
+    else:
+      sys.stdout.write('  Trip :                     :')
   else:
-    sys.stdout.write('  Trip :                    :')
+    sys.stdout.write('  Trip :                     :')
   if 'DURATION' in d and 'IDLE_TIME' in d:
-    sys.stdout.write('  Time : {:>9}/{:>9} :'.format(formatSeconds(d['DURATION']['SUM']), formatSeconds(d['IDLE_TIME']['SUM'])))
+    if d['DURATION']['VAL'] is not None:
+      sys.stdout.write('  Time : {:>9}/{:>9} :'.format(formatSeconds(d['DURATION']['SUM']), formatSeconds(d['IDLE_TIME']['SUM'])))
+    else:
+      sys.stdout.write('  Time :          /          :')
   else:
-    sys.stdout.write('  Time :          /         :')
+    sys.stdout.write('  Time :          /          :')
   if 'LPS' in d:
-    sys.stdout.write('  Fuel : {:9.2f}           :'.format(d['LPS']['SUM']))
-  else:
-    sys.stdout.write('  Fuel :                    :')
-  if 'GEAR' in d:
-    sys.stdout.write('  Gear : {:>9}           :'.format(d['GEAR']['VAL']))
+    if d['LPS']['VAL'] is not None:
+      sys.stdout.write('  Fuel : {:9.2f}           :'.format(d['LPS']['SUM']))
+    else:
+      sys.stdout.write('  Fuel :                     :')
   else:
     sys.stdout.write('  Fuel :                     :')
+  if 'GEAR' in d:
+    if d['GEAR']['VAL'] is not None:
+      sys.stdout.write('  Gear : {:>9}           :'.format(d['GEAR']['VAL']))
+    else:
+      sys.stdout.write('  Gear :                     :')
+  else:
+    sys.stdout.write('  Gear :                     :')
 
   sys.stdout.flush()
 
@@ -229,7 +262,7 @@ if __name__ == '__main__':
           ecu.resume()
         #print(ecu.status())
         #print(ecu.status()['Worker Status'])
-        printFullTable(ecu.summary)
+        printFullTable(ecu.snapshot)
         sleep(1)
       while not ecu.isConnected():
         if journey: 

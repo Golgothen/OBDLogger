@@ -19,13 +19,14 @@ class KPI(object):
     self.__max = None
     self.__instantHist = []   # Instant value history to calculate AVG
     self.__timeHist = []      # Time aware history to calculate SUM
-    self.__age = None
+    self.__age = time()
 
   @property      # Getter
   def val(self):
     if self.__func is not None:
       v = self.__func(self.__parameters)
-      self.val = v  # Trigger the setter
+      if v is not None:
+        self.val = v  # Trigger the setter
     if len(self.__instantHist) > 0:
       return self.__instantHist[0]  # Instant values do not take time passed into account
 
@@ -43,11 +44,8 @@ class KPI(object):
       else:
         if v < self.__min:
           self._min = v
-      if self.___age is None:
-        self.__age = 1
-      else:
-        v = v * (time() - self._age)
-        self._age = time()
+      v = v * (time() - self.__age)
+      self.__age = time()
       self.__timeHist.insert(0, v)  # Record time calculated value for sums
 
   @property

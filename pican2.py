@@ -30,21 +30,15 @@
 #                                                                      #
 ########################################################################
 
-import re
-import serial
-import time
-import logging
-from .protocols import *
-from .utils import OBDStatus
+inport can, logging
 
 logger = logging.getLogger('root')
 
-
-class ELM327:
+class CANBUS:
     """
-        Handles communication with the ELM327 adapter.
+        Handles communication with the PiCAN2 hat.
 
-        After instantiation with a portname (/dev/ttyUSB0, etc...),
+        After instantiation with an interface (can0, etc...),
         the following functions become available:
 
             send_and_parse()
@@ -55,118 +49,30 @@ class ELM327:
             ecus()
     """
 
-    ELM_PROMPT = b'>'
-
-    _SUPPORTED_PROTOCOLS = {
-        #"0" : None, # Automatic Mode. This isn't an actual protocol. If the
-                     # ELM reports this, then we don't have enough
-                     # information. see auto_protocol()
-        "1" : SAE_J1850_PWM,
-        "2" : SAE_J1850_VPW,
-        "3" : ISO_9141_2,
-        "4" : ISO_14230_4_5baud,
-        "5" : ISO_14230_4_fast,
-        "6" : ISO_15765_4_11bit_500k,
-        "7" : ISO_15765_4_29bit_500k,
-        "8" : ISO_15765_4_11bit_250k,
-        "9" : ISO_15765_4_29bit_250k,
-        "A" : SAE_J1939,
-        #"B" : None, # user defined 1
-        #"C" : None, # user defined 2
-    }
-
-    # used as a fallback, when ATSP0 doesn't cut it
-    _TRY_PROTOCOL_ORDER = [
-        "6", # ISO_15765_4_11bit_500k
-        "8", # ISO_15765_4_11bit_250k
-        "1", # SAE_J1850_PWM
-        "7", # ISO_15765_4_29bit_500k
-        "9", # ISO_15765_4_29bit_250k
-        "2", # SAE_J1850_VPW
-        "3", # ISO_9141_2
-        "4", # ISO_14230_4_5baud
-        "5", # ISO_14230_4_fast
-        "A", # SAE_J1939
-    ]
-
-    # 38400, 9600 are the possible boot bauds (unless reprogrammed via
-    # PP 0C).  19200, 38400, 57600, 115200, 230400, 500000 are listed on
-    # p.46 of the ELM327 datasheet.
-    #
-    # Once pyserial supports non-standard baud rates on platforms other
-    # than Linux, we'll add 500K to this list.
-    #
-    # We check the two default baud rates first, then go fastest to
-    # slowest, on the theory that anyone who's using a slow baud rate is
-    # going to be less picky about the time required to detect it.
-    _TRY_BAUDS = [ 38400, 9600, 230400, 115200, 57600, 19200 ]
-
-
-
-    def __init__(self, portname, baudrate, protocol):
+    def __init__(self, channel):
         """Initializes port by resetting device and gettings supported PIDs. """
 
-        logger.debug("Initializing ELM327: PORT=%s BAUD=%s PROTOCOL=%s" %
+        logger.debug("Initializing CAN Interface: INTERFACE=%s" %
                     (
-                        portname,
-                        "auto" if baudrate is None else baudrate,
-                        "auto" if protocol is None else protocol,
+                        interface
                     ))
 
-        self.__status   = OBDStatus.NOT_CONNECTED
-        self.__port     = None
-        self.__protocol = UnknownProtocol([])
-        self.__nodatacount = 0
+        self.__status   = 'Not Connected'
+        self.__canID    = None
+        #self.__protocol = UnknownProtocol([])
+        #self.__nodatacount = 0
 
 
         # ------------- open port -------------
         try:
-            self.__port = serial.Serial(portname, \
-                                        parity   = serial.PARITY_NONE, \
-                                        stopbits = 1, \
-                                        bytesize = 8,
-                                        timeout = 10) # seconds
-        except serial.SerialException as e:
-            self.__error(e)
-            return
+            self.__bus = can.interface.Bus(channel = channel, bustype = 'socketcan_native')
+
         except OSError as e:
+            # OSError [Error 19] No Such Device
             self.__error(e)
             return
 
-        # ------------------------ find the ELM's baud ------------------------
-
-        if not self.set_baudrate(baudrate):
-            self.__error("Failed to set baudrate")
-            return
-
-        # ---------------------------- ATZ (reset) ----------------------------
-        try:
-            self.__send(b"ATZ", delay=1) # wait 1 second for ELM to initialize
-            # return data can be junk, so don't bother checking
-        except serial.SerialException as e:
-            self.__error(e)
-            return
-
-        # -------------------------- ATE0 (echo OFF) --------------------------
-        r = self.__send(b"ATE0")
-        if not self.__isok(r, expectEcho=True):
-            self.__error("ATE0 did not return 'OK'")
-            return
-
-        # ------------------------- ATH1 (headers ON) -------------------------
-        r = self.__send(b"ATH1")
-        if not self.__isok(r):
-            self.__error("ATH1 did not return 'OK', or echoing is still ON")
-            return
-
-        # ------------------------ ATL0 (linefeeds OFF) -----------------------
-        r = self.__send(b"ATL0")
-        if not self.__isok(r):
-            self.__error("ATL0 did not return 'OK'")
-            return
-
-        # by now, we've successfuly communicated with the ELM, but not the car
-        self.__status = OBDStatus.ELM_CONNECTED
+        self.__status = 'CAN Connected'
 
         # try to communicate with the car, and load the correct protocol parser
         if self.set_protocol(protocol):

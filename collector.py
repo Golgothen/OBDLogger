@@ -87,7 +87,7 @@ class Collector(Process):
 
     while self.__controlPipe.poll():                          # Loop through all messages on the Application pipe
       m = self.__controlPipe.recv()
-      logger.debug('Received ' + str(m.message) + ' on controller pipe')
+      logger.info('Received ' + str(m.message) + ' on controller pipe')
 
       if m.message == 'RESET'              : self.__reset()
       if m.message == 'SNAPSHOT'           : self.__controlPipe.send(Message(m.message,SNAPSHOT = self.__snapshot()))
@@ -115,7 +115,13 @@ class Collector(Process):
     # Returns a dictionary of all KPI current values
     data = dict()
     for d in self.__data:
-      data[d] = self.__data[d].val
+      data[d] = dict()
+      data[d]['VAL'] = self.__data[d].val
+      data[d]['MIN'] = self.__data[d].min
+      data[d]['MAX'] = self.__data[d].max
+      if d not in ['TIMESTAMP']:
+        data[d]['AVG'] = self.__data[d].avg()
+        data[d]['SUM'] = self.__data[d].sum()
     return data
 
   def __sum(self, m):
@@ -164,7 +170,7 @@ class Collector(Process):
     logger.debug(str(self.__data))
     self.__ready = True
     self.__dirty = False
-    logger.info('Dictionary build complete')
+    logger.info('Dictionary build complete. ' + str(len(self.__data)) + ' KPIs added')
 
   def __pause(self):
     if not self.__paused:
@@ -197,6 +203,8 @@ class Collector(Process):
 
   def __summary(self):
     d=dict()
+    if 'TIMESTAMP' not in self.__data:
+      return d
     d['DATE'] = self.__data['TIMESTAMP'].min
     d['AVG_LP100K'] = self.__data['LP100k'].avg()
     d['DISTANCE'] = self.__data['DISTANCE'].sum()
