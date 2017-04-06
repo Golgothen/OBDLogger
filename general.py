@@ -8,27 +8,27 @@ import os, csv, logging
 ###
 
 def formatSeconds(d):
-  hours,remainder = divmod(d,3600)
-  minutes,seconds = divmod(remainder,60)
-  if hours > 24:
-    days,hours = divmod(hours,24)
-    return '{:02.0f}d{:02.0f}:{:02.0f}'.format(days,hours,minutes)
-  return '{:02.0f}:{:02.0f}:{:02.0f}'.format(hours,minutes,seconds)
+  hours, remainder = divmod(d, 3600)
+  minutes, seconds = divmod(remainder, 60)
+  if hours > 99:
+    days,hours = divmod(hours, 24)
+    return '{:02.0f}d{:02.0f}:{:02.0f}'.format(days, hours, minutes)
+  return '{:02.0f}:{:02.0f}:{:02.0f}'.format(hours, minutes, seconds)
 
 def readCSV(file):
   if os.path.isfile(file):
-    data=dict()
+    data = dict()
     #try:
     with open(file) as f:
       reader = csv.DictReader(f)
       headings = next(reader)
       for h in headings:
-        data[h]=[]
+        data[h] = []
       f.seek(0)
       next(reader)
       for row in reader:
         for h in row:
-          if h=='DATE':
+          if h == 'DATE':
             data[h].append(row[h])
           else:
             data[h].append(float(row[h]))
@@ -50,42 +50,59 @@ def readCSV(file):
     return None
 
 def readLastTrip(file):
-  data=dict()
+  data = dict()
   headings = ['AVG_LP100K','DISTANCE','AVG_SPEED','FUEL','AVG_LOAD','DURATION','IDLE_TIME']
   if os.path.isfile(file):
     with open(file) as f:
-      reader = csv.DictReader(f,fieldnames=headings)
+      reader = csv.DictReader(f, fieldnames = headings)
       for row in reader:
         for h in row:
           data[h] = float(row[h])
   else:
     for h in headings:
-      data[h]=0.0
+      data[h] = 0.0
   return data
 
 def writeLastTrip(file,data):
-  f = open(file,'wb')
-  f.write(str(data['AVG_LP100K'])+','+str(data['DISTANCE'])+','+str(data['AVG_SPEED'])+','+str(data['FUEL'])+','+str(data['AVG_LOAD'])+','+str(data['DURATION'])+','+str(data['IDLE_TIME'])+'\n')
-  f.close
+  with open(file,'wb') as f:
+    f.write(bytes(
+              str(data['AVG_LP100K']) + ',' +
+              str(data['DISTANCE']) + ',' +
+              str(data['AVG_SPEED']) + ',' +
+              str(data['FUEL']) + ',' +
+              str(data['AVG_LOAD']) + ',' +
+              str(data['DURATION']) + ',' +
+              str(data['IDLE_TIME']) + '\n',
+            'UTF-8'))
 
 def writeTripHistory(file,data):
-  writeheaders=False
+  writeheaders = False
   if not os.path.isfile(file):
-    writeheaders=True
-  f = open(file,'ab')
-  if writeheaders:
-    f.write('DATE,AVG_LP100K,DISTANCE,AVG_SPEED,FUEL,AVG_LOAD,DURATION,IDLE_TIME\n')
-  f.write(str(data['DATE'])+','+str(data['AVG_LP100K'])+','+str(data['DISTANCE'])+','+str(data['AVG_SPEED'])+','+str(data['FUEL'])+','+str(data['AVG_LOAD'])+','+str(data['DURATION'])+','+str(data['IDLE_TIME'])+'\n')
-  f.close
+    writeheaders = True
+  with open(file,'ab') as f:
+    if writeheaders:
+      f.write(bytes(
+                'DATE,AVG_LP100K,DISTANCE,AVG_SPEED,FUEL,AVG_LOAD,DURATION,IDLE_TIME\n',
+              'UTF-8'))
+    f.write(bytes(
+              str(data['DATE']) + ',' + 
+              str(data['AVG_LP100K']) + ',' + 
+              str(data['DISTANCE']) + ',' +
+              str(data['AVG_SPEED']) + ',' +
+              str(data['FUEL']) + ',' + 
+              str(data['AVG_LOAD']) + ',' +
+              str(data['DURATION']) + ',' +
+              str(data['IDLE_TIME']) + '\n',
+            'UTF-8'))
 
-def updateTripStats(s):
-  data = dict(s)
-  data['DATE'] = s['TIMESTAMP'].min
-  data['AVG_LP100K'] = s['FUEL_CONSUMPTION'].avg()
-  data['DISTANCE'] = s['DISTANCE'].sum()
-  data['AVG_SPEED'] = s['SPEED'].avg()
-  data['FUEL'] = s['LPS'].sum()
-  data['AVG_LOAD'] = s['ENGINE_LOAD'].avg()
-  data['DURATION'] = s['DURATION'].sum()
-  data['IDLE_TIME'] = s['IDLE_TIME'].sum()
-  return data
+#def updateTripStats(s):
+#  data = dict(s)
+##  data['DATE'] = s['TIMESTAMP'].min
+#  data['AVG_LP100K'] = s['FUEL_CONSUMPTION'].avg()
+#  data['DISTANCE'] = s['DISTANCE'].sum()
+#  data['AVG_SPEED'] = s['SPEED'].avg()
+#  data['FUEL'] = s['LPS'].sum()
+#  data['AVG_LOAD'] = s['ENGINE_LOAD'].avg()
+#  data['DURATION'] = s['DURATION'].sum()
+#  data['IDLE_TIME'] = s['IDLE_TIME'].sum()
+#  return data

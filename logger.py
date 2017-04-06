@@ -50,7 +50,7 @@ class DataLogger(threading.Thread):
   def run(self):
     self.__running=True
     self.__pid = os.getpid()
-    logger.info('Logger process starting on ' + str(self.__pid))
+    logger.info('Starting Logger process on PID ' + str(self.__pid))
     try:
       timer=time()
       while self.__running:

@@ -27,9 +27,9 @@ class ECU(Process):
     self.__running = False
 
   def run(self):
-    logger.info('Starting ECU process.')
-    self.__running=True
+    self.__running = True
     self.__pid = os.getpid()
+    logger.info('Starting ECU process on ' + str(self.__pid))
     try:    
       while self.__running:
         self.__checkPipe()
@@ -78,10 +78,10 @@ class ECU(Process):
 
   def __shutdown(self):
     logger.info('Stopping ECU process')
-    self.__running=False
+    self.__running = False
     for q in self.__Que:
       logger.info('Stopping Que ' + q)
-      self.__Que[q].running=False
+      self.__Que[q].running = False
       logger.debug('Stop Wait Que ' + q)
       _thread.start_new_thread(self.__Que[q].join,())
     logger.info('ECU Stopped')
@@ -140,14 +140,14 @@ class ECU(Process):
       logger.info('Pausing ECU')
       self.__paused = True
       for q in self.__Que:
-        if self.__Que[q].isAlive(): self.__Que[q].paused=True
+        if self.__Que[q].isAlive(): self.__Que[q].paused = True
 
   def __resume(self):
     logger.info('Resuming ECU')
     self.__dataPipe.send(Message('RESUME'))
     self.__paused = False
     for q in self.__Que:
-      if self.__Que[q].isAlive(): self.__Que[q].paused=False
+      if self.__Que[q].isAlive(): self.__Que[q].paused = False
 
   def __deleteAfterPoll(self, p):
-    self.__Que[p['QUE']].deleteAfterPoll=p['FLAG']
+    self.__Que[p['QUE']].deleteAfterPoll = p['FLAG']

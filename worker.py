@@ -54,7 +54,7 @@ class Worker(Process):
   def run(self):
     self.__running = True
     self.__pid = os.getpid()
-    logger.info('Worker process running on ' + str(self.__pid))
+    logger.info('Starting Worker process on PID ' + str(self.__pid))
     try:
       while self.__running:
         self.__checkPipe()
@@ -75,11 +75,11 @@ class Worker(Process):
               if self.__firstPoll is None: 
                 self.__firstPoll = datetime.now()
               if not q.is_null():                                                 #todo: uncomment after testing
-                logger.info(str(m) + ' - ' + str(q.value))
+                logger.debug(str(m) + ' - ' + str(q.value))
                 self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
               #self.__resultQue.put(Message(m, VALUE = 0.0))                                 #todo: delete after testing
-            self.__pollRate = self.__pollCount / (datetime.now()-self.__firstPoll).total_seconds()
-        sleep(1.0/self.__frequency)
+            self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
+        sleep(1.0 / self.__frequency)
 
       logger.info('Worker process stopping')
       return
@@ -92,9 +92,9 @@ class Worker(Process):
     while self.__ecuPipe.poll():
       m = self.__ecuPipe.recv()
       logger.info('Received ' + str(m.message) + ' from ECU')
-      if m.message == 'STOP':         self.__stop()
-      if m.message == 'PAUSE':        self.__pause()
-      if m.message == 'RESUME':       self.__resume()
+      if m.message == 'STOP'              : self.__stop()
+      if m.message == 'PAUSE'             : self.__pause()
+      if m.message == 'RESUME'            : self.__resume()
 
     # Check for commands comming from the Application
     while self.__controlPipe.poll():
@@ -113,7 +113,7 @@ class Worker(Process):
       m = self.__dataPipe.recv()
       logger.info('Received ' + str(m.message) + ' from Collector')
 
-      if m.message == 'SUPPORTED_COMMANDS': self.__dataPipe.send(Message(m.message,SUPPORTED_COMMANDS=self.__supported_commands))
+      if m.message == 'SUPPORTED_COMMANDS': self.__dataPipe.send(Message(m.message,SUPPORTED_COMMANDS = self.__supported_commands))
 
   def __isConnected(self):
     connected = False  # TODO: delete after testing
@@ -137,7 +137,7 @@ class Worker(Process):
   def __pause(self):
     if not self.__paused:
       logger.debug('Pausing worker process')
-      self.__paused=True
+      self.__paused = True
       self.__logPipe.send(Message("PAUSE"))
 
   def __resume(self):
@@ -147,7 +147,7 @@ class Worker(Process):
       self.__logPipe.send(Message("RESUME"))
 
   def __connect(self):
-    self.__interface=obd.OBD(self.__port, self.__baud)
+    self.__interface = obd.OBD(self.__port, self.__baud)
     logger.info('Worker connection status = ' + self.__interface.status())
     self.__supported_commands = []
     if self.__interface.status() == 'Not Connected': sleep(1)
@@ -172,18 +172,18 @@ class Worker(Process):
   def __status(self):
     #returns a dict of que status
     d = dict()
-    d['Name']=self.name
-    d['Frequency']=self.__frequency
-    d['Running']=self.__running
-    d['Paused']=self.__paused
-    d['Connected']=self.__isConnected()
+    d['Name'] = self.name
+    d['Frequency'] = self.__frequency
+    d['Running'] = self.__running
+    d['Paused'] = self.__paused
+    d['Connected'] = self.__isConnected()
     if self.__isConnected():                      #todo: uncomment after testing
-      d['Interface']=self.__interface.status()
-      d['Supported Commands']=self.__supported_commands
-    d['Que Length']=self.__workQue.qsize()
-    d['Max Que Length']=self.__maxQueLength
-    d['Poll Count']=self.__pollCount
-    d['Poll Rate']=self.__pollRate
+      d['Interface'] = self.__interface.status()
+      d['Supported Commands'] = self.__supported_commands
+    d['Que Length'] = self.__workQue.qsize()
+    d['Max Que Length'] = self.__maxQueLength
+    d['Poll Count'] = self.__pollCount
+    d['Poll Rate'] = self.__pollRate
     d['Pid'] = self.__pid
     return d
 

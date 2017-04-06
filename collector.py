@@ -52,7 +52,7 @@ class Collector(Process):
     # Main function for process.  Runs continully until instructed to stop.
     self.__running = True
     self.__pid = os.getpid()
-    logger.info('Collector running on PID ' + str(self.__pid))
+    logger.info('Starting Collector process on PID ' + str(self.__pid))
     try:
       while self.__running:                                   # Running set to False by STOP command
         self.__checkPipe()                                    # Check all pipes for commands
@@ -61,15 +61,15 @@ class Collector(Process):
           if not self.__paused:                               # Paused set True/False by PAUSE/RESUME commands
             while self.__results.qsize() > 0:                 # Loop while there are results in the que
               m = self.__results.get()                        # Pull result message from que
-              self.__data[m.message].val=m.params['VALUE']    # Update corresponding KPI with the result value
+              self.__data[m.message].val = m.params['VALUE']  # Update corresponding KPI with the result value
             self.__checkPipe()                                # Check pipes for commands after the que has been cleared
           sleep(1.0/self.__frequency)                         # brief sleep so we dont hog the CPU
         else:                                                 # Not ready?
           if not self.__SCreq:                                # Flag if the Supported Commands request has been sent
-            self.__SCreq=True                                 # Only send the above request once
+            self.__SCreq = True                               # Only send the above request once
             self.__reset()                                    # Empty data dictionary and request a list of supported commands
             sleep(0.25)
-        sleep(1.0/self.__frequency)                           # Release CPU
+        sleep(1.0 / self.__frequency)                         # Release CPU
       logger.info('Collector process stopped')                # Running has been set to False
     except (KeyboardInterrupt, SystemExit):                   # Pick up interrups and system shutdown
       self.__running = False                                  # Set Running to false, causing the above loop to exit
@@ -90,19 +90,19 @@ class Collector(Process):
       logger.debug('Received ' + str(m.message) + ' on controller pipe')
 
       if m.message == 'RESET'              : self.__reset()
-      if m.message == 'SNAPSHOT'           : self.__controlPipe.send(Message(m.message,SNAPSHOT=self.__snapshot()))
-      if m.message == 'SUMMARY'            : self.__controlPipe.send(Message(m.message,SUMMARY=self.__summary()))
-      if m.message == 'SUM'                : self.__controlPipe.send(Message(m.message,SUM=self.__sum(m.params)))
-      if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message,AVG=self.__avg(m.params)))      
-      if m.message == 'MIN'                : self.__controlPipe.send(Message(m.message,MIN=self.__min(m.params)))
-      if m.message == 'MAX'                : self.__controlPipe.send(Message(m.message,MAX=self.__max(m.params)))
-      if m.message == 'STATUS'             : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
+      if m.message == 'SNAPSHOT'           : self.__controlPipe.send(Message(m.message,SNAPSHOT = self.__snapshot()))
+      if m.message == 'SUMMARY'            : self.__controlPipe.send(Message(m.message,SUMMARY = self.__summary()))
+      if m.message == 'SUM'                : self.__controlPipe.send(Message(m.message,SUM = self.__sum(m.params)))
+      if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message,AVG = self.__avg(m.params)))      
+      if m.message == 'MIN'                : self.__controlPipe.send(Message(m.message,MIN = self.__min(m.params)))
+      if m.message == 'MAX'                : self.__controlPipe.send(Message(m.message,MAX = self.__max(m.params)))
+      if m.message == 'STATUS'             : self.__controlPipe.send(Message(m.message,STATUS = self.__status()))
 
     while self.__loggerPipe.poll():                          # Loop through all messages on the Logger pipe
       m = self.__loggerPipe.recv()
       logger.debug('Received ' + str(m.message) + ' on logger pipe')
 
-      if m.message == 'SNAPSHOT'           : self.__loggerPipe.send(Message(m.message,DATA=self.__snapshot()))
+      if m.message == 'SNAPSHOT'           : self.__loggerPipe.send(Message(m.message,DATA = self.__snapshot()))
       if m.message == 'RESET'              : self.__reset()
 
     while self.__workerPipe.poll():                          # Loop through all messages on the Worker pipe
@@ -119,7 +119,6 @@ class Collector(Process):
     return data
 
   def __sum(self, m):
-    # 
     return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
 
   def __avg(self, m):
@@ -137,35 +136,31 @@ class Collector(Process):
     self.__workerPipe.send(Message('SUPPORTED_COMMANDS'))
 
   def __buildDict(self, supportedcommands):
-    self.__SCreq=False
+    self.__SCreq = False
     if supportedcommands == []:
       return
     for f in supportedcommands:
       self.__data[f] = KPI()
     # now add calculates data fields
-    self.__data['TIMESTAMP'] = KPI(FUNCTION=timeStamp)
     if 'MAF' in self.__data: 
       self.__data['MAF'].timeSensitive = True
       if 'ENGINE_LOAD' in self.__data:
-        self.__data['LPS'] = KPI(FUNCTION=LPS, MAF=self.__data['MAF'], ENGINE_LOAD=self.__data['ENGINE_LOAD'])
-        self.__data['LPH'] = KPI(FUNCTION=LPH, LPS=self.__data['LPS'])
+        self.__data['LPS'] = KPI(FUNCTION = LPS, MAF = self.__data['MAF'], ENGINE_LOAD = self.__data['ENGINE_LOAD'])
+        self.__data['LPH'] = KPI(FUNCTION = LPH, LPS = self.__data['LPS'])
     if 'SPEED' in self.__data:
-      self.__data['DISTANCE'] = KPI(FUNCTION=distance,SPEED=self.__data['SPEED'])
-      self.__data['DISTANCE'].timeSensitive=True
+      self.__data['DISTANCE'] = KPI(FUNCTION = distance,SPEED = self.__data['SPEED'])
       if 'RPM' in self.__data:
-        self.__data['DRIVE_RATIO'] = KPI(FUNCTION=driveRatio, SPEED=self.__data['SPEED'], RPM=self.__data['RPM'])
-        self.__data['GEAR'] = KPI(FUNCTION=gear,DRIVE_RATIO=self.__data['DRIVE_RATIO'])
-        self.__data['IDLE_TIME'] = KPI(FUNCTION=idleTime, SPEED=self.__data['SPEED'], RPM = self.__data['RPM'])
-        self.__data['IDLE_TIME'].timeSensitive = True
+        self.__data['DRIVE_RATIO'] = KPI(FUNCTION = driveRatio, SPEED = self.__data['SPEED'], RPM = self.__data['RPM'])
+        self.__data['GEAR'] = KPI(FUNCTION = gear,DRIVE_RATIO = self.__data['DRIVE_RATIO'])
+        self.__data['IDLE_TIME'] = KPI(FUNCTION = idleTime, SPEED = self.__data['SPEED'], RPM = self.__data['RPM'])
       if 'LPH' in self.__data:
-        self.__data['LP100K'] = KPI(FUNCTION=LP100K, SPEED=self.__data['SPEED'], LPH=self.__data['LPH'])
+        self.__data['LP100K'] = KPI(FUNCTION = LP100K, SPEED = self.__data['SPEED'], LPH = self.__data['LPH'])
     if 'RPM' in self.__data:
-      self.__data['DURATION'] = KPI(FUNCTION=duration, RPM = self.__data['RPM'])
-      self.__data['DURATION'].timeSensitive = True
+      self.__data['DURATION'] = KPI(FUNCTION = duration, RPM = self.__data['RPM'])
     if 'BAROMETRIC_PRESSURE' in self.__data and 'INTAKE_PRESSURE' in self.__data:
-      self.__data['BOOST_PRESSURE'] = KPI(FUNCTION=boost, BAROMETRIC_PRESSURE=self.__data['BAROMETRIC_PRESSURE'], INTAKE_PRESSURE=self.__data['INTAKE_PRESSURE'])
+      self.__data['BOOST_PRESSURE'] = KPI(FUNCTION = boost, BAROMETRIC_PRESSURE = self.__data['BAROMETRIC_PRESSURE'], INTAKE_PRESSURE=self.__data['INTAKE_PRESSURE'])
     if 'DISTANCE_SINCE_DTC_CLEAR' in self.__data:
-      self.__data['OBD_DISTANCE'] = KPI(FUNCTION=OBDdistance, DISTANCE_SINCE_DTC_CLEAR=self.__data['DISTANCE_SINCE_DTC_CLEAR'])
+      self.__data['OBD_DISTANCE'] = KPI(FUNCTION = OBDdistance, DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
     logger.debug(str(self.__data))
     self.__ready = True
     self.__dirty = False
@@ -202,16 +197,13 @@ class Collector(Process):
 
   def __summary(self):
     d=dict()
-    for k in self.__data:
-      if self.__data[k].val is None:
-        continue
-      else:
-        d[k] = dict()
-        d[k]['VAL'] = self.__data[k].val
-        d[k]['MIN'] = self.__data[k].min
-        d[k]['MAX'] = self.__data[k].max
-        if k not in ('TIMESTAMP','GEAR'):
-          d[k]['AVG'] = self.__data[k].avg()
-          d[k]['SUM'] = self.__data[k].sum()
+    d['DATE'] = self.__data['TIMESTAMP'].min
+    d['AVG_LP100K'] = self.__data['LP100k'].avg()
+    d['DISTANCE'] = self.__data['DISTANCE'].sum()
+    d['AVG_SPEED'] = self.__data['SPEED'].avg()
+    d['FUEL'] = self.__data['LPS'].sum()
+    d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg()
+    d['DURATION'] = self.__data['DURATION'].sum()
+    d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum()
     return d
 

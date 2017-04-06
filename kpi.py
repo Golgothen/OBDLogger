@@ -8,74 +8,74 @@ logger = logging.getLogger('root')
 class KPI(object):
 
   def __init__(self,**kwargs):
-    self._parameters = dict()
-    self._func = None
+    self.__parameters = dict()
+    self.__func = None
     for k in kwargs:
       if k == 'FUNCTION':
-        self._func=kwargs[k]
+        self.__func = kwargs[k]
       else:
-        self._parameters[k]=kwargs[k]
-    self._min=None
-    self._max=None
-    self._hist=[]
-    self._age=None
-    self.timeSensitive=False
+        self.__parameters[k] = kwargs[k]
+    self.__min = None
+    self.__max = None
+    self.__instantHist = []   # Instant value history to calculate AVG
+    self.__timeHist = []      # Time aware history to calculate SUM
+    self.__age = None
 
-  @property
+  @property      # Getter
   def val(self):
-    if self._func is not None:
-      v=self._func(self._parameters)
-      self.val=v
-    if len(self._hist)>0:
-      return self._hist[0]
+    if self.__func is not None:
+      v = self.__func(self.__parameters)
+      self.val = v  # Trigger the setter
+    if len(self.__instantHist) > 0:
+      return self.__instantHist[0]  # Instant values do not take time passed into account
 
   @val.setter
-  def val(self,v):
+  def val(self, v):
     if v is not None:
-      if self.timeSensitive:
-        if self._age is None:
-          self._age = 1
-        else:
-          v=v*(time()-self._age)
-          self._age=time()
-      self._hist.insert(0,v)
-      if self._max is None:
-        self._max=v
+      self.__instantHist.insert(0, v)  # Record Instant history values for AVG
+      if self.__max is None:
+        self.__max = v
       else:
-        if v > self._max:
-          self._max=v
-      if self._min is None:
-        self._min=v
+        if v > self.__max:
+          self._max = v
+      if self.__min is None:
+        self.__min = v
       else:
-        if v < self._min:
-          self._min=v
+        if v < self.__min:
+          self._min = v
+      if self.___age is None:
+        self.__age = 1
+      else:
+        v = v * (time() - self._age)
+        self._age = time()
+      self.__timeHist.insert(0, v)  # Record time calculated value for sums
 
   @property
   def max(self):
-    return self._max
+    return self.__max
 
   @property
   def min(self):
-    return self._min
+    return self.__min
 
   @property
   def len(self):
-    return len(self._hist)
+    return len(self.__instantHist)
 
-  def sum(self,period=0,offset=0):
+  def sum(self,period = 0,offset = 0):
     period=abs(period)
     offset=abs(offset)
-    if period == 0 and offset == 0: return float(sum(self._hist))
-    return float(sum(self._hist[offset:offset+period]))
+    if period == 0 and offset == 0: return float(sum(self.__timeHist))
+    return float(sum(self.__timeHist[offset:offset+period]))
 
-  def avg(self,period=0, offset = 0):
+  def avg(self,period = 0, offset = 0):
     period=abs(period)
     offset=abs(offset)
     if period == 0 and offset == 0:
-      if len(self._hist)==0: return 0.0
-      return float(sum(self._hist)/len(self._hist))
-    if len(self._hist[offset:offset+period])==0: return 0.0
-    else: return float(sum(self._hist[offset:offset+period]))/float(len(self._hist[offset:offset+period]))
+      if len(self.__instantHist) == 0: return 0.0
+      return float(sum(self.__instantHist) / len(self.__instantHist))
+    if len(self.__instantHist[offset:offset + period]) == 0: return 0.0
+    else: return float(sum(self.__instantHist[offset:offset + period])) / float(len(self.__instantHist[offset:offset + period]))
 
 #  def reset(self):
 #    self._hist=[]
@@ -107,7 +107,7 @@ def driveRatio(p):
   r = p['RPM'].val
   if s is None or r is None: return None
   if s == 0: return None                           #Avoid Divide by Zero
-  sideWall=TYRE_WIDTH * ASPECT_RATIO               # in mm
+  sideWall = TYRE_WIDTH * ASPECT_RATIO             # in mm
   wheelDiameter = sideWall + (RIM_SIZE * 25.4)     # in mm
   wheelCirc = wheelDiameter * 3.14159 / 1000.0     # in m
   wheel_rpm = s*1000.0/60/wheelCirc                # in rpm

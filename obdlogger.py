@@ -227,9 +227,9 @@ if __name__ == '__main__':
               logHeadings.append(c)       # Add any added commands to the log headings so they get logged
           ecu.logHeadings(logHeadings)
           ecu.resume()
-        print(ecu.status())
+        #print(ecu.status())
         #print(ecu.status()['Worker Status'])
-        #printFullTable(ecu.summary)
+        printFullTable(ecu.summary)
         sleep(1)
       while not ecu.isConnected():
         if journey: 
@@ -239,19 +239,19 @@ if __name__ == '__main__':
           if ecu.sum('DURATION') == 0:
             ecu.discard()
           else:
+            tripstats = ecu.summary
             if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
               logger.debug('Finalising trip....')
-              #tripstats = updateTripStats(kpis)
-              #writeTripHistory(SETTINGS_PATH + 'TripHistory.csv',tripstats)
-              #writeTripHistory(SETTINGS_PATH + 'TankHistory.csv',tripstats)
-              #writeLastTrip(SETTINGS_PATH + 'LastTrip.csv',tripstats)
+              writeTripHistory(SETTINGS_PATH + 'TripHistory.csv',tripstats)
+              writeTripHistory(SETTINGS_PATH + 'TankHistory.csv',tripstats)
+              writeLastTrip(SETTINGS_PATH + 'LastTrip.csv',tripstats)
               history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
               tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
               disconnected=None
         logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
         #assume engine is off
-        #printIdleScreen()
-        print(ecu.status())
+        printIdleScreen()
+        #print(ecu.status())
         #print(ecu.status()['Worker Status'])
         sleep(1)
 
