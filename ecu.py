@@ -29,7 +29,7 @@ class ECU(Process):
   def run(self):
     self.__running = True
     self.__pid = os.getpid()
-    logger.info('Starting ECU process on ' + str(self.__pid))
+    logger.info('Starting ECU process on PID ' + str(self.__pid))
     try:    
       while self.__running:
         self.__checkPipe()
