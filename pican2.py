@@ -30,7 +30,7 @@
 #                                                                      #
 ########################################################################
 
-inport can, logging
+import can, logging
 
 logger = logging.getLogger('root')
 
