@@ -7,89 +7,85 @@ logger = logging.getLogger('root')
 
 class KPI(object):
 
-  def __init__(self,**kwargs):
-    self.__parameters = dict()
-    self.__func = None
-    for k in kwargs:
-      if k == 'FUNCTION':
-        self.__func = kwargs[k]
-      else:
-        self.__parameters[k] = kwargs[k]
-    self.__min = None
-    self.__max = None
-    self.__instantHist = []   # Instant value history to calculate AVG
-    self.__timeHist = []      # Time aware history to calculate SUM
-    self.__age = time()
+    def __init__(self,**kwargs):
+        self.__parameters = dict()
+        self.__func = None
+        for k in kwargs:
+            if k == 'FUNCTION':
+                self.__func = kwargs[k]
+            else:
+                self.__parameters[k] = kwargs[k]
+        self.__min = None
+        self.__max = None
+        self.__instantHist = []                          # Instant value history to calculate AVG
+        self.__timeHist = []                             # Time aware history to calculate SUM
+        self.__age = time()
 
-  @property      # Getter
-  def val(self):
-    if self.__func is not None:
-      v = self.__func(self.__parameters)
-      if v is not None:
-        self.val = v  # Trigger the setter
-    if len(self.__instantHist) > 0:
-      return self.__instantHist[0]  # Instant values do not take time passed into account
+    @property # Getter
+    def val(self):
+        if self.__func is not None:
+            v = self.__func(self.__parameters)
+            if v is not None:
+                self.val = v                             # Trigger the setter
+        if len(self.__instantHist) > 0:
+            return self.__instantHist[0]                 # Instant values do not take time passed into account
 
-  @val.setter
-  def val(self, v):
-    if v is not None:
-      self.__instantHist.insert(0, v)  # Record Instant history values for AVG
-      if self.__max is None:
-        self.__max = v
-      else:
-        if v > self.__max:
-          self._max = v
-      if self.__min is None:
-        self.__min = v
-      else:
-        if v < self.__min:
-          self._min = v
-      v = v * (time() - self.__age)
-      self.__age = time()
-      self.__timeHist.insert(0, v)  # Record time calculated value for sums
+    @val.setter
+    def val(self, v):
+        if v is not None:
+            self.__instantHist.insert(0, v)              # Record Instant history values for AVG
+            if self.__max is None:
+                self.__max = v
+            else:
+                if v > self.__max:
+                    self._max = v
+            if self.__min is None:
+                self.__min = v
+            else:
+                if v < self.__min:
+                    self._min = v
+            v = v * (time() - self.__age)
+            self.__age = time()
+            self.__timeHist.insert(0, v)                 # Record time calculated value for sums
 
-  @property
-  def max(self):
-    return self.__max
+    @property
+    def max(self):
+        return self.__max
 
-  @property
-  def min(self):
-    return self.__min
+    @property
+    def min(self):
+        return self.__min
 
-  @property
-  def len(self):
-    return len(self.__instantHist)
+    @property
+    def len(self):
+        return len(self.__instantHist)
 
-  def sum(self,period = 0,offset = 0):
-    period=abs(period)
-    offset=abs(offset)
-    if period == 0 and offset == 0: return float(sum(self.__timeHist))
-    return float(sum(self.__timeHist[offset:offset+period]))
+    def sum(self,period = 0,offset = 0):
+        period=abs(period)
+        offset=abs(offset)
+        if period == 0 and offset == 0: return float(sum(self.__timeHist))
+        return float(sum(self.__timeHist[offset:offset+period]))
 
-  def avg(self,period = 0, offset = 0):
-    period=abs(period)
-    offset=abs(offset)
-    if period == 0 and offset == 0:
-      if len(self.__instantHist) == 0: return 0.0
-      return float(sum(self.__instantHist) / len(self.__instantHist))
-    if len(self.__instantHist[offset:offset + period]) == 0: return 0.0
-    else: return float(sum(self.__instantHist[offset:offset + period])) / float(len(self.__instantHist[offset:offset + period]))
+    def avg(self,period = 0, offset = 0):
+        period=abs(period)
+        offset=abs(offset)
+        if period == 0 and offset == 0:
+            if len(self.__instantHist) == 0: return 0.0
+            return float(sum(self.__instantHist) / len(self.__instantHist))
+        if len(self.__instantHist[offset:offset + period]) == 0: return 0.0
+        else: return float(sum(self.__instantHist[offset:offset + period])) / float(len(self.__instantHist[offset:offset + period]))
 
-#  def reset(self):
-#    self._hist=[]
 
-#  def addParameters(self, **kwargs):
-#    for k in kwargs:
-#      self._parameters[k]=kwargs[k]
+# Contants used in calculations
 
 FUEL_AIR_RATIO_IDEAL = 14.7
-FUEL_AIR_RATIO_MIN = 25.0         #Fuel/Air Ratio x:1
+FUEL_AIR_RATIO_MIN = 25.0                 #Fuel/Air Ratio x:1
 FUEL_AIR_RATIO_MAX = 50.0
-FUEL_DENSITY = 850.8              #Diesel Fuel Density g/L
-TYRE_WIDTH = 195.0                #Tyre Width in mm
-ASPECT_RATIO = 0.65               #Tyre profile
-RIM_SIZE = 15.0                   #Rim size in inches
-
+FUEL_DENSITY = 850.8                      #Diesel Fuel Density g/L
+TYRE_WIDTH = 195.0                        #Tyre Width in mm
+ASPECT_RATIO = 0.65                       #Tyre profile
+RIM_SIZE = 15.0                           #Rim size in inches
+PI = 3.14159
 ###
 
 # Calculation Functions
@@ -97,102 +93,102 @@ RIM_SIZE = 15.0                   #Rim size in inches
 ###
 
 def driveRatio(p):
-  #Final Drive Ratio
-  #Final drive gear ration depends on tyre profile.
-  #Needs to be attached to Speed and RPM sensors
-  if 'SPEED' not in p or 'RPM' not in p: return None
-  s = p['SPEED'].val
-  r = p['RPM'].val
-  if s is None or r is None: return None
-  if s == 0: return None                           #Avoid Divide by Zero
-  sideWall = TYRE_WIDTH * ASPECT_RATIO             # in mm
-  wheelDiameter = sideWall + (RIM_SIZE * 25.4)     # in mm
-  wheelCirc = wheelDiameter * 3.14159 / 1000.0     # in m
-  wheel_rpm = s*1000.0/60/wheelCirc                # in rpm
-  return r / wheel_rpm                             # ratio Engine RPM : Wheel RPM
+    #Final Drive Ratio
+    #Final drive gear ration depends on tyre profile.
+    #Needs to be attached to Speed and RPM sensors
+    if 'SPEED' not in p or 'RPM' not in p: return None
+    s = p['SPEED'].val
+    r = p['RPM'].val
+    if s is None or r is None: return None
+    if s == 0: return None                          #Avoid Divide by Zero
+    sideWall = TYRE_WIDTH * ASPECT_RATIO            # Tyre sidewall height in mm
+    wheelDiameter = sideWall + (RIM_SIZE * 25.4)    # Wheel diameter in mm
+    wheelCirc = wheelDiameter * PI / 1000.0         # Wheel circumfrance in m
+    wheel_rpm = s*1000.0 / 60 / wheelCirc           # Wheel RPM
+    return r / wheel_rpm                            # ratio Engine RPM : Wheel RPM
 
 def LPH(p):
-  if 'LPS' not in p: return None
-  l = p['LPS'].val
-  if l is None: return None
-  return l * 3600
+    if 'LPS' not in p: return None
+    l = p['LPS'].val
+    if l is None: return None
+    return l * 3600
 
 def LPS(p):
-  if 'MAF' not in p or 'ENGINE_LOAD' not in p: return None
-  m = p['MAF'].val
-  e = p['ENGINE_LOAD'].val
-  if m is None or e is None: return None
-  if e == 0: return 0.0
-  if m == 0: return None
-  return m/(FUEL_AIR_RATIO_MAX - ((FUEL_AIR_RATIO_MAX-FUEL_AIR_RATIO_MIN)*(e/100.0)))/FUEL_DENSITY
+    if 'MAF' not in p or 'ENGINE_LOAD' not in p: return None
+    m = p['MAF'].val
+    e = p['ENGINE_LOAD'].val
+    if m is None or e is None: return None
+    if e == 0: return 0.0
+    if m == 0: return None
+    return m/(FUEL_AIR_RATIO_MAX - ((FUEL_AIR_RATIO_MAX - FUEL_AIR_RATIO_MIN) * (e / 100.0))) / FUEL_DENSITY
 
 def LP100K(p):
-  #Fuel Consumption in L/100K
-  #Depends on Air/Fuel Mixture.  Diesel is documented at 14.7:1
-  #Needs to be attaqched to Speed and MAF sensors
-  if 'LPH' not in p or 'SPEED' not in p: return None
-  l = p['LPH'].val
-  s = p['SPEED'].avg(5)
-  if l is None or s is None: return None
-  if s == 0: return 0
-  return 100.0/s*l
+    #Fuel Consumption in L/100K
+    #Depends on Air/Fuel Mixture.    Diesel is documented at 14.7:1
+    #Needs to be attaqched to Speed and MAF sensors
+    if 'LPH' not in p or 'SPEED' not in p: return None
+    l = p['LPH'].val
+    s = p['SPEED'].avg(5)
+    if l is None or s is None: return None
+    if s == 0: return 0
+    return 100.0 / s * l
 
 def boost(p):
-  #Boost Pressure in PSI
-  #Simple calculation of MAP (Manifold Absolute Pressure) and Barometric Pressure
-  #Needs to be attached to Intake Pressure and Barometric Pressure
-  if 'INTAKE_PRESSURE' not in p or 'BAROMETRIC_PRESSURE' not in p: return None
-  i = p['INTAKE_PRESSURE'].val
-  b = p['BAROMETRIC_PRESSURE'].val
-  if i is None or b is None: return None
-  v = (i - b) / 6.89475728
-  if v<0: return 0
-  return v
+    #Boost Pressure in PSI
+    #Simple calculation of MAP (Manifold Absolute Pressure) and Barometric Pressure
+    #Needs to be attached to Intake Pressure and Barometric Pressure
+    if 'INTAKE_PRESSURE' not in p or 'BAROMETRIC_PRESSURE' not in p: return None
+    i = p['INTAKE_PRESSURE'].val
+    b = p['BAROMETRIC_PRESSURE'].val
+    if i is None or b is None: return None
+    v = (i - b) / 6.89475728
+    if v<0: return 0
+    return v
 
 def distance(p):
-  if 'SPEED' not in p: return None
-  d = p['SPEED'].avg(5)
-  if d is None: return None
-  return d/3600
+    if 'SPEED' not in p: return None
+    d = p['SPEED'].avg(5)
+    if d is None: return None
+    return d / 3600
 
 def OBDdistance(p):
-  if 'DISTANCE_SINCE_DTC_CLEAR' not in p: return None
-  d = p['DISTANCE_SINCE_DTC_CLEAR'].val
-  if d is None: return None
-  return d-p['DISTANCE_SINCE_DTC_CLEAR'].min
+    if 'DISTANCE_SINCE_DTC_CLEAR' not in p: return None
+    d = p['DISTANCE_SINCE_DTC_CLEAR'].val
+    if d is None: return None
+    return d - p['DISTANCE_SINCE_DTC_CLEAR'].min
 
 def gear(p):
-  if 'DRIVE_RATIO' not in p: return None
-  r=p['DRIVE_RATIO'].val
-  if r is None: return None
-  if r > 12.0 and r < 13.7:
-    return '1st'
-  if r > 6.2 and r < 7.4:
-    return '2nd'
-  if r > 4.7 and r < 5.8:
-    return '3rd'
-  if r > 3.2 and r < 3.9:
-    return '4th'
-  if r > 2.3 and r < 2.9:
-    return '5th'
-  return 'Neutal'
+    if 'DRIVE_RATIO' not in p: return None
+    r = p['DRIVE_RATIO'].val
+    if r is None: return None
+    if r > 12.0 and r < 13.7:
+        return '1st'
+    if r > 6.2 and r < 7.4:
+        return '2nd'
+    if r > 4.7 and r < 5.8:
+        return '3rd'
+    if r > 3.2 and r < 3.9:
+        return '4th'
+    if r > 2.3 and r < 2.9:
+        return '5th'
+    return 'Neutal'
 
 def duration(p):
-  if 'RPM' not in p: return None
-  r = p['RPM'].val
-  if r is None: return None
-  if r == 0: return 0
-  return 1
+    if 'RPM' not in p: return None
+    r = p['RPM'].val
+    if r is None: return None
+    if r == 0: return 0
+    return 1
 
 def idleTime(p):
-  if 'SPEED' not in p and 'RPM' not in p: return None
-  s = p['SPEED'].val
-  r = p['RPM'].val
-  if s is None or r is None: return None
-  if s == 0:
-    if r > 0 and r < 1000:
-      return 1
-  return 0
+    if 'SPEED' not in p and 'RPM' not in p: return None
+    s = p['SPEED'].val
+    r = p['RPM'].val
+    if s is None or r is None: return None
+    if s == 0:
+        if r > 0 and r < 1000:
+            return 1
+    return 0
 
 def timeStamp(p):
-  return datetime.now()
+    return datetime.now()
