@@ -167,10 +167,11 @@ class DataLogger(threading.Thread):
 
     def __pause(self):
         #Pause logging, thread keeps running
-        logger.info('Logging paused')
-        self.__paused = True
-        if self.__pausedAt is None:
-            self.__pausedAt = datetime.now()
+        if not self.__paused:
+            logger.info('Logging paused')
+            self.__paused = True
+            if self.__pausedAt is None:
+                self.__pausedAt = datetime.now()
 
     def __save(self):
         #Compress the logfile

@@ -11,7 +11,7 @@ logger = logging.getLogger('root')
 logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
 file_handler = logging.FileHandler('./'+logName) # sends output to file
 #file_handler = logging.StreamHandler() # sends output to stderr
-file_handler.setFormatter(logging.Formatter('%(asctime)-15s:%(levelname)-8s - [%(module)-10s.%(funcName)-15s:%(lineno)-4s] %(message)s'))
+file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-10s.%(funcName)-17s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
 logger.setLevel(logging.INFO)
@@ -251,7 +251,10 @@ if __name__ == '__main__':
                     for c in Commands['ONCE']:                          # Add all the ONCE commands back into the ONCE que if they do not already exist
                         if c not in l:
                             ecu.addCommand('ONCE',c)
-                    sc = ecu.supportedcommands()
+                    sc = None
+                    while sc is None:
+                        sc = ecu.supportedcommands()
+                        sleep(0.01)
                     for c in sc:                                        # Add all supported commands that arent already in a que to the LOW que
                         if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
                             Commands['LOW'].append(c)

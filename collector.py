@@ -79,10 +79,10 @@ class Collector(Process):
             m = self.__ecuPipe.recv()                                               # Grab the first message in the pipe
             logger.info('Received {} on ECU pipe'.format(m.message))
 
-            if m.message == 'PAUSE'                            : self.__pause()                            
-            if m.message == 'RESUME'                         : self.__resume()
-            if m.message == 'STOP'                             : self.__stop()
-            if m.message == 'RESET'                            : self.__reset()
+            if m.message == 'PAUSE'              : self.__pause()                            
+            if m.message == 'RESUME'             : self.__resume()
+            if m.message == 'STOP'               : self.__stop()
+            if m.message == 'RESET'              : self.__reset()
 
         while self.__controlPipe.poll():                                            # Loop through all messages on the Application pipe
             m = self.__controlPipe.recv()
@@ -149,25 +149,51 @@ class Collector(Process):
         # now add calculates data fields
 
         #self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp)
-        if 'MAF' in self.__data: 
-            self.__data['MAF'].timeSensitive = True
-            if 'ENGINE_LOAD' in self.__data:
-                self.__data['LPS'] = KPI(FUNCTION = LPS, MAF = self.__data['MAF'], ENGINE_LOAD = self.__data['ENGINE_LOAD'])
-                self.__data['LPH'] = KPI(FUNCTION = LPH, LPS = self.__data['LPS'])
+        if 'MAF' in self.__data and \
+           'ENGINE_LOAD' in self.__data:
+
+                self.__data['LPS'] =         KPI(FUNCTION = LPS, 
+                                                 MAF = self.__data['MAF'],
+                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
+                self.__data['LPH'] =         KPI(FUNCTION = LPH,
+                                                 LPS = self.__data['LPS'])
+
         if 'SPEED' in self.__data:
-            self.__data['DISTANCE'] = KPI(FUNCTION = distance,SPEED = self.__data['SPEED'])
+
+            self.__data['DISTANCE'] =        KPI(FUNCTION = distance,
+                                                 SPEED = self.__data['SPEED'])
+
             if 'RPM' in self.__data:
-                self.__data['DRIVE_RATIO'] = KPI(FUNCTION = driveRatio, SPEED = self.__data['SPEED'], RPM = self.__data['RPM'])
-                self.__data['GEAR'] = KPI(FUNCTION = gear,DRIVE_RATIO = self.__data['DRIVE_RATIO'])
-                self.__data['IDLE_TIME'] = KPI(FUNCTION = idleTime, SPEED = self.__data['SPEED'], RPM = self.__data['RPM'])
+                self.__data['DRIVE_RATIO'] = KPI(FUNCTION = driveRatio,
+                                                 SPEED = self.__data['SPEED'],
+                                                 RPM = self.__data['RPM'])
+                self.__data['GEAR'] =        KPI(FUNCTION = gear,
+                                                 DRIVE_RATIO = self.__data['DRIVE_RATIO'])
+                self.__data['IDLE_TIME'] =   KPI(FUNCTION = idleTime,
+                                                 SPEED = self.__data['SPEED'],
+                                                 RPM = self.__data['RPM'])
+
             if 'LPH' in self.__data:
-                self.__data['LP100K'] = KPI(FUNCTION = LP100K, SPEED = self.__data['SPEED'], LPH = self.__data['LPH'])
+                self.__data['LP100K'] =      KPI(FUNCTION = LP100K,
+                                                 SPEED = self.__data['SPEED'],
+                                                 LPH = self.__data['LPH'])
+
         if 'RPM' in self.__data:
-            self.__data['DURATION'] = KPI(FUNCTION = duration, RPM = self.__data['RPM'])
-        if 'BAROMETRIC_PRESSURE' in self.__data and 'INTAKE_PRESSURE' in self.__data:
-            self.__data['BOOST_PRESSURE'] = KPI(FUNCTION = boost, BAROMETRIC_PRESSURE = self.__data['BAROMETRIC_PRESSURE'], INTAKE_PRESSURE=self.__data['INTAKE_PRESSURE'])
+            self.__data['DURATION'] =        KPI(FUNCTION = duration,
+                                                 RPM = self.__data['RPM'])
+
+        if 'BAROMETRIC_PRESSURE' in self.__data and \
+           'INTAKE_PRESSURE' in self.__data:
+
+            self.__data['BOOST_PRESSURE'] =  KPI(FUNCTION = boost, 
+                                                 BAROMETRIC_PRESSURE = self.__data['BAROMETRIC_PRESSURE'],
+                                                 INTAKE_PRESSURE=self.__data['INTAKE_PRESSURE'])
+
         if 'DISTANCE_SINCE_DTC_CLEAR' in self.__data:
-            self.__data['OBD_DISTANCE'] = KPI(FUNCTION = OBDdistance, DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
+
+            self.__data['OBD_DISTANCE'] =    KPI(FUNCTION = OBDdistance,
+                                                 DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
+
         self.__ready = True
         self.__dirty = False
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
