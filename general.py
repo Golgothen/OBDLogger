@@ -17,34 +17,29 @@ def formatSeconds(d):
 def readCSV(file):
     if os.path.isfile(file):
         data = dict()
-        #try:
-        with open(file) as f:
-            reader = csv.DictReader(f)
-            headings = next(reader)
-            for h in headings:
-                data[h] = []
-            f.seek(0)
-            next(reader)
-            for row in reader:
-                for h in row:
-                    if h == 'DATE':
-                        data[h].append(row[h])
-                    else:
-                        data[h].append(float(row[h]))
-        return data
-        #except:
-        #    f.close()
-        #    data=None
+        try:
+            with open(file) as f:
+                reader = csv.reader(f)
+                headings = next(reader)
+                for h in headings:
+                    data[h] = []
+                for row in reader:
+                    for h, v in zip(headings, row):
+                        if h == 'DATE':
+                            data[h].append(v)
+                        else:
+                            data[h].append(float(v))
+            return data
+        except:
+            data=None
             #Nulls in file causes CSV reader to fail
             #Recreate the file stripping out all nulls
-        #    f = open(file,'rb')
-        #    data=f.read()
-        #    f.close()
-        #    f = open(file,'wb')
-        #    f.write(data.replace('\x00',''))
-        #    f.close()
+            with open(file,'rb') as f:
+                data=f.read()
+            with open(file,'wb') as f:
+                f.write(data.replace('\x00',''))
             #Try again
-        #    return readCSV(file)
+            return readCSV(file)
     else:
         return None
 
