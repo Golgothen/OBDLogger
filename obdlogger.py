@@ -33,7 +33,7 @@ def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
 
-    #os.system('clear')
+    os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
     if screentime.seconds>=IDLE_SCREEN_TIME:
         currentIdleScreen+=1
@@ -90,22 +90,6 @@ def printTank():
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
 
-def printFuelTable():
-    if snapshot['SPEED']>0:
-        os.system('clear')
-        sys.stdout.write('  Time :     L/100K : Fuel(ml) :')
-        sys.stdout.write('   Now : {:8,.2f} : {:8,.2f} :'.format(snapshot['FUEL_CONSUMPTION'], snapshot['LPS']))
-        sys.stdout.write('   60s : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(60, 0), sensors['LPS'].sum(60, 0)*1000))
-        sys.stdout.write('    5m : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(300, 60), sensors['LPS'].sum(300, 60)*1000))
-        sys.stdout.write('   10m : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(300, 360), sensors['LPS'].sum(300, 360)*1000))
-        sys.stdout.write('   15m : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(300, 660), sensors['LPS'].sum(300, 660)*1000))
-        sys.stdout.write('   30m : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(900, 960), sensors['LPS'].sum(900, 960)*1000))
-        sys.stdout.write('   45m : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(900, 1860), sensors['LPS'].sum(900, 1860)*1000))
-        sys.stdout.write('    1h : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(3600, 2760), sensors['LPS'].sum(3600, 2760)*1000))
-        sys.stdout.write('    2h : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(3600, 6360), sensors['LPS'].sum(3600, 6360)*1000))
-
-    sys.stdout.flush()
-
 def paintFullTable():
     os.system('clear')
     # paint the screen
@@ -119,7 +103,7 @@ def paintFullTable():
     sys.stdout.write('  Time :          /          :')
     sys.stdout.write('  Fuel :                     :')
     sys.stdout.write('  Gear :          /          :')
-
+    sys.stdout.flush()
 
 def printFullTable(d):
     if 'SPEED' in d:
