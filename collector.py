@@ -92,7 +92,7 @@ class Collector(Process):
             if m.message == 'SNAPSHOT'           : self.__controlPipe.send(Message(m.message, SNAPSHOT = self.__snapshot()))
             if m.message == 'SUMMARY'            : self.__controlPipe.send(Message(m.message, SUMMARY = self.__summary()))
             if m.message == 'SUM'                : self.__controlPipe.send(Message(m.message, SUM = self.__sum(m.params)))
-            if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message, AVG = self.__avg(m.params)))            
+            if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message, AVG = self.__avg(m.params)))
             if m.message == 'MIN'                : self.__controlPipe.send(Message(m.message, MIN = self.__min(m.params)))
             if m.message == 'MAX'                : self.__controlPipe.send(Message(m.message, MAX = self.__max(m.params)))
             if m.message == 'STATUS'             : self.__controlPipe.send(Message(m.message, STATUS = self.__status()))
@@ -108,7 +108,7 @@ class Collector(Process):
             m = self.__workerPipe.recv()
             logger.debug('Received {} on Worker pipe'.format(m.message))
 
-            if m.message == 'SUPPORTED_COMMANDS' : self.__buildDict(m.params['SUPPORTED_COMMANDS']) 
+            if m.message == 'SUPPORTED_COMMANDS' : self.__buildDict(m.params['SUPPORTED_COMMANDS'])
 
     def __snapshot(self):
         # Returns a dictionary of all KPI current values
@@ -152,7 +152,7 @@ class Collector(Process):
         if 'MAF' in self.__data and \
            'ENGINE_LOAD' in self.__data:
 
-                self.__data['LPS'] =         KPI(FUNCTION = LPS, 
+                self.__data['LPS'] =         KPI(FUNCTION = LPS,
                                                  MAF = self.__data['MAF'],
                                                  ENGINE_LOAD = self.__data['ENGINE_LOAD'])
                 self.__data['LPH'] =         KPI(FUNCTION = LPH,
@@ -185,7 +185,7 @@ class Collector(Process):
         if 'BAROMETRIC_PRESSURE' in self.__data and \
            'INTAKE_PRESSURE' in self.__data:
 
-            self.__data['BOOST_PRESSURE'] =  KPI(FUNCTION = boost, 
+            self.__data['BOOST_PRESSURE'] =  KPI(FUNCTION = boost,
                                                  BAROMETRIC_PRESSURE = self.__data['BAROMETRIC_PRESSURE'],
                                                  INTAKE_PRESSURE=self.__data['INTAKE_PRESSURE'])
 
@@ -202,7 +202,7 @@ class Collector(Process):
         if not self.__paused:
             logger.info('Pausing Collector process')
             self.__dirty = self.__paused = True
-            
+
     def __resume(self):
         if self.__paused:
             logger.info('Resuming Collector process')

@@ -1,4 +1,4 @@
-import os, csv, logging
+import os, csv, logging, sys
 
 ###
 
@@ -86,3 +86,7 @@ def writeTripHistory(file,data):
             str(data['DURATION']) + ',' +
             str(data['IDLE_TIME']) + '\n',
         'UTF-8'))
+
+def printxy(x, y, text):
+     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
+     sys.stdout.flush()

@@ -1,8 +1,6 @@
 #from gps import *
 from time import sleep
 from datetime import datetime
-#from multiprocessing import Queue, Pipe
-#import threading
 from general import *
 from monitor import Monitor
 from logger import DataLogger
@@ -108,91 +106,69 @@ def printFuelTable():
 
     sys.stdout.flush()
 
+def paintFullTable():
+    os.system('clear')
+    # paint the screen
+    sys.stdout.write(' Speed :     /    /          :')
+    sys.stdout.write('   RPM :          /          :')
+    sys.stdout.write('   LPH :          /          :')
+    sys.stdout.write(' Boost :          /          :')
+    sys.stdout.write('  Load :          /          :')
+    sys.stdout.write('  Temp :          /          :')
+    sys.stdout.write('  Trip :                     :')
+    sys.stdout.write('  Time :          /          :')
+    sys.stdout.write('  Fuel :                     :')
+    sys.stdout.write('  Gear :          /          :')
+
+
 def printFullTable(d):
-    #os.system('clear')
     if 'SPEED' in d:
         if d['SPEED']['VAL'] is not None:
-            sys.stdout.write(' Speed : {:4.0f}/{:4.0f}/{:9.2f} :'.format(d['SPEED']['VAL'], d['SPEED']['MAX'], d['SPEED']['AVG']))
-        else:
-            sys.stdout.write(' Speed :     /    /          :')
-    else:
-        sys.stdout.write(' Speed :     /    /          :')
+            printxy(1,10,'{:4.0f}'.format(d['SPEED']['VAL']))
+            printxy(1,15,'{:4.0f}'.format(d['SPEED']['MAX']))
+            printxy(1,20,'{:9.2f}'.format(d['SPEED']['AVG']))
+            if d['SPEED']['VAL'] == 0:
+                if 'LPH' in d:
+                    if d['LPH']['VAL'] is not None:
+                        printxy(3, 1, '   LPH :')
+                        printxy(3, 10, '{:9,.3f}'.format(d['LPH']['VAL']))
+                        printxy(3, 20, '{:9,.3f}'.format(d['LPH']['AVG']))
+            else:
+                if 'LP100K' in d:
+                    if d['LP100K']['VAL'] is not None:
+                        printxy(3, 1, 'LP100K :')
+                        printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['VAL']))
+                        printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['AVG']))
     if 'RPM' in d:
         if d['RPM']['VAL'] is not None:
-            sys.stdout.write('   RPM : {:9,.0f}/{:9,.0f} :'.format(d['RPM']['VAL'], d['RPM']['MAX']))
-        else:
-            sys.stdout.write('   RPM :          /          :')
-    else:
-        sys.stdout.write('   RPM :          /          :')
-    if 'ENGINE_LOAD' in d:
-        if d['ENGINE_LOAD']['VAL'] is not None:
-            sys.stdout.write('  Load : {:9.2f}/{:9.2f} :'.format(d['ENGINE_LOAD']['VAL'], d['ENGINE_LOAD']['MAX']))
-        else:
-            sys.stdout.write('  Load :          /          :')
-    else:
-        sys.stdout.write('  Load :          /          :')
-    if 'SPEED' in d:
-        if d['SPEED']['VAL'] == 0:
-            if 'LPH' in d:
-                if d['LPH']['VAL'] is not None:
-                    sys.stdout.write('   LPH : {:9,.3f}/{:9,.3f} :'.format(d['LPH']['VAL'], d['LPH']['AVG']))
-                else:
-                    sys.stdout.write('   LPH :          /          :')
-            else:
-                sys.stdout.write('   LPH :          /          :')
-        else:
-            if 'LP100K' in d:
-                if d['LP100K']['VAL'] is not None:
-                    sys.stdout.write('L/100K : {:9,.3f}/{:9,.3f} :'.format(d['LP100K']['VAL'], d['LP100K']['AVG']))
-                else:
-                    sys.stdout.write('L/100K :          /        :')
-            else:
-                sys.stdout.write('L/100K :          /         :')
-    else:
-        sys.stdout.write('   LPH :          /          :')
+            printxy(2 ,10, '{:9,.0f}'.format(d['RPM']['VAL']))
+            printxy(2, 20, '{:9,.0f}'.format(d['RPM']['MAX']))
     if 'BOOST_PRESSURE' in d:
         if d['BOOST_PRESSURE']['VAL'] is not None:
-            sys.stdout.write(' Boost : {:9.2f}/{:9.2f} :'.format(d['BOOST_PRESSURE']['VAL'], d['BOOST_PRESSURE']['MAX']))
-        else:
-            sys.stdout.write(' Boost :          /          :')
-    else:
-        sys.stdout.write(' Boost :          /          :')
+            printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
+            printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
+    if 'ENGINE_LOAD' in d:
+        if d['ENGINE_LOAD']['VAL'] is not None:
+            printxy(5, 10, '{:9.2f}'.format(d['ENGINE_LOAD']['VAL']))
+            printxy(5, 20, '{:9.2f}'.format(d['ENGINE_LOAD']['MAX']))
     if 'COOLANT_TEMP' in d:
         if d['COOLANT_TEMP']['VAL'] is not None:
-            sys.stdout.write('  Temp : {:9}/{:9} :'.format(d['COOLANT_TEMP']['VAL'], d['COOLANT_TEMP']['MAX']))
-        else:
-            sys.stdout.write('  Temp :          /          :')
-    else:
-        sys.stdout.write('  Temp :          /          :')
+            printxy(6, 10, '{:9}'.format(d['COOLANT_TEMP']['VAL']))
+            printxy(6, 20, '{:9}'.format(d['COOLANT_TEMP']['MAX']))
     if 'DISTANCE' in d:
         if d['DISTANCE']['VAL'] is not None:
-            sys.stdout.write('  Trip : {:9,.2f}           :'.format(d['DISTANCE']['SUM']))
-        else:
-            sys.stdout.write('  Trip :                     :')
-    else:
-        sys.stdout.write('  Trip :                     :')
+            printxy(7, 10, '{:9,.2f}'.format(d['DISTANCE']['SUM']))
     if 'DURATION' in d and 'IDLE_TIME' in d:
         if d['DURATION']['VAL'] is not None:
-            sys.stdout.write('  Time : {:>9}/{:>9} :'.format(formatSeconds(d['DURATION']['SUM']), formatSeconds(d['IDLE_TIME']['SUM'])))
-        else:
-            sys.stdout.write('  Time :          /          :')
-    else:
-        sys.stdout.write('  Time :          /          :')
+            printxy(8, 10, '{:>9}'.format(formatSeconds(d['DURATION']['SUM'])))
+            printxy(8, 20, '{:>9}'.format(formatSeconds(d['IDLE_TIME']['SUM'])))
     if 'LPS' in d:
         if d['LPS']['VAL'] is not None:
-            sys.stdout.write('  Fuel : {:9.2f}           :'.format(d['LPS']['SUM']))
-        else:
-            sys.stdout.write('  Fuel :                   :')
-    else:
-        sys.stdout.write('  Fuel :                     :')
+            printxy(9, 10, '{:9.2f}'.format(d['LPS']['SUM']))
     if 'GEAR' in d:
         if d['GEAR']['VAL'] is not None:
-            sys.stdout.write('  Gear : {:>9}           :'.format(d['GEAR']['VAL']))
-        else:
-            sys.stdout.write('  Gear :                     :')
-    else:
-        sys.stdout.write('  Gear :                     :')
-
+            printxy(10, 10, '{:>9}'.format(d['GEAR']['VAL']))
+            printxy(10, 20, '{:9.2f}'.format(d['DRIVE_RATIO']['VAL']))
     sys.stdout.flush()
 
 
@@ -212,7 +188,7 @@ if __name__ == '__main__':
         tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
 
         ecu = Monitor(OBD_PORT,OBD_BAUD)
-    
+
         ecu.logPath(LOG_PATH)
         logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
                        'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
@@ -247,6 +223,7 @@ if __name__ == '__main__':
             while ecu.isConnected() == True:
                 if not journey:
                     journey=True
+                    paintFullTable()
                     l = ecu.getQueCommands('ONCE')
                     for c in Commands['ONCE']:                          # Add all the ONCE commands back into the ONCE que if they do not already exist
                         if c not in l:
@@ -255,19 +232,18 @@ if __name__ == '__main__':
                     while sc is None:
                         sc = ecu.supportedcommands()
                         sleep(0.01)
-                    for c in sc:                                        # Add all supported commands that arent already in a que to the LOW que
+                    for c in sc:
                         if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
                             Commands['LOW'].append(c)
-                            ecu.addCommand('LOW',c)
+                            ecu.addCommand('LOW',c)                     # Add all supported commands that arent already in a que to the LOW que
                             logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
-                #print(ecu.status())
-                #print(ecu.status()['Worker Status'])
+                logger.info(ecu.status())
                 printFullTable(ecu.snapshot)
                 sleep(1)
             while not ecu.isConnected():
-                if journey: 
+                if journey:
                     journey=False
                     ecu.pause()
                     disconnected = datetime.now()
@@ -286,8 +262,7 @@ if __name__ == '__main__':
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()
-                #print(ecu.status())
-                #print(ecu.status()['Worker Status'])
+                logger.info(ecu.status())
                 sleep(1)
 
     except (KeyboardInterrupt, SystemExit):
