@@ -3,7 +3,7 @@ from multiprocessing import Queue #, Manager
 from ecu import ECU
 from worker import Worker
 from collector import Collector
-from que import Que	
+from que import Que
 from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
@@ -27,6 +27,7 @@ class Monitor():
         loggerControlPipe = PipeCont()              # Logger <-> Application
         loggerDataPipe = PipeCont()                 # Logger <-> Collector
         loggerWorkerPipe = PipeCont()               # Logger <-> Worker
+        gpsControlPipe = PipeCont()                 # GPS <-> Application
 
         workQue = Queue()
         resultQue = Queue()
@@ -63,6 +64,8 @@ class Monitor():
         self.__worker.start()
         self.__collector.start()
         self.__logger.start()
+        self.__gps = None
+        self.__gpsEnabled = False
 
     def __checkWorkerPipe(self, message, timeout):
         # Check Worker pipe
@@ -148,7 +151,7 @@ class Monitor():
     def addCommand(self, que, command, override=False):
         self.__ecuComm.send(Message('ADDCOMMAND',QUE = que, COMMAND = command, OVERRIDE = override))
         logger.debug('Add Command {} on que {} sent'.format(command, que))
-    
+
     def setQueFrequency(self, que, frequency):
         self.__ecuComm.send(Message('SETFREQUENCY',QUE = que, FREQUENCY = frequency))
         logger.debug('Set frequency on que {} sent'.format(que))
@@ -243,6 +246,18 @@ class Monitor():
             return r['MAX']
 
     @property
+    def gpsEnable(self):
+        return self.__gpsEnabled
+
+    @gpsEnable.setter
+    def gpsEnable(self, v):
+        if v:
+            self.__gpsEnmabled = True
+            self.__gps = GPS(resultQue,
+                             gpsControlPipe.r)                             # GPS <-> Application
+            self.__gps.start()
+
+    @property
     def snapshot(self):
         self.__dataComm.send(Message('SNAPSHOT'))
         r = self.__checkDataPipe('SNAPSHOT', PIPE_TIMEOUT)
@@ -257,9 +272,6 @@ class Monitor():
 
     def discard(self):
         self.__logComm.send(Message('DISCARD'))
-
-#    def restart(self):
-#        self.__logComm.send(Message('RESTART'))
 
     def logPath(self, path):
         self.__logComm.send(Message('LOGPATH',PATH = path))

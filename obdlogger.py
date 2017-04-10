@@ -1,4 +1,3 @@
-#from gps import *
 from time import sleep
 from datetime import datetime
 from general import *
@@ -202,6 +201,7 @@ if __name__ == '__main__':
             for c in Commands[q]:
                 ecu.addCommand(q, c)
 
+        ecu.GPSEnable = False
 
         logger.debug('Starting...')
 
