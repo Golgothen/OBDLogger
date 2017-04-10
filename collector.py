@@ -79,7 +79,7 @@ class Collector(Process):
             m = self.__ecuPipe.recv()                                               # Grab the first message in the pipe
             logger.info('Received {} on ECU pipe'.format(m.message))
 
-            if m.message == 'PAUSE'              : self.__pause()                            
+            if m.message == 'PAUSE'              : self.__pause()
             if m.message == 'RESUME'             : self.__resume()
             if m.message == 'STOP'               : self.__stop()
             if m.message == 'RESET'              : self.__reset()
