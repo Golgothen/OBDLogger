@@ -27,6 +27,7 @@ IDLE_SCREEN_TIME = 10
 ODOMETER = 66482.0
 TRIP_TIMEOUT = 900
 
+GPS_ENABLE = False
 
 def printIdleScreen():
     global lastScreenUpdate
@@ -187,6 +188,8 @@ if __name__ == '__main__':
         tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
 
         ecu = Monitor(OBD_PORT,OBD_BAUD)
+
+        ecu.gpsEnable = GPS_ENABLE
 
         ecu.logPath(LOG_PATH)
         logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
