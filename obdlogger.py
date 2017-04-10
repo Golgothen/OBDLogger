@@ -28,7 +28,6 @@ IDLE_SCREEN_TIME = 10
 ODOMETER = 66482.0
 TRIP_TIMEOUT = 900
 
-
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
@@ -98,7 +97,7 @@ def paintFullTable():
     sys.stdout.write('   LPH :          /          :')
     sys.stdout.write(' Boost :          /          :')
     sys.stdout.write('  Load :          /          :')
-    sys.stdout.write('  Temp :          /          :')
+    sys.stdout.write('   MAF :          /          :')
     sys.stdout.write('  Trip :                     :')
     sys.stdout.write('  Time :          /          :')
     sys.stdout.write('  Fuel :                     :')
@@ -135,27 +134,32 @@ def printFullTable(d):
         if d['ENGINE_LOAD']['VAL'] is not None:
             printxy(5, 10, '{:9.2f}'.format(d['ENGINE_LOAD']['VAL']))
             printxy(5, 20, '{:9.2f}'.format(d['ENGINE_LOAD']['MAX']))
-    if 'COOLANT_TEMP' in d:
-        if d['COOLANT_TEMP']['VAL'] is not None:
-            printxy(6, 10, '{:9}'.format(d['COOLANT_TEMP']['VAL']))
-            printxy(6, 20, '{:9}'.format(d['COOLANT_TEMP']['MAX']))
+#    if 'COOLANT_TEMP' in d:
+#        if d['COOLANT_TEMP']['VAL'] is not None:
+#            printxy(6, 10, '{:9}'.format(d['COOLANT_TEMP']['VAL']))
+#            printxy(6, 20, '{:9}'.format(d['COOLANT_TEMP']['MAX']))
+    if 'MAF' in d:
+        if d['MAF']['VAL'] is not None:
+            printxy(6, 10, '{:9}'.format(d['MAF']['VAL']))
+            printxy(6, 20, '{:9}'.format(d['MAF']['AVG']))
     if 'DISTANCE' in d:
         if d['DISTANCE']['VAL'] is not None:
             printxy(7, 10, '{:9,.2f}'.format(d['DISTANCE']['SUM']))
     if 'DURATION' in d and 'IDLE_TIME' in d:
-        if d['DURATION']['VAL'] is not None:
+        if d['DURATION']['VAL'] is not None and \
+           d['IDLE_TIME']['VAL'] is not None:
             printxy(8, 10, '{:>9}'.format(formatSeconds(d['DURATION']['SUM'])))
             printxy(8, 20, '{:>9}'.format(formatSeconds(d['IDLE_TIME']['SUM'])))
     if 'LPS' in d:
         if d['LPS']['VAL'] is not None:
             printxy(9, 10, '{:9.2f}'.format(d['LPS']['SUM']))
+            printxy(9, 20, '{:9.2f}'.format(d['LPS']['VAL']))
     if 'GEAR' in d:
-        if d['GEAR']['VAL'] is not None:
+        if d['GEAR']['VAL'] is not None and \
+           d['DRIVE_RATIO']['VAL'] is not None:
             printxy(10, 10, '{:>9}'.format(d['GEAR']['VAL']))
             printxy(10, 20, '{:9.2f}'.format(d['DRIVE_RATIO']['VAL']))
     sys.stdout.flush()
-
-
 
 if __name__ == '__main__':
 
@@ -225,7 +229,7 @@ if __name__ == '__main__':
                     ecu.resume()
                 logger.info(ecu.status())
                 printFullTable(ecu.snapshot)
-                sleep(1)
+                sleep(0.25)
             while not ecu.isConnected():
                 if journey:
                     journey=False
@@ -235,14 +239,15 @@ if __name__ == '__main__':
                         ecu.discard()
                     else:
                         tripstats = ecu.summary
-                        if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
-                            logger.debug('Finalising trip....')
-                            writeTripHistory(SETTINGS_PATH + 'TripHistory.csv', tripstats)
-                            writeTripHistory(SETTINGS_PATH + 'TankHistory.csv', tripstats)
-                            writeLastTrip(SETTINGS_PATH + 'LastTrip.csv', tripstats)
-                            history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
-                            tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
-                            disconnected=None
+                if disconnected is not None:
+                    if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
+                        logger.info('Finalising trip....')
+                        writeTripHistory(SETTINGS_PATH + 'TripHistory.csv', tripstats)
+                        writeTripHistory(SETTINGS_PATH + 'TankHistory.csv', tripstats)
+                        writeLastTrip(SETTINGS_PATH + 'LastTrip.csv', tripstats)
+                        history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
+                        tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
+                        disconnected=None
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()
