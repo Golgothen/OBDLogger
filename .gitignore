@@ -1,0 +1,16 @@
+# Compiled source
+
+*.pyc
+
+# Runtime logs
+
+RUN*.log
+
+# Python cache
+
+__pycache__
+
+# Data files
+
+settings/*.csv
+
