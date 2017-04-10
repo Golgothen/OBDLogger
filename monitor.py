@@ -31,6 +31,7 @@ class Monitor():
 
         workQue = Queue()
         resultQue = Queue()
+
         self.__ecuComm = ecuControlPipe.s                              # Handle for communication to ECU process
         self.__workerComm = workerControlPipe.s                        # Handle for communication to Worker process
         self.__dataComm = collectorControlPipe.s                       # Handle for communication to Collector process
@@ -63,6 +64,8 @@ class Monitor():
 
         self.__gps = GPS(resultQue,
                          gpsControlPipe.r)                             # GPS <-> Application
+
+        self.__gpsEnabled = False
 
         self.__ecu.start()
         self.__worker.start()
