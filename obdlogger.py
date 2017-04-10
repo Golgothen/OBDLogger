@@ -21,6 +21,8 @@ snapshot=dict()
 OBD_PORT = '/dev/ttyUSB0'
 OBD_BAUD = 38400
 
+ENABLE_GPS = Flase
+
 SETTINGS_PATH = './settings/'
 LOG_PATH = './logs/'
 TANK_CAPACITY = 53.0
@@ -189,6 +191,10 @@ if __name__ == '__main__':
 
         ecu = Monitor(OBD_PORT,OBD_BAUD)
 
+        if ENABLE_GPS:
+            gps = GPS()
+            gps.start()
+
         ecu.logPath(LOG_PATH)
         logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
                        'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
@@ -196,6 +202,9 @@ if __name__ == '__main__':
                        'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
                        'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
                        'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR']
+
+        if ENABLE_GPS:
+            logHeadings += ['LATITUDE','LONGITUDE','HEADING','GPS_SPEED','ALTITUDE','CLIMB']
 
         ecu.addQue('HI',10)
         ecu.addQue('MED',1)
