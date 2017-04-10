@@ -118,7 +118,7 @@ class Collector(Process):
             data[d]['VAL'] = self.__data[d].val
             data[d]['MIN'] = self.__data[d].min
             data[d]['MAX'] = self.__data[d].max
-            if d not in ['TIMESTAMP']:
+            if type(data[d]['VAL']) in [float, int]:
                 data[d]['AVG'] = self.__data[d].avg()
                 data[d]['SUM'] = self.__data[d].sum()
         return data

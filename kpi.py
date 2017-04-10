@@ -44,9 +44,10 @@ class KPI(object):
             else:
                 if v < self.__min:
                     self._min = v
-            v = v * (time() - self.__age)
+            if type(v) in [float,int]:                       # only number types
+                v = v * (time() - self.__age)
+                self.__timeHist.insert(0, v)                 # Record time calculated value for sums
             self.__age = time()
-            self.__timeHist.insert(0, v)                 # Record time calculated value for sums
 
     @property
     def max(self):

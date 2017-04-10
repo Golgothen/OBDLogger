@@ -14,7 +14,7 @@ file_handler = logging.FileHandler('./'+logName) # sends output to file
 file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-10s.%(funcName)-17s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
@@ -94,7 +94,7 @@ def printTank():
 
 def printFuelTable():
     if snapshot['SPEED']>0:
-#        os.system('clear')
+        os.system('clear')
         sys.stdout.write('  Time :     L/100K : Fuel(ml) :')
         sys.stdout.write('   Now : {:8,.2f} : {:8,.2f} :'.format(snapshot['FUEL_CONSUMPTION'], snapshot['LPS']))
         sys.stdout.write('   60s : {:8,.2f} : {:8,.2f} :'.format(sensors['FUEL_CONSUMPTION'].avg(60, 0), sensors['LPS'].sum(60, 0)*1000))
@@ -109,7 +109,7 @@ def printFuelTable():
     sys.stdout.flush()
 
 def printFullTable(d):
-#    os.system('clear')
+    #os.system('clear')
     if 'SPEED' in d:
         if d['SPEED']['VAL'] is not None:
             sys.stdout.write(' Speed : {:4.0f}/{:4.0f}/{:9.2f} :'.format(d['SPEED']['VAL'], d['SPEED']['MAX'], d['SPEED']['AVG']))
