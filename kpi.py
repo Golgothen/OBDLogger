@@ -166,11 +166,11 @@ def gear(p):
         return '1st'
     if r > 6.2 and r < 7.4:
         return '2nd'
-    if r > 4.7 and r < 5.8:
+    if r > 3.8 and r < 4.2:
         return '3rd'
-    if r > 3.2 and r < 3.9:
+    if r > 2.75 and r < 3.0:
         return '4th'
-    if r > 2.3 and r < 2.9:
+    if r > 2.1 and r < 2.35:
         return '5th'
     return 'Neutal'
 
