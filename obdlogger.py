@@ -211,8 +211,6 @@ if __name__ == '__main__':
             for c in Commands[q]:
                 ecu.addCommand(q, c)
 
-        ecu.GPSEnable = False
-
         logger.debug('Starting...')
 
         disconnected=None
@@ -251,6 +249,7 @@ if __name__ == '__main__':
                         tripstats = ecu.summary
                 if disconnected is not None:
                     if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
+                        ecu.save()
                         logger.info('Finalising trip....')
                         writeTripHistory(SETTINGS_PATH + 'TripHistory.csv', tripstats)
                         writeTripHistory(SETTINGS_PATH + 'TankHistory.csv', tripstats)
@@ -258,6 +257,7 @@ if __name__ == '__main__':
                         history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
                         tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
                         disconnected=None
+                        ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()
