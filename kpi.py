@@ -1,5 +1,6 @@
 from time import time
 from datetime import datetime
+import math
 
 import logging
 
@@ -33,21 +34,22 @@ class KPI(object):
     @val.setter
     def val(self, v):
         if v is not None:
-            self.__instantHist.insert(0, v)              # Record Instant history values for AVG
-            if self.__max is None:
-                self.__max = v
-            else:
-                if v > self.__max:
+            if not math.isnan(v):
+                self.__instantHist.insert(0, v)              # Record Instant history values for AVG
+                if self.__max is None:
                     self.__max = v
-            if self.__min is None:
-                self.__min = v
-            else:
-                if v < self.__min:
+                else:
+                    if v > self.__max:
+                        self.__max = v
+                if self.__min is None:
                     self.__min = v
-            if type(v) in [float,int]:                       # only number types
-                v = v * (time() - self.__age)
-                self.__timeHist.insert(0, v)                 # Record time calculated value for sums
-            self.__age = time()
+                else:
+                    if v < self.__min:
+                        self.__min = v
+                if type(v) in [float,int]:                       # only number types
+                    v = v * (time() - self.__age)
+                    self.__timeHist.insert(0, v)                 # Record time calculated value for sums
+                self.__age = time()
 
     @property
     def max(self):
