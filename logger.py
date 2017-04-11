@@ -72,12 +72,6 @@ class DataLogger(threading.Thread):
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
                     self.__refreshRequired = True
                     self.__refreshRequested = False
-                else:
-                    if self.__pausedAt is None:
-                        self.__pausedAt = datetime.now()                # Take note of the time when logging was paused
-                    if (datetime.now() - self.__pausedAt).total_seconds() > self.__tripTimeout:
-                        if self.__logName is not None:
-                            self.__save()
                 sleeptime=(1.0 / self.__logFrequency) - (time() - timer)
                 if sleeptime < 0:
                     logger.warning('Logger sleep time reached zero. Concider reducing log frequency')
