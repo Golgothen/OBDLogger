@@ -129,7 +129,7 @@ def LP100K(p):
     #Needs to be attaqched to Speed and MAF sensors
     if 'LPH' not in p or 'SPEED' not in p: return None
     l = p['LPH'].val
-    s = p['SPEED'].avg(5)
+    s = p['SPEED'].val
     if l is None or s is None: return None
     if s == 0: return 0
     return 100.0 / s * l

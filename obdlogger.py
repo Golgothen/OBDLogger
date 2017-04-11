@@ -99,7 +99,7 @@ def paintFullTable():
     sys.stdout.write('   MAF :          /          :')
     sys.stdout.write('  Trip :                     :')
     sys.stdout.write('  Time :          /          :')
-    sys.stdout.write('  Fuel :                     :')
+    sys.stdout.write('  Fuel :          /          :')
     sys.stdout.write('  Gear :          /          :')
     sys.stdout.flush()
 
@@ -109,6 +109,7 @@ def printFullTable(d):
             printxy(1,10,'{:4.0f}'.format(d['SPEED']['VAL']))
             printxy(1,15,'{:4.0f}'.format(d['SPEED']['MAX']))
             printxy(1,20,'{:9.2f}'.format(d['SPEED']['AVG']))
+
             if d['SPEED']['VAL'] == 0:
                 if 'LPH' in d:
                     if d['LPH']['VAL'] is not None:
@@ -121,38 +122,47 @@ def printFullTable(d):
                         printxy(3, 1, 'LP100K :')
                         printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['VAL']))
                         printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['AVG']))
+
     if 'RPM' in d:
         if d['RPM']['VAL'] is not None:
             printxy(2 ,10, '{:9,.0f}'.format(d['RPM']['VAL']))
             printxy(2, 20, '{:9,.0f}'.format(d['RPM']['MAX']))
+
     if 'BOOST_PRESSURE' in d:
         if d['BOOST_PRESSURE']['VAL'] is not None:
             printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
             printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
+
     if 'ENGINE_LOAD' in d:
         if d['ENGINE_LOAD']['VAL'] is not None:
             printxy(5, 10, '{:9.2f}'.format(d['ENGINE_LOAD']['VAL']))
             printxy(5, 20, '{:9.2f}'.format(d['ENGINE_LOAD']['MAX']))
+
 #    if 'COOLANT_TEMP' in d:
 #        if d['COOLANT_TEMP']['VAL'] is not None:
 #            printxy(6, 10, '{:9}'.format(d['COOLANT_TEMP']['VAL']))
 #            printxy(6, 20, '{:9}'.format(d['COOLANT_TEMP']['MAX']))
+
     if 'MAF' in d:
         if d['MAF']['VAL'] is not None:
-            printxy(6, 10, '{:9}'.format(d['MAF']['VAL']))
-            printxy(6, 20, '{:9}'.format(d['MAF']['AVG']))
+            printxy(6, 10, '{:9.2f}'.format(d['MAF']['VAL']))
+            printxy(6, 20, '{:9.2f}'.format(d['MAF']['AVG']))
+
     if 'DISTANCE' in d:
         if d['DISTANCE']['VAL'] is not None:
             printxy(7, 10, '{:9,.2f}'.format(d['DISTANCE']['SUM']))
+
     if 'DURATION' in d and 'IDLE_TIME' in d:
         if d['DURATION']['VAL'] is not None and \
            d['IDLE_TIME']['VAL'] is not None:
             printxy(8, 10, '{:>9}'.format(formatSeconds(d['DURATION']['SUM'])))
             printxy(8, 20, '{:>9}'.format(formatSeconds(d['IDLE_TIME']['SUM'])))
+
     if 'LPS' in d:
         if d['LPS']['VAL'] is not None:
             printxy(9, 10, '{:9.2f}'.format(d['LPS']['SUM']))
             printxy(9, 20, '{:9.2f}'.format(d['LPS']['VAL']))
+
     if 'GEAR' in d:
         if d['GEAR']['VAL'] is not None and \
            d['DRIVE_RATIO']['VAL'] is not None:
