@@ -7,6 +7,7 @@ from que import Que
 from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
+from gps import GPS
 
 import sys, logging
 

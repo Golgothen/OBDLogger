@@ -27,11 +27,8 @@ IDLE_SCREEN_TIME = 10
 ODOMETER = 66482.0
 TRIP_TIMEOUT = 900
 
-<<<<<<< HEAD
-=======
 GPS_ENABLE = False
 
->>>>>>> f000669c6c6a71b2a7ef7418b2439fff8d185c3f
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
@@ -208,7 +205,7 @@ if __name__ == '__main__':
             for c in Commands[q]:
                 ecu.addCommand(q, c)
 
-        ecu.GPSEnable = False
+        ecu.gpsEnable = GPS_ENABLE
 
         logger.debug('Starting...')
 
@@ -232,7 +229,7 @@ if __name__ == '__main__':
                             Commands['LOW'].append(c)
                             ecu.addCommand('LOW',c)                     # Add all supported commands that arent already in a que to the LOW que
                             logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
-                    ecu.logHeadings(logHeadings)
+                    ecu.addLogHeadings(logHeadings)
                     ecu.resume()
                 logger.info(ecu.status())
                 printFullTable(ecu.snapshot)
