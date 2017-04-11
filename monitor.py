@@ -18,23 +18,25 @@ class Monitor():
 
     def __init__(self, port, baud):
         #super(Monitor,self).__init__()
-        ecuWorkerPipe = PipeCont()                  # ECU <-> Worker
-        ecuDataPipe = PipeCont()                    # ECU <-> Collector
-        ecuControlPipe = PipeCont()                 # ECU <-> Application
-        workerDataPipe = PipeCont()                 # Worker <-> Collector
-        workerControlPipe = PipeCont()              # Worker <-> Application
-        collectorControlPipe = PipeCont()           # Collector <-> Application
-        loggerControlPipe = PipeCont()              # Logger <-> Application
-        loggerDataPipe = PipeCont()                 # Logger <-> Collector
-        loggerWorkerPipe = PipeCont()               # Logger <-> Worker
-        gpsControlPipe = PipeCont()                 # GPS <-> Application
+        ecuWorkerPipe = PipeCont()                                     # ECU <-> Worker
+        ecuDataPipe = PipeCont()                                       # ECU <-> Collector
+        ecuControlPipe = PipeCont()                                    # ECU <-> Application
+        workerDataPipe = PipeCont()                                    # Worker <-> Collector
+        workerControlPipe = PipeCont()                                 # Worker <-> Application
+        collectorControlPipe = PipeCont()                              # Collector <-> Application
+        loggerControlPipe = PipeCont()                                 # Logger <-> Application
+        loggerDataPipe = PipeCont()                                    # Logger <-> Collector
+        loggerWorkerPipe = PipeCont()                                  # Logger <-> Worker
+        gpsControlPipe = PipeCont()                                    # GPS <-> Application
 
         workQue = Queue()
         resultQue = Queue()
-        self.__ecuComm = ecuControlPipe.s
-        self.__workerComm = workerControlPipe.s
-        self.__dataComm = collectorControlPipe.s
-        self.__logComm = loggerControlPipe.s
+
+        self.__ecuComm = ecuControlPipe.s                              # Handle for communication to ECU process
+        self.__workerComm = workerControlPipe.s                        # Handle for communication to Worker process
+        self.__dataComm = collectorControlPipe.s                       # Handle for communication to Collector process
+        self.__logComm = loggerControlPipe.s                           # Handle for communication to Logger process
+        self.__gpsComm = gpsControlPipe.s                              # Handle for communication to GPS process
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
@@ -60,12 +62,15 @@ class Monitor():
                                    loggerDataPipe.s,                   # Logger <-> Collector
                                    loggerWorkerPipe.r)                 # Logger <-> Worker
 
+        self.__gps = GPS(resultQue,
+                         gpsControlPipe.r)                             # GPS <-> Application
+
+        self.__gpsEnabled = False
+
         self.__ecu.start()
         self.__worker.start()
         self.__collector.start()
         self.__logger.start()
-        self.__gps = None
-        self.__gpsEnabled = False
 
     def __checkWorkerPipe(self, message, timeout):
         # Check Worker pipe
@@ -251,11 +256,16 @@ class Monitor():
 
     @gpsEnable.setter
     def gpsEnable(self, v):
-        if v:
-            self.__gpsEnmabled = True
-            self.__gps = GPS(resultQue,
-                             gpsControlPipe.r)                             # GPS <-> Application
-            self.__gps.start()
+        self.__gpsEnabled = v
+        if self.__gpsEnabled:
+            if self.__gps.is_alive():
+                self.__gpsComm.send(Message('RESUME'))
+            else:
+                self.__gps.start()
+            self.__logComm.send('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']
+        else:
+            self.__gpsComm.send(Message('PAUSE'))
+            self.__logComm.send('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']
 
     @property
     def snapshot(self):
@@ -285,8 +295,11 @@ class Monitor():
         if r is not None:
             return r['NAME']
 
-    def logHeadings(self, headings):
-        self.__logComm.send(Message('HEADINGS', HEADINGS = headings))
+    def addLogHeadings(self, headings):
+        self.__logComm.send(Message('ADD_HEADINGS', HEADINGS = headings))
+
+    def removeLogHeadings(self, headings):
+        self.__logComm.send(Message('REMOVE_HEADINGS', HEADINGS = headings))
 
     def tripTimeout(self, timeout):
         self.__logComm.send(Message('TIMEOUT', TIMEOUT = timeout))

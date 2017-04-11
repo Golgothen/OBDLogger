@@ -99,20 +99,19 @@ class DataLogger(threading.Thread):
             m = self.__controlPipe.recv()
             logger.debug('Received {} on controller pipe'.format(m.message))
 
-            if m.message == 'STOP'        : self.__stop()
-            if m.message == 'SAVE'        : self.__save()
-            if m.message == 'DISCARD'     : self.__discard()
-            if m.message == 'PAUSE'       : self.__pause()
-            if m.message == 'RESUME'      : self.__resume()
-            if m.message == 'RESTART'     : self.__restart()
-            if m.message == 'LOGPATH'     : self.__logPath = m.params['PATH']
-            if m.message == 'LOGNAME'     : self.__controlPipe.send(Message(m.message,NAME=self.__logName))
-            if m.message == 'STATUS'      : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
-            if m.message == 'FREQUENCY'   : self.__logFrequency = m.params['FREQUENCY']
-            if m.message == 'TIMEOUT'     : self.__tripTimeout = m.params['TIMEOUT']
-            if m.message == 'HEADINGS'    : 
-                self.__colHeadings(m.params['HEADINGS'])
-                #self.__restart()
+            if m.message == 'STOP'            : self.__stop()
+            if m.message == 'SAVE'            : self.__save()
+            if m.message == 'DISCARD'         : self.__discard()
+            if m.message == 'PAUSE'           : self.__pause()
+            if m.message == 'RESUME'          : self.__resume()
+            if m.message == 'RESTART'         : self.__restart()
+            if m.message == 'LOGPATH'         : self.__logPath = m.params['PATH']
+            if m.message == 'LOGNAME'         : self.__controlPipe.send(Message(m.message,NAME=self.__logName))
+            if m.message == 'STATUS'          : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
+            if m.message == 'FREQUENCY'       : self.__logFrequency = m.params['FREQUENCY']
+            if m.message == 'TIMEOUT'         : self.__tripTimeout = m.params['TIMEOUT']
+            if m.message == 'ADD_HEADINGS'    : self.__addColHeadings(m.params['HEADINGS'])
+            if m.message == 'REMOVE_HEADINGS' : self.__removeColHeadings(m.params['HEADINGS'])
 
         while self.__workerPipe.poll():
             m = self.__workerPipe.recv()
@@ -142,9 +141,17 @@ class DataLogger(threading.Thread):
             with open(self.__logName + '.log','wb') as f:        # Clobber output file if it exists
                 f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
 
-    def __colHeadings(self,headings):
+    def __addColHeadings(self, headings):
         #Set the log headings
-        self.__logHeadings = headings
+        for h in headings:
+            if h not in self.__logHeadings:
+                self.__logHeadings.append(h)
+
+    def __removeColHeadings(self, headings):
+        #Set the log headings
+        for h in headings:
+            if h in self.__logHeadings:
+                self.__logHeadings.remove(h)
 
     def __stop(self):
         #Stop logging.    Thread stops - This is final.    Cannot be restarted
