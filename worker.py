@@ -100,7 +100,7 @@ class Worker(Process):
         # Check for commands comming from the Application
         while self.__controlPipe.poll():
             m = self.__controlPipe.recv()
-            logger.info('Received {} on Controller pipe'.format(m.message))
+            logger.warning('Received {} on Controller pipe'.format(m.message))
 
             if m.message == 'STOP'                : self.__stop()
             if m.message == 'PAUSE'               : self.__pause()
@@ -152,7 +152,7 @@ class Worker(Process):
         self.__interface = obd.OBD(self.__port, self.__baud)
         logger.info('Worker connection status = {}'.format(self.__interface.status()))
         self.__supported_commands = []
-        if self.__interface.status() == 'Not Connected': sleep(1)
+        #if self.__interface.status() == 'Not Connected': sleep(1)
         if self.__interface.status() == 'Car Connected':
             for c in self.__interface.supported_commands:
                 if c.mode == 1 and c.name[:4] != 'PIDS':

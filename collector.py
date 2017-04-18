@@ -119,15 +119,15 @@ class Collector(Process):
             data[d]['MIN'] = self.__data[d].min
             data[d]['MAX'] = self.__data[d].max
             if type(data[d]['VAL']) in [float, int]:
-                data[d]['AVG'] = self.__data[d].avg()
-                data[d]['SUM'] = self.__data[d].sum()
+                data[d]['AVG'] = self.__data[d].avg
+                data[d]['SUM'] = self.__data[d].sum
         return data
 
     def __sum(self, m):
-        return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
+        return self.__data[m['NAME']].sum
 
     def __avg(self, m):
-        return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
+        return self.__data[m['NAME']].avg
 
     def __min(self, m):
         return self.__data[m['NAME']].min
@@ -238,12 +238,12 @@ class Collector(Process):
     def __summary(self):
         d=dict()
         d['DATE'] = datetime.now() #self.__data['TIMESTAMP'].min
-        d['AVG_LP100K'] = self.__data['LP100K'].avg()
-        d['DISTANCE'] = self.__data['DISTANCE'].sum()
-        d['AVG_SPEED'] = self.__data['SPEED'].avg()
-        d['FUEL'] = self.__data['LPS'].sum()
-        d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg()
-        d['DURATION'] = self.__data['DURATION'].sum()
-        d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum()
+        d['AVG_LP100K'] = self.__data['LP100K'].avg
+        d['DISTANCE'] = self.__data['DISTANCE'].sum
+        d['AVG_SPEED'] = self.__data['SPEED'].avg
+        d['FUEL'] = self.__data['LPS'].sum
+        d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg
+        d['DURATION'] = self.__data['DURATION'].sum
+        d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum
         return d
 

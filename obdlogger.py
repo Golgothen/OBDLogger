@@ -31,7 +31,7 @@ def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
 
-    os.system('clear')
+    #os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
     if screentime.seconds>=IDLE_SCREEN_TIME:
         currentIdleScreen+=1
@@ -91,7 +91,7 @@ def printTank():
 
 
 def paintFullTable():
-    os.system('clear')
+    #os.system('clear')
     # paint the screen
     sys.stdout.write(' Speed :     /    /          :')
     sys.stdout.write('   RPM :          /          :')
