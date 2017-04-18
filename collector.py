@@ -26,11 +26,11 @@ PIPE_TIMEOUT = 3                                   # Time in seconds to wait for
 class Collector(Process):
 
     def __init__(self,
-                             ecuPipe,              # Pipe to ECU process
-                             controlPipe,          # Pipe to controlling application
-                             logPipe,              # Pipe to Logger process
-                             workerPipe,           # Pipe to Worker process
-                             que):                 # Result que
+                 ecuPipe,                          # Pipe to ECU process
+                 controlPipe,                      # Pipe to controlling application
+                 logPipe,                          # Pipe to Logger process
+                 workerPipe,                       # Pipe to Worker process
+                 que):                             # Result que
 
         super(Collector,self).__init__()
         self.__results = que

@@ -172,18 +172,6 @@ def printFullTable(d):
             printxy(10, 20, '{:9.2f}'.format(d['DRIVE_RATIO']['VAL']))
     sys.stdout.flush()
 
-def blankHist():
-    h = {}
-    h['AVG_SPEED'] = [0.0]
-    h['AVG_LP100K'] = [0.0]
-    h['DISTANCE'] = [0.0]
-    h['FUEL'] = [0.0]
-    h['AVG_LOAD'] = [0.0]
-    h['DURATION'] = [0.0]
-    h['IDLE_TIME'] = [0.0]
-    return h
-
-
 if __name__ == '__main__':
 
     tripstats = dict()

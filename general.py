@@ -60,7 +60,7 @@ def readLastTrip(file):
 def writeLastTrip(file,data):
     # Check the output directory exists.  Create it if it doesn't
     if not os.path.isdir(os.path.split(file)[0]):
-        os.path.makedirs(os.path.split(file)[0])
+        os.makedirs(os.path.split(file)[0])
     with open(file,'wb') as f:
         f.write(bytes(
             str(data['AVG_LP100K']) + ',' +
@@ -75,7 +75,7 @@ def writeLastTrip(file,data):
 def writeTripHistory(file,data):
     # Check the output directory exists.  Create it if it doesn't
     if not os.path.isdir(os.path.split(file)[0]):
-        os.path.makedirs(os.path.split(file)[0])
+        os.makedirs(os.path.split(file)[0])
     writeheaders = False
     if not os.path.isfile(file):
         writeheaders = True
@@ -94,5 +94,17 @@ def writeTripHistory(file,data):
         'UTF-8'))
 
 def printxy(x, y, text):
-     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
-     sys.stdout.flush()
+    sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
+    sys.stdout.flush()
+
+def blankHist():
+    h = {}
+    h['AVG_SPEED'] = [0.0]
+    h['AVG_LP100K'] = [0.0]
+    h['DISTANCE'] = [0.0]
+    h['FUEL'] = [0.0]
+    h['AVG_LOAD'] = [0.0]
+    h['DURATION'] = [0.0]
+    h['IDLE_TIME'] = [0.0]
+    return h
+
