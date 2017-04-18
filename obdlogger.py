@@ -24,7 +24,7 @@ SETTINGS_PATH = './settings/'
 LOG_PATH = './logs/'
 TANK_CAPACITY = 53.0
 IDLE_SCREEN_TIME = 10
-ODOMETER = 66482.0
+ODOMETER = 73540.0
 TRIP_TIMEOUT = 900
 
 def printIdleScreen():
@@ -82,11 +82,13 @@ def printTank():
     sys.stdout.write('         Avg. Speed: {:8.2f} '.format(sum(tank['AVG_SPEED'])/len(tank['AVG_SPEED'])))
     sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
     sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(tank['DISTANCE'])))
-    sys.stdout.write('           Est. DTE: {:8.1f} '.format((TANK_CAPACITY-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
+    if sum(tank['AVG_LP100K']) > 0:
+        sys.stdout.write('           Est. DTE: {:8.1f} '.format((TANK_CAPACITY-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
     sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(sum(tank['FUEL'])))
     sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(tank['DURATION']))))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
+
 
 def paintFullTable():
     os.system('clear')
@@ -170,6 +172,18 @@ def printFullTable(d):
             printxy(10, 20, '{:9.2f}'.format(d['DRIVE_RATIO']['VAL']))
     sys.stdout.flush()
 
+def blankHist():
+    h = {}
+    h['AVG_SPEED'] = [0.0]
+    h['AVG_LP100K'] = [0.0]
+    h['DISTANCE'] = [0.0]
+    h['FUEL'] = [0.0]
+    h['AVG_LOAD'] = [0.0]
+    h['DURATION'] = [0.0]
+    h['IDLE_TIME'] = [0.0]
+    return h
+
+
 if __name__ == '__main__':
 
     tripstats = dict()
@@ -182,9 +196,9 @@ if __name__ == '__main__':
 
         tripstats = readLastTrip(SETTINGS_PATH + 'LastTrip.csv')
         history = readCSV(SETTINGS_PATH + 'TripHistory.csv')
-        if history is None: history = tripstats
+        if history is None: history = blankHist()
         tank = readCSV(SETTINGS_PATH + 'TankHistory.csv')
-        if tank is None: history = tripstats
+        if tank is None: tank = blankHist()
 
         ecu = Monitor(OBD_PORT,OBD_BAUD)
 
