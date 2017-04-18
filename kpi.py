@@ -17,9 +17,13 @@ class KPI(object):
                 self.__parameters[k] = kwargs[k]
         self.__min = None
         self.__max = None
-        self.__instantHist = []                          # Instant value history to calculate AVG
-        self.__timeHist = []                             # Time aware history to calculate SUM
-        self.__age = time()
+        self.__sum = 0.0
+        self.__avg = 0.0
+        self.__count = 0
+        self.__val = None
+        #self.__instantHist = []                          # Instant value history to calculate AVG
+        #self.__timeHist = []                             # Time aware history to calculate SUM
+        self.__age = None
 
     @property # Getter
     def val(self):
@@ -27,13 +31,14 @@ class KPI(object):
             v = self.__func(self.__parameters)
             if v is not None:
                 self.val = v                             # Trigger the setter
-        if len(self.__instantHist) > 0:
-            return self.__instantHist[0]                 # Instant values do not take time passed into account
+        if self.__val is not None:
+            return self.__val                            # Val is the instantaneous value.  It does not take time passed since the last sample into account.
 
     @val.setter
     def val(self, v):
         if v is not None:
-            self.__instantHist.insert(0, v)              # Record Instant history values for AVG
+            self.__val = v                               # Record Instant history values for AVG
+            self.__count += 1
             if self.__max is None:
                 self.__max = v
             else:
@@ -45,8 +50,11 @@ class KPI(object):
                 if v < self.__min:
                     self.__min = v
             if type(v) in [float,int]:                       # only number types
-                v = v * (time() - self.__age)
-                self.__timeHist.insert(0, v)                 # Record time calculated value for sums
+                if self.__age is None:
+                    self.__sum += v
+                else:
+                    self.__sum += v * (time() - self.__age)      # Record time calculated value for sums
+                self.__avg += v
             self.__age = time()
 
     @property
@@ -61,20 +69,14 @@ class KPI(object):
     def len(self):
         return len(self.__instantHist)
 
-    def sum(self,period = 0,offset = 0):
-        period=abs(period)
-        offset=abs(offset)
-        if period == 0 and offset == 0: return float(sum(self.__timeHist))
-        return float(sum(self.__timeHist[offset:offset+period]))
+    @property
+    def sum(self):
+        return self.__sum
 
-    def avg(self,period = 0, offset = 0):
-        period=abs(period)
-        offset=abs(offset)
-        if period == 0 and offset == 0:
-            if len(self.__instantHist) == 0: return 0.0
-            return float(sum(self.__instantHist) / len(self.__instantHist))
-        if len(self.__instantHist[offset:offset + period]) == 0: return 0.0
-        else: return float(sum(self.__instantHist[offset:offset + period])) / float(len(self.__instantHist[offset:offset + period]))
+    @property
+    def avg(self):
+        if self.__count == 0: return 0
+        else: return self.__avg / self.__count
 
 
 # Contants used in calculations
@@ -148,7 +150,7 @@ def boost(p):
 
 def distance(p):
     if 'SPEED' not in p: return None
-    d = p['SPEED'].avg(5)
+    d = p['SPEED'].val
     if d is None: return None
     return d / 3600
 
@@ -168,7 +170,7 @@ def gear(p):
         return '2nd'
     if r > 3.8 and r < 4.2:
         return '3rd'
-    if r > 2.75 and r < 3.0:
+    if r > 2.70 and r < 3.1:
         return '4th'
     if r > 2.1 and r < 2.35:
         return '5th'
