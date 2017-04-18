@@ -181,8 +181,10 @@ if __name__ == '__main__':
     try:
 
         tripstats = readLastTrip(SETTINGS_PATH + 'LastTrip.csv')
-        history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
-        tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
+        history = readCSV(SETTINGS_PATH + 'TripHistory.csv')
+        if history is None: history = tripstats
+        tank = readCSV(SETTINGS_PATH + 'TankHistory.csv')
+        if tank is None: history = tripstats
 
         ecu = Monitor(OBD_PORT,OBD_BAUD)
 

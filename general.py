@@ -58,6 +58,9 @@ def readLastTrip(file):
     return data
 
 def writeLastTrip(file,data):
+    # Check the output directory exists.  Create it if it doesn't
+    if not os.path.isdir(os.path.split(file)[0]):
+        os.path.makedirs(os.path.split(file)[0])
     with open(file,'wb') as f:
         f.write(bytes(
             str(data['AVG_LP100K']) + ',' +
@@ -70,6 +73,9 @@ def writeLastTrip(file,data):
         'UTF-8'))
 
 def writeTripHistory(file,data):
+    # Check the output directory exists.  Create it if it doesn't
+    if not os.path.isdir(os.path.split(file)[0]):
+        os.path.makedirs(os.path.split(file)[0])
     writeheaders = False
     if not os.path.isfile(file):
         writeheaders = True
@@ -77,11 +83,11 @@ def writeTripHistory(file,data):
         if writeheaders:
             f.write(bytes('DATE,AVG_LP100K,DISTANCE,AVG_SPEED,FUEL,AVG_LOAD,DURATION,IDLE_TIME\n', 'UTF-8'))
         f.write(bytes(
-            str(data['DATE']) + ',' + 
-            str(data['AVG_LP100K']) + ',' + 
+            str(data['DATE']) + ',' +
+            str(data['AVG_LP100K']) + ',' +
             str(data['DISTANCE']) + ',' +
             str(data['AVG_SPEED']) + ',' +
-            str(data['FUEL']) + ',' + 
+            str(data['FUEL']) + ',' +
             str(data['AVG_LOAD']) + ',' +
             str(data['DURATION']) + ',' +
             str(data['IDLE_TIME']) + '\n',
