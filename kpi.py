@@ -50,9 +50,7 @@ class KPI(object):
                 if v < self.__min:
                     self.__min = v
             if type(v) in [float,int]:                       # only number types
-                if self.__age is None:
-                    self.__sum += v
-                else:
+                if self.__age is not None:
                     self.__sum += v * (time() - self.__age)      # Record time calculated value for sums
                 self.__avg += v
             self.__age = time()
