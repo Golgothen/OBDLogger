@@ -65,7 +65,7 @@ class KPI(object):
 
     @property
     def len(self):
-        return len(self.__instantHist)
+        return self.__count
 
     @property
     def sum(self):

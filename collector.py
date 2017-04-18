@@ -26,11 +26,11 @@ PIPE_TIMEOUT = 3                                   # Time in seconds to wait for
 class Collector(Process):
 
     def __init__(self,
-                             ecuPipe,              # Pipe to ECU process
-                             controlPipe,          # Pipe to controlling application
-                             logPipe,              # Pipe to Logger process
-                             workerPipe,           # Pipe to Worker process
-                             que):                 # Result que
+                 ecuPipe,                          # Pipe to ECU process
+                 controlPipe,                      # Pipe to controlling application
+                 logPipe,                          # Pipe to Logger process
+                 workerPipe,                       # Pipe to Worker process
+                 que):                             # Result que
 
         super(Collector,self).__init__()
         self.__results = que
@@ -119,15 +119,15 @@ class Collector(Process):
             data[d]['MIN'] = self.__data[d].min
             data[d]['MAX'] = self.__data[d].max
             if type(data[d]['VAL']) in [float, int]:
-                data[d]['AVG'] = self.__data[d].avg()
-                data[d]['SUM'] = self.__data[d].sum()
+                data[d]['AVG'] = self.__data[d].avg
+                data[d]['SUM'] = self.__data[d].sum
         return data
 
     def __sum(self, m):
-        return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
+        return self.__data[m['NAME']].sum
 
     def __avg(self, m):
-        return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
+        return self.__data[m['NAME']].avg
 
     def __min(self, m):
         return self.__data[m['NAME']].min
