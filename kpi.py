@@ -21,8 +21,6 @@ class KPI(object):
         self.__avg = 0.0
         self.__count = 0
         self.__val = None
-        #self.__instantHist = []                          # Instant value history to calculate AVG
-        #self.__timeHist = []                             # Time aware history to calculate SUM
         self.__age = None
 
     @property # Getter
@@ -30,14 +28,14 @@ class KPI(object):
         if self.__func is not None:
             v = self.__func(self.__parameters)
             if v is not None:
-                self.val = v                             # Trigger the setter
+                self.val = v                                     # Trigger the setter
         if self.__val is not None:
-            return self.__val                            # Val is the instantaneous value.  It does not take time passed since the last sample into account.
+            return self.__val                                    # __val is the instantaneous value.  It does not take time passed since the last sample into account.
 
     @val.setter
     def val(self, v):
         if v is not None:
-            self.__val = v                               # Record Instant history values for AVG
+            self.__val = v
             self.__count += 1
             if self.__max is None:
                 self.__max = v
@@ -49,11 +47,11 @@ class KPI(object):
             else:
                 if v < self.__min:
                     self.__min = v
-            if type(v) in [float,int]:                       # only number types
-                if self.__age is not None:
-                    self.__sum += v * (time() - self.__age)      # Record time calculated value for sums
-                self.__avg += v
-            self.__age = time()
+            if type(v) in [float,int]:                           # only number types
+                if self.__age is not None:                       # only calculate time shared value if at least one sample has been taken before
+                    self.__sum += v * (time() - self.__age)      # Cumulative sum of time calculated value for sums
+                self.__avg += v                                  # Cumulative sum of instantaneous values for averaging
+            self.__age = time()                                  # Note the current time
 
     @property
     def max(self):
@@ -75,7 +73,6 @@ class KPI(object):
     def avg(self):
         if self.__count == 0: return 0
         else: return self.__avg / self.__count
-
 
 # Contants used in calculations
 
