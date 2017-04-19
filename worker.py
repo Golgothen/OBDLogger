@@ -100,7 +100,7 @@ class Worker(Process):
         # Check for commands comming from the Application
         while self.__controlPipe.poll():
             m = self.__controlPipe.recv()
-            logger.warning('Received {} on Controller pipe'.format(m.message))
+            logger.info('Received {} on Controller pipe'.format(m.message))
 
             if m.message == 'STOP'                : self.__stop()
             if m.message == 'PAUSE'               : self.__pause()

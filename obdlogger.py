@@ -31,7 +31,7 @@ def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
 
-    #os.system('clear')
+    os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
     if screentime.seconds>=IDLE_SCREEN_TIME:
         currentIdleScreen+=1
@@ -91,7 +91,7 @@ def printTank():
 
 
 def paintFullTable():
-    #os.system('clear')
+    os.system('clear')
     # paint the screen
     sys.stdout.write(' Speed :     /    /          :')
     sys.stdout.write('   RPM :          /          :')
@@ -115,13 +115,13 @@ def printFullTable(d):
             if d['SPEED']['VAL'] == 0:
                 if 'LPH' in d:
                     if d['LPH']['VAL'] is not None:
-                        printxy(3, 1, '   LPH :')
+                        printxy(3, 1, '   LPH')
                         printxy(3, 10, '{:9,.3f}'.format(d['LPH']['VAL']))
                         printxy(3, 20, '{:9,.3f}'.format(d['LPH']['AVG']))
             else:
                 if 'LP100K' in d:
                     if d['LP100K']['VAL'] is not None:
-                        printxy(3, 1, 'LP100K :')
+                        printxy(3, 1, 'LP100K')
                         printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['VAL']))
                         printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['AVG']))
 
