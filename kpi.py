@@ -111,14 +111,21 @@ def LPH(p):
     if l is None: return None
     return l * 3600
 
-def LPS(p):
-    if 'MAF' not in p or 'ENGINE_LOAD' not in p: return None
-    m = p['MAF'].val
+def FAM(p):
+    if 'ENGINE_LOAD' not in p: return None
     e = p['ENGINE_LOAD'].val
-    if m is None or e is None: return None
-    if e == 0: return 0.0
+    if e is None: return None
+    if e == 0.0: return 0.0
+    return FUEL_AIR_RATIO_MAX - ((FUEL_AIR_RATIO_MAX - FUEL_AIR_RATIO_MIN) * (e / 100.0))
+
+def LPS(p):
+    if 'MAF' not in p or 'FAM' not in p: return None
+    m = p['MAF'].val
+    f = p['FAM'].val
+    if m is None or f is None: return None
+    if f == 0: return 0.0
     if m == 0: return None
-    return m/(FUEL_AIR_RATIO_MAX - ((FUEL_AIR_RATIO_MAX - FUEL_AIR_RATIO_MIN) * (e / 100.0))) / FUEL_DENSITY
+    return m / f / FUEL_DENSITY
 
 def LP100K(p):
     #Fuel Consumption in L/100K

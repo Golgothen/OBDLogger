@@ -149,12 +149,17 @@ class Collector(Process):
         # now add calculates data fields
 
         #self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp)
+        if 'ENGINE_LOAD' in self.__data:
+
+            self.__data['FAM'] =             KPI(FUNCTION = FAM,
+                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD']
+
         if 'MAF' in self.__data and \
-           'ENGINE_LOAD' in self.__data:
+           'FAM' in self.__data:
 
                 self.__data['LPS'] =         KPI(FUNCTION = LPS,
                                                  MAF = self.__data['MAF'],
-                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
+                                                 FAM = self.__data['FAM'])
                 self.__data['LPH'] =         KPI(FUNCTION = LPH,
                                                  LPS = self.__data['LPS'])
 

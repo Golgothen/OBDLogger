@@ -27,6 +27,9 @@ IDLE_SCREEN_TIME = 10
 ODOMETER = 73540.0
 TRIP_TIMEOUT = 900
 
+LOG_EXTRA_DATA = False
+
+
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
@@ -191,12 +194,9 @@ if __name__ == '__main__':
         ecu = Monitor(OBD_PORT,OBD_BAUD)
 
         ecu.logPath(LOG_PATH)
-        logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
+        logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','FAM',
                        'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
-                       'BAROMETRIC_PRESSURE','INTAKE_PRESSURE','BOOST_PRESSURE',
-                       'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
-                       'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
-                       'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR']
+                       'DRIVE_RATIO','GEAR']
 
         ecu.addQue('HI',10)
         ecu.addQue('MED',1)
@@ -205,10 +205,9 @@ if __name__ == '__main__':
 
         ecu.deleteAfterPoll('ONCE',True)
 
-        Commands = {'HI'  : ['RPM','SPEED','MAF','ENGINE_LOAD'],
-                    'MED' : ['BAROMETRIC_PRESSURE','INTAKE_PRESSURE','COOLANT_TEMP'],
-                    'LOW' : ['DISTANCE_SINCE_DTC_CLEAR','DISTANCE_W_MIL','COMMANDED_EGR',
-                             'EGR_ERROR'],
+        Commands = {'HI'   : ['RPM','SPEED','MAF','ENGINE_LOAD'],
+                    'MED'  : ['BAROMETRIC_PRESSURE','INTAKE_PRESSURE','COOLANT_TEMP'],
+                    'LOW'  : ['DISTANCE_SINCE_DTC_CLEAR','DISTANCE_W_MIL','COMMANDED_EGR','EGR_ERROR'],
                     'ONCE' : ['WARMUPS_SINCE_DTC_CLEAR']}
 
         for q in Commands:
@@ -232,11 +231,12 @@ if __name__ == '__main__':
                     while sc is None:
                         sc = ecu.supportedcommands()
                         sleep(0.01)
-                    for c in sc:
-                        if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
-                            Commands['LOW'].append(c)
-                            ecu.addCommand('LOW',c)                     # Add all supported commands that arent already in a que to the LOW que
-                            logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
+                    if LOG_EXTRA_DATA:
+                        for c in sc:
+                            if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
+                                Commands['LOW'].append(c)
+                                ecu.addCommand('LOW',c)                     # Add all supported commands that arent already in a que to the LOW que
+                                logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
                 logger.info(ecu.status())
