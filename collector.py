@@ -152,7 +152,7 @@ class Collector(Process):
         if 'ENGINE_LOAD' in self.__data:
 
             self.__data['FAM'] =             KPI(FUNCTION = FAM,
-                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD']
+                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
 
         if 'MAF' in self.__data and \
            'FAM' in self.__data:
