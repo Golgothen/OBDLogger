@@ -64,8 +64,6 @@ class Monitor():
         self.__worker.start()
         self.__collector.start()
         self.__logger.start()
-        self.__gps = None
-        self.__gpsEnabled = False
 
     def __checkWorkerPipe(self, message, timeout):
         # Check Worker pipe
@@ -221,14 +219,14 @@ class Monitor():
         logger.info('Starting logger')
         self.__logComm.send(Message('RESUME'))
 
-    def sum(self, name, offset = 0, length = 0):
-        self.__dataComm.send(Message('SUM',NAME = name, OFFSET = offset, LENGTH = length))
+    def sum(self, name):
+        self.__dataComm.send(Message('SUM',NAME = name))
         r = self.__checkDataPipe('SUM', PIPE_TIMEOUT)
         if r is not None:
             return r['SUM']
 
-    def avg(self, name, offset = 0, length = 0):
-        self.__dataComm.send(Message('AVG',NAME = name, OFFSET = offset, LENGTH = length))
+    def avg(self, name):
+        self.__dataComm.send(Message('AVG',NAME = name))
         r = self.__checkDataPipe('AVG', PIPE_TIMEOUT)
         if r is not None:
             return r['AVG']
@@ -244,18 +242,6 @@ class Monitor():
         r = self.__checkDataPipe('MAX', PIPE_TIMEOUT)
         if r is not None:
             return r['MAX']
-
-    @property
-    def gpsEnable(self):
-        return self.__gpsEnabled
-
-    @gpsEnable.setter
-    def gpsEnable(self, v):
-        if v:
-            self.__gpsEnmabled = True
-            self.__gps = GPS(resultQue,
-                             gpsControlPipe.r)                             # GPS <-> Application
-            self.__gps.start()
 
     @property
     def snapshot(self):

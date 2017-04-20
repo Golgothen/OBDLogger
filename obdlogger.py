@@ -133,10 +133,15 @@ def printFullTable(d):
             printxy(2 ,10, '{:9,.0f}'.format(d['RPM']['VAL']))
             printxy(2, 20, '{:9,.0f}'.format(d['RPM']['MAX']))
 
-    if 'BOOST_PRESSURE' in d:
-        if d['BOOST_PRESSURE']['VAL'] is not None:
-            printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
-            printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
+#    if 'BOOST_PRESSURE' in d:
+#        if d['BOOST_PRESSURE']['VAL'] is not None:
+#            printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
+#            printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
+
+    if 'FAM' in d:
+        if d['FAM']['VAL'] is not None:
+            printxy(4, 10, '{:9.2f}'.format(d['FAM']['VAL']))
+            printxy(4, 20, '{:9.2f}'.format(d['FAM']['MAX']))
 
     if 'ENGINE_LOAD' in d:
         if d['ENGINE_LOAD']['VAL'] is not None:

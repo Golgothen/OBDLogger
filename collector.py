@@ -199,14 +199,6 @@ class Collector(Process):
             self.__data['OBD_DISTANCE'] =    KPI(FUNCTION = OBDdistance,
                                                  DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
 
-        # Add KPIs for GPS info should it be enabled
-        self.__data['LATITUDE'] = KPI()
-        self.__data['LONGITUDE'] = KPI()
-        self.__data['ALTITUDE'] = KPI()
-        self.__data['HEADING'] = KPI()
-        self.__data['GPS_SPEED'] = KPI()
-        self.__data['CLIMB'] = KPI()
-
         self.__ready = True
         self.__dirty = False
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
