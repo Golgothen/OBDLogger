@@ -17,18 +17,6 @@ lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
 snapshot=dict()
 
-#OBD_PORT = '/dev/ttyUSB0'
-#OBD_BAUD = 38400
-
-#SETTINGS_PATH = './settings/'
-#LOG_PATH = './logs/'
-#TANK_CAPACITY = 53.0
-#IDLE_SCREEN_TIME = 10
-#ODOMETER = 73540.0
-#TRIP_TIMEOUT = 900
-
-#LOG_EXTRA_DATA = False
-
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen

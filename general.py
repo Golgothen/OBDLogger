@@ -120,6 +120,7 @@ def loadDefaults():
     config.add_section('Vehicle')
 
     config.set('Application','LogPath','./logs/')
+    config.set('Application','Log Frequency','1')
     config.set('Application','StatPath','./stats/')
     config.set('Application','Idle Screen Time','10')
     config.set('Application','Busy Screen Time','0.25')
