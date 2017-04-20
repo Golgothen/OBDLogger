@@ -1,4 +1,5 @@
 import os, csv, logging, sys
+from configparser import ConfigParser
 
 ###
 
@@ -108,3 +109,56 @@ def blankHist():
     h['IDLE_TIME'] = [0.0]
     return h
 
+def loadConfig():
+    config = loadDefaults()
+    config.read('obdlogger.cfg')
+    return config
+
+def loadDefaults():
+    config = ConfigParser()
+    config.add_section('Application')
+    config.add_section('Vehicle')
+
+    config.set('Application','LogPath','./logs/')
+    config.set('Application','Log Frequency','1')
+    config.set('Application','StatPath','./stats/')
+    config.set('Application','Idle Screen Time','10')
+    config.set('Application','Busy Screen Time','0.25')
+    config.set('Application','Trip Timeout','900')
+    config.set('Application','Log Extra Data','False')
+    config.set('Application','OBD Port','/dev/ttyUSB0')
+    config.set('Application','OBD Baud','38400')
+    config.set('Application','Queues','Hi,Medium,Low,Once')
+    config.set('Application','Log Headings','TIMESTAMP,RPM,SPEED,DISTANCE,FAM,LP100K,LPS,LPH,MAF,ENGINE_LOAD,DRIVE_RATIO,GEAR')
+    config.set('Application','Pipe Timeout','3')
+    config.set('Application','GPS Enabled','False')
+
+    for q in config.get('Application','Queues').split(','):
+        config.add_section('Queue {}'.format(q))
+
+    config.set('Vehicle','Tank Capacity','53')
+    config.set('Vehicle','Odometer','73540')
+    config.set('Vehicle','Fuel Air Ratio Ideal','14.7')
+    config.set('Vehicle','Fuel Air Ratio Min','25')
+    config.set('Vehicle','Fuel Air Ratio Max','50')
+    config.set('Vehicle','Fuel Density','850.8')
+    config.set('Vehicle','Tyre Width','195')
+    config.set('Vehicle','Aspect Ratio','65')
+    config.set('Vehicle','Rim Size','15')
+
+    config.set('Queue Hi','Frequency','10.0')
+    config.set('Queue Hi','Commands','RPM,SPEED,MAF,ENGINE_LOAD')
+    config.set('Queue Medium','Frequency','1.0')
+    config.set('Queue Medium','Commands','BAROMETRIC_PRESSURE,INTAKE_PRESSURE,COOLANT_TEMP')
+    config.set('Queue Low','Frequency','0.01')
+    config.set('Queue Low','Commands','DISTANCE_SINCE_DTC_CLEAR,DISTANCE_W_MIL,COMMANDED_EGR,EGR_ERROR')
+    config.set('Queue Low','Default Queue','True')
+    config.set('Queue Once','Frequency','1.0')
+    config.set('Queue Once','Commands','WARMUPS_SINCE_DTC_CLEAR')
+    config.set('Queue Once','Delete After Poll','True')
+    config.set('Queue Once','Reconfigure on Restart','True')
+
+    return config
+
+def saveConfig(config):
+    config.write(open('obdlogger.cfg','w'))

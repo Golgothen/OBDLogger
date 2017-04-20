@@ -2,19 +2,20 @@ from multiprocessing import Process, Queue, Pipe
 from datetime import datetime
 from time import sleep
 from messages import Message
-
+from general import *
 import logging, os, obd #, _thread
 
 logger = logging.getLogger('root')
 
-PIPE_TIMEOUT = 3
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 class Worker(Process):
 
-    def __init__(self, 
-                 workQue, 
-                 resultQue, 
-                 ecuPipe,                        # Worker <-> ECU 
+    def __init__(self,
+                 workQue,
+                 resultQue,
+                 ecuPipe,                        # Worker <-> ECU
                  controlPipe,                    # Worker <-> Application
                  dataPipe,                       # Worker <-> Collector
                  logPipe,                        # Worker <-> Logger
@@ -67,12 +68,12 @@ class Worker(Process):
                         self.__firstPoll = datetime.now()
                     if not self.__paused and self.__running:
                         while self.__workQue.qsize() > 0:
-                            if self.__workQue.qsize() > self.__maxQueLength: 
-                                self.__maxQueLength = self.__workQue.qsize() 
+                            if self.__workQue.qsize() > self.__maxQueLength:
+                                self.__maxQueLength = self.__workQue.qsize()
                             m = self.__workQue.get()
                             q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
                             self.__pollCount+=1
-                            if self.__firstPoll is None: 
+                            if self.__firstPoll is None:
                                 self.__firstPoll = datetime.now()
                             if not q.is_null():                                                                            # todo: uncomment after testing
                                 logger.debug('{} - {}'.format(m, q.value))

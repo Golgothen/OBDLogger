@@ -7,12 +7,14 @@ from que import Que
 from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
+from general import *
 
 import sys, logging
 
 logger = logging.getLogger('root')
 
-PIPE_TIMEOUT = 3
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 class Monitor():
 
