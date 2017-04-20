@@ -60,7 +60,7 @@ def printHistory():
     sys.stdout.write('         Avg. Speed: {:8.2f} '.format(sum(history['AVG_SPEED'])/len(history['AVG_SPEED'])))
     sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(history['AVG_LP100K'])/len(history['AVG_LP100K'])))
     sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(history['DISTANCE'])))
-    sys.stdout.write('           Odometer: {:8,.0f} '.format(sum(history['DISTANCE'])+ODOMETER))
+    sys.stdout.write('           Odometer: {:8,.0f} '.format(sum(history['DISTANCE'])+config.getfloat('Vehicle', 'Odometer')))
     sys.stdout.write('      Fuel Consumed: {:8,.2f} '.format(sum(history['FUEL'])))
     sys.stdout.write('   Avg. Engine Load: {:8.2f} '.format(sum(history['AVG_LOAD'])/len(history['AVG_LOAD'])))
     sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(history['DURATION']))))
@@ -74,7 +74,7 @@ def printTank():
     sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
     sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(tank['DISTANCE'])))
     if sum(tank['AVG_LP100K']) > 0:
-        sys.stdout.write('           Est. DTE: {:8.1f} '.format((TANK_CAPACITY-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
+        sys.stdout.write('           Est. DTE: {:8.1f} '.format((config.getfloat('Vehicle', 'Tank Capacity')-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
     sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(sum(tank['FUEL'])))
     sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(tank['DURATION']))))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
@@ -220,7 +220,7 @@ if __name__ == '__main__':
                     if config.getboolean('Application', 'Log Extra Data'):
                         loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
                         for q in config.get('Application', 'Queues').split(','):
-                            loadedCommands.append(config.get('Queue {}'.format(q),'Commands').split(',')
+                            loadedCommands.append(config.get('Queue {}'.format(q),'Commands').split(','))
                         for q in config.get('Application', 'Queues').split(','):
                             if config.has_option('Queue {}'.format(q), 'Default Queue'):
                                 for c in sc:
