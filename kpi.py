@@ -1,5 +1,6 @@
 from time import time
 from datetime import datetime
+from general import *
 
 import logging
 
@@ -76,7 +77,7 @@ class KPI(object):
 
 # Contants used in calculations
 
-global config
+config = loadConfig()
 
 #FUEL_AIR_RATIO_IDEAL = 14.7
 #FUEL_AIR_RATIO_MIN = 25.0                 #Fuel/Air Ratio x:1

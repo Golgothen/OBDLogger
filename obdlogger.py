@@ -87,7 +87,7 @@ def paintFullTable():
     sys.stdout.write(' Speed :     /    /          :')
     sys.stdout.write('   RPM :          /          :')
     sys.stdout.write('   LPH :          /          :')
-    sys.stdout.write(' Boost :          /          :')
+    sys.stdout.write('   FAM :          /          :')
     sys.stdout.write('  Load :          /          :')
     sys.stdout.write('   MAF :          /          :')
     sys.stdout.write('  Trip :                     :')
@@ -218,10 +218,13 @@ if __name__ == '__main__':
                         sc = ecu.supportedcommands()
                         sleep(0.01)
                     if config.getboolean('Application', 'Log Extra Data'):
+                        loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
+                        for q in config.get('Application', 'Queues').split(','):
+                            loadedCommands.append(config.get('Queue {}'.format(q),'Commands').split(',')
                         for q in config.get('Application', 'Queues').split(','):
                             if config.has_option('Queue {}'.format(q), 'Default Queue'):
                                 for c in sc:
-                                    if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
+                                    if c not in loadedCommands:
                                         ecu.addCommand(q,c)                     # Add all supported commands that arent already in a que to the LOW que
                                         logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
@@ -240,14 +243,14 @@ if __name__ == '__main__':
                         tripstats = ecu.summary
                         writeLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv', tripstats)
                 if disconnected is not None:
-                    if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
+                    if (datetime.now()-disconnected).total_seconds() > config.getfloat('Application', 'Trip Timeout'):
                         ecu.save()
                         logger.info('Finalising trip....')
                         writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
                         writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
                         history=readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
                         tank=readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
-                        disconnected=None
+                        disconnected = None
                         ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
