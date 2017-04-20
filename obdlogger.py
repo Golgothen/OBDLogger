@@ -183,6 +183,7 @@ if __name__ == '__main__':
                       config.get('Application', 'OBD Baud'))
 
         ecu.logPath(config.get('Application', 'LogPath'))
+        ecu.gpsEnabled = config.getboolean('Application','GPS Enabled')
         logHeadings = config.get('Application', 'Log Headings').split(',')
 
         for q in config.get('Application', 'Queues').split(','):
