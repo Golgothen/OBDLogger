@@ -17,26 +17,26 @@ lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
 snapshot=dict()
 
-OBD_PORT = '/dev/ttyUSB0'
-OBD_BAUD = 38400
+#OBD_PORT = '/dev/ttyUSB0'
+#OBD_BAUD = 38400
 
-SETTINGS_PATH = './settings/'
-LOG_PATH = './logs/'
-TANK_CAPACITY = 53.0
-IDLE_SCREEN_TIME = 10
-ODOMETER = 73540.0
-TRIP_TIMEOUT = 900
+#SETTINGS_PATH = './settings/'
+#LOG_PATH = './logs/'
+#TANK_CAPACITY = 53.0
+#IDLE_SCREEN_TIME = 10
+#ODOMETER = 73540.0
+#TRIP_TIMEOUT = 900
 
-LOG_EXTRA_DATA = False
-
+#LOG_EXTRA_DATA = False
 
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
+    global config
 
     os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
-    if screentime.seconds>=IDLE_SCREEN_TIME:
+    if screentime.seconds>=config.getfloat('Application', 'Idle Screen Time'):
         currentIdleScreen+=1
         lastScreenUpdate=datetime.now()
     if currentIdleScreen>2:
@@ -181,38 +181,29 @@ if __name__ == '__main__':
     history = dict()
     tank = dict()
 
-    #obd.logger.setLevel(obd.logging.DEBUG)
+    config = loadConfig()
 
     try:
 
-        tripstats = readLastTrip(SETTINGS_PATH + 'LastTrip.csv')
-        history = readCSV(SETTINGS_PATH + 'TripHistory.csv')
+        tripstats = readLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv')
+        history = readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
         if history is None: history = blankHist()
-        tank = readCSV(SETTINGS_PATH + 'TankHistory.csv')
+        tank = readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
         if tank is None: tank = blankHist()
 
-        ecu = Monitor(OBD_PORT,OBD_BAUD)
+        ecu = Monitor(config.get('Application', 'OBD Port'),
+                      config.get('Application', 'OBD Baud'))
 
-        ecu.logPath(LOG_PATH)
-        logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','FAM',
-                       'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
-                       'DRIVE_RATIO','GEAR']
+        ecu.logPath(config.get('Application', 'LogPath'))
+        logHeadings = config.get('Application', 'Log Headings').split(',')
 
-        ecu.addQue('HI',10)
-        ecu.addQue('MED',1)
-        ecu.addQue('LOW',0.1)
-        ecu.addQue('ONCE',1)
-
-        ecu.deleteAfterPoll('ONCE',True)
-
-        Commands = {'HI'   : ['RPM','SPEED','MAF','ENGINE_LOAD'],
-                    'MED'  : ['BAROMETRIC_PRESSURE','INTAKE_PRESSURE','COOLANT_TEMP'],
-                    'LOW'  : ['DISTANCE_SINCE_DTC_CLEAR','DISTANCE_W_MIL','COMMANDED_EGR','EGR_ERROR'],
-                    'ONCE' : ['WARMUPS_SINCE_DTC_CLEAR']}
-
-        for q in Commands:
-            for c in Commands[q]:
-                ecu.addCommand(q, c)
+        for q in config.get('Application', 'Queues').split(','):
+            ecu.addQue(q, config.getfloat('Queue {}'.format(q), 'Frequency'))
+            if config.has_option('Queue {}'.format(q), 'Delete After Poll'):
+                ecu.deleteAfterPoll(q, config.getboolean('Queue {}'.format(q), 'Delete After Poll'))
+            if config.has_option('Queue {}'.format(q), 'Commands'):
+                for c in config.get('Queue {}'.format(q), 'Commands').split(','):
+                    ecu.addCommand(q, c)
 
         logger.debug('Starting...')
 
@@ -223,25 +214,27 @@ if __name__ == '__main__':
                 if not journey:
                     journey=True
                     paintFullTable()
-                    l = ecu.getQueCommands('ONCE')
-                    for c in Commands['ONCE']:                          # Add all the ONCE commands back into the ONCE que if they do not already exist
-                        if c not in l:
-                            ecu.addCommand('ONCE',c)
+                    for q in config.get('Application', 'Queues').split(','):
+                        if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
+                           config.has_option('Queue {}'.format(q), 'Commands'):
+                            for c in config.get('Queue {}'.format(q), 'Commands').split(','):
+                                ecu.addCommand(q, c)
                     sc = None
                     while sc is None:
                         sc = ecu.supportedcommands()
                         sleep(0.01)
-                    if LOG_EXTRA_DATA:
-                        for c in sc:
-                            if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
-                                Commands['LOW'].append(c)
-                                ecu.addCommand('LOW',c)                     # Add all supported commands that arent already in a que to the LOW que
-                                logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
+                    if config.getboolean('Application', 'Log Extra Data'):
+                        for q in config.get('Application', 'Queues').split(','):
+                            if config.has_option('Queue {}'.format(q), 'Default Queue'):
+                                for c in sc:
+                                    if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
+                                        ecu.addCommand(q,c)                     # Add all supported commands that arent already in a que to the LOW que
+                                        logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
                 logger.info(ecu.status())
                 printFullTable(ecu.snapshot)
-                sleep(0.25)
+                sleep(config.getfloat('Application', 'Busy Screen Time'))
             while not ecu.isConnected():
                 if journey:
                     journey=False
@@ -251,15 +244,15 @@ if __name__ == '__main__':
                         ecu.discard()
                     else:
                         tripstats = ecu.summary
+                        writeLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv', tripstats)
                 if disconnected is not None:
                     if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
                         ecu.save()
                         logger.info('Finalising trip....')
-                        writeTripHistory(SETTINGS_PATH + 'TripHistory.csv', tripstats)
-                        writeTripHistory(SETTINGS_PATH + 'TankHistory.csv', tripstats)
-                        writeLastTrip(SETTINGS_PATH + 'LastTrip.csv', tripstats)
-                        history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
-                        tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
+                        writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
+                        writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
+                        history=readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
+                        tank=readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
                         disconnected=None
                         ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))

@@ -15,13 +15,15 @@
 from multiprocessing import Process, Queue
 from messages import Message
 from kpi import *
+from general import *
 from time import sleep
 
 import os, logger
 
 logger = logging.getLogger('root')
 
-PIPE_TIMEOUT = 3                                   # Time in seconds to wait for pipe command responses
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses
 
 class Collector(Process):
 
@@ -152,7 +154,7 @@ class Collector(Process):
         if 'ENGINE_LOAD' in self.__data:
 
             self.__data['FAM'] =             KPI(FUNCTION = FAM,
-                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD']
+                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
 
         if 'MAF' in self.__data and \
            'FAM' in self.__data:

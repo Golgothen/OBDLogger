@@ -4,8 +4,10 @@ from worker import Worker
 from que import Que
 from multiprocessing import Process, Queue, Pipe
 from messages import Message
+from general import *
 
-PIPE_TIMEOUT = 3
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 import logging
 
@@ -30,7 +32,7 @@ class ECU(Process):
         self.__running = True
         self.__pid = os.getpid()
         logger.info('Starting ECU process on PID {}'.format(self.__pid))
-        try:        
+        try:
             while self.__running:
                 self.__checkPipe()
                 for q in self.__Que:
@@ -64,9 +66,9 @@ class ECU(Process):
             logger.info('Received {} on worker pipe'.format(m.message))
 
             if m.message == 'CONNECTION':
-                if m.params['STATUS']: 
+                if m.params['STATUS']:
                     self.__resume()
-                else: 
+                else:
                     self.__pause()
 
         # Check commands comming from the collector process
@@ -90,7 +92,7 @@ class ECU(Process):
 
     def __addQue(self, p):
         #Adds a que to the ECU.
-        if p['QUE'] in self.__Que: 
+        if p['QUE'] in self.__Que:
             logger.debug('Que {} already exists'.format(p['QUE']))
             return
         self.__Que[p['QUE']] = Que(p['QUE'], p['FREQUENCY'], self.__workerQue)

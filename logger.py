@@ -101,7 +101,7 @@ class DataLogger(threading.Thread):
             if m.message == 'LOGNAME'     : self.__controlPipe.send(Message(m.message,NAME=self.__logName))
             if m.message == 'STATUS'      : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
             if m.message == 'FREQUENCY'   : self.__logFrequency = m.params['FREQUENCY']
-            if m.message == 'HEADINGS'    : 
+            if m.message == 'HEADINGS'    :
                 self.__colHeadings(m.params['HEADINGS'])
                 #self.__restart()
 

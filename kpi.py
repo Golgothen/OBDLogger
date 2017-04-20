@@ -76,14 +76,18 @@ class KPI(object):
 
 # Contants used in calculations
 
-FUEL_AIR_RATIO_IDEAL = 14.7
-FUEL_AIR_RATIO_MIN = 25.0                 #Fuel/Air Ratio x:1
-FUEL_AIR_RATIO_MAX = 50.0
-FUEL_DENSITY = 850.8                      #Diesel Fuel Density g/L
-TYRE_WIDTH = 195.0                        #Tyre Width in mm
-ASPECT_RATIO = 0.65                       #Tyre profile
-RIM_SIZE = 15.0                           #Rim size in inches
+global config
+
+#FUEL_AIR_RATIO_IDEAL = 14.7
+#FUEL_AIR_RATIO_MIN = 25.0                 #Fuel/Air Ratio x:1
+#FUEL_AIR_RATIO_MAX = 50.0
+#FUEL_DENSITY = 850.8                      #Diesel Fuel Density g/L
+#TYRE_WIDTH = 195.0                        #Tyre Width in mm
+#ASPECT_RATIO = 0.65                       #Tyre profile
+#RIM_SIZE = 15.0                           #Rim size in inches
+
 PI = 3.14159
+
 ###
 
 # Calculation Functions
@@ -99,8 +103,10 @@ def driveRatio(p):
     r = p['RPM'].val
     if s is None or r is None: return None
     if s == 0: return None                          #Avoid Divide by Zero
-    sideWall = TYRE_WIDTH * ASPECT_RATIO            # Tyre sidewall height in mm
-    wheelDiameter = sideWall + (RIM_SIZE * 25.4)    # Wheel diameter in mm
+    sideWall = config.getfloat('Vehicle', 'Tyre Width') * \
+               (config.getfloat('Vehicle', 'Aspect Ratio')/100)            # Tyre sidewall height in mm
+    wheelDiameter = sideWall + \
+                    (config.getfloat('Vehicle', 'Rim Size') * 25.4)    # Wheel diameter in mm
     wheelCirc = wheelDiameter * PI / 1000.0         # Wheel circumfrance in m
     wheel_rpm = s*1000.0 / 60 / wheelCirc           # Wheel RPM
     return r / wheel_rpm                            # ratio Engine RPM : Wheel RPM
@@ -116,7 +122,9 @@ def FAM(p):
     e = p['ENGINE_LOAD'].val
     if e is None: return None
     if e == 0.0: return 0.0
-    return FUEL_AIR_RATIO_MAX - ((FUEL_AIR_RATIO_MAX - FUEL_AIR_RATIO_MIN) * (e / 100.0))
+    return config.getfloat('Vehicle', 'Fuel Air Ratio Max') - (\
+           ( config.getfloat('Vehicle', 'Fuel Air Ratio Max') - \
+             config.getfloat('Vehicle', 'Fuel Air Ratio Min')) * (e / 100.0))
 
 def LPS(p):
     if 'MAF' not in p or 'FAM' not in p: return None
@@ -125,7 +133,7 @@ def LPS(p):
     if m is None or f is None: return None
     if f == 0: return 0.0
     if m == 0: return None
-    return m / f / FUEL_DENSITY
+    return m / f / config.getfloat('Vehicle', 'Fuel Density')
 
 def LP100K(p):
     #Fuel Consumption in L/100K
