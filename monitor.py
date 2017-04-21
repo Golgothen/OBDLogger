@@ -268,10 +268,10 @@ class Monitor():
                 self.__gpsComm.send(Message('RESUME'))
             else:
                 self.__gps.start()
-            self.__logComm.send('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']
+            self.__logComm.send('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB'])
         else:
             self.__gpsComm.send(Message('PAUSE'))
-            self.__logComm.send('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']
+            self.__logComm.send('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB'])
 
     @property
     def snapshot(self):

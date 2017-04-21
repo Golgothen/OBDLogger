@@ -1,24 +1,33 @@
 from multiprocessing import Process, Queue, Pipe
 from time import sleep, time
 from messages import Message
-from gps import *
+from gps3 import agps3
+
+from general import *
 
 import logging, os
 
 logger = logging.getLogger('root')
 
-PIPE_TIMEOUT = 3
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application', 'Pipe Timeout')
+HOST = '127.0.0.1'
+PORT = '2947'
+PROTOCOL = 'json'
 
 class GPS(Process):
 
     def __init__(self,
                  resultQue,                      # Queue to put the results
-                 controlPipe)                    # Worker <-> Application
+                 controlPipe):                   # Worker <-> Application
 
-        super(Worker,self).__init__()
+        super(GPS,self).__init__()
         #self.daemon=False
         self.name = 'GPS'
-        self.__gpsd = gps(mode=WATCH_ENABLE)
+        self.__gpsd = agps3.GPSSocket()
+        self.__gpsd.connect(HOST, PORT)
+        self.__gpsd.watch(gpsd_protocol=PROTOCOL)
+        self.__stream = agps3.DataStream()
         self.__frequency = 1
         self.__running = False
         self.__paused = True
@@ -40,12 +49,12 @@ class GPS(Process):
                     t = time()
                     self.__gpsd.next()
                     self.__pollCpunt += 1
-                    self.__resultQue.put(Message('ALTITUDE', VALUE=self.__gpsd.fix.altitude))
-                    self.__resultQue.put(Message('LATITUDE', VALUE=self.__gpsd.fix.latitude))
-                    self.__resultQue.put(Message('LONGITUDE', VALUE=self.__gpsd.fix.longitude))
-                    self.__resultQue.put(Message('HEADING', VALUE=self.__gpsd.fix.track))
-                    self.__resultQue.put(Message('GPS_SPEED', VALUE=self.__gpsd.fix.speed))
-                    self.__resultQue.put(Message('CLIMB', VALUE=self.__gpsd.fix.climb))
+                    self.__resultQue.put(Message('ALTITUDE', VALUE=self.__stream.alt))
+                    self.__resultQue.put(Message('LATITUDE', VALUE=self.__stream.lat))
+                    self.__resultQue.put(Message('LONGITUDE', VALUE=self.__stream.lon))
+                    self.__resultQue.put(Message('HEADING', VALUE=self.__stream.track))
+                    self.__resultQue.put(Message('GPS_SPEED', VALUE=self.__stream.speed))
+                    self.__resultQue.put(Message('CLIMB', VALUE=self.__stream.climb))
                     sleeptime = time() - t - (1.0 / self.__frequency)
                     if sleeptime > 0: sleep(sleeptime)
                 else:
