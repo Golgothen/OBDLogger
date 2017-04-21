@@ -7,13 +7,16 @@ from que import Que
 from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
+
 from gps import GPS
+from general import *
 
 import sys, logging
 
 logger = logging.getLogger('root')
 
-PIPE_TIMEOUT = 3
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 class Monitor():
 
@@ -66,12 +69,14 @@ class Monitor():
         self.__gps = GPS(resultQue,
                          gpsControlPipe.r)                             # GPS <-> Application
 
-        self.__gpsEnabled = False
+        self.__gpsEnabled = config.getboolean('Application', 'GPS Enabled')
 
         self.__ecu.start()
         self.__worker.start()
         self.__collector.start()
         self.__logger.start()
+        if self.__gpsEnabled:
+            self.__gps.start()
 
     def __checkWorkerPipe(self, message, timeout):
         # Check Worker pipe
@@ -227,14 +232,14 @@ class Monitor():
         logger.info('Starting logger')
         self.__logComm.send(Message('RESUME'))
 
-    def sum(self, name, offset = 0, length = 0):
-        self.__dataComm.send(Message('SUM',NAME = name, OFFSET = offset, LENGTH = length))
+    def sum(self, name):
+        self.__dataComm.send(Message('SUM',NAME = name))
         r = self.__checkDataPipe('SUM', PIPE_TIMEOUT)
         if r is not None:
             return r['SUM']
 
-    def avg(self, name, offset = 0, length = 0):
-        self.__dataComm.send(Message('AVG',NAME = name, OFFSET = offset, LENGTH = length))
+    def avg(self, name):
+        self.__dataComm.send(Message('AVG',NAME = name))
         r = self.__checkDataPipe('AVG', PIPE_TIMEOUT)
         if r is not None:
             return r['AVG']

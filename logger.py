@@ -8,9 +8,9 @@ logger = logging.getLogger('root')
 
 class DataLogger(threading.Thread):
 
-    def __init__(self, 
-                 controlPipe, 
-                 dataPipe, 
+    def __init__(self,
+                 controlPipe,
+                 dataPipe,
                  workerPipe):
 
         threading.Thread.__init__(self)
@@ -31,8 +31,6 @@ class DataLogger(threading.Thread):
         self.__logFormat = '%Y%m%d%H%M'             # Log file name format
         self.__pauseLog = False                     # Flag to pause logging
         self.__pid = None                           # Pricess ID of Logging process
-        self.__tripTimeout = 900                    # Time in seconds to continue logging to the same file or start a new one.
-        self.__pausedAt = None                      # Holds the time when logging was paused
 
         logger.debug('Logging process initalised')
 
@@ -74,15 +72,9 @@ class DataLogger(threading.Thread):
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
                     self.__refreshRequired = True
                     self.__refreshRequested = False
-                else:
-                    if self.__pausedAt is None:
-                        self.__pausedAt = datetime.now()                # Take note of the time when logging was paused
-                    if (datetime.now() - self.__pausedAt).total_seconds() > self.__tripTimeout:
-                        if self.__logName is not None:
-                            self.__save()
                 sleeptime=(1.0 / self.__logFrequency) - (time() - timer)
                 if sleeptime < 0:
-                    logger.warning('Logger sleep time reached zero. Concider reducing log frequency') 
+                    logger.warning('Logger sleep time reached zero. Concider reducing log frequency')
                     #self.logFrequency-=1
                 else:
                     sleep(sleeptime)
@@ -90,7 +82,7 @@ class DataLogger(threading.Thread):
             logger.info('Logging process stopped')
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
-            return 
+            return
 
     def __checkPipe(self):
         # Check controller pipe
@@ -161,24 +153,14 @@ class DataLogger(threading.Thread):
         #Resume Logging
         logger.info('Logging resumed')
         self.__paused = self.__pauseLog = False
-        if self.__pausedAt is not None:
-            if (datetime.now() - self.__pausedAt).total_seconds() > self.__tripTimeout:
-                if self.__logName is not None:
-                    self.__save()
-                    self.__dataPipe.send(Message('RESET'))                     # Reset data collector when starting a new trip
-                self.__setName()
-        #else:
         if self.__logName is None:
             self.__setName()
-        self.__pausedAt = None
 
     def __pause(self):
         #Pause logging, thread keeps running
         if not self.__paused:
             logger.info('Logging paused')
             self.__paused = True
-            if self.__pausedAt is None:
-                self.__pausedAt = datetime.now()
 
     def __save(self):
         #Compress the logfile
@@ -192,7 +174,7 @@ class DataLogger(threading.Thread):
             logger.error('Error compressing log file {}'.format(self.__logName))
             self.__logName = None
             return
-        os.remove(self.__logName)
+        os.remove(self.__logName + '.log')
         self.logName = None
 
     def __discard(self):

@@ -15,22 +15,24 @@
 from multiprocessing import Process, Queue
 from messages import Message
 from kpi import *
+from general import *
 from time import sleep
 
 import os, logger
 
 logger = logging.getLogger('root')
 
-PIPE_TIMEOUT = 3                                   # Time in seconds to wait for pipe command responses
+config = loadConfig()
+PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses
 
 class Collector(Process):
 
     def __init__(self,
-                             ecuPipe,              # Pipe to ECU process
-                             controlPipe,          # Pipe to controlling application
-                             logPipe,              # Pipe to Logger process
-                             workerPipe,           # Pipe to Worker process
-                             que):                 # Result que
+                 ecuPipe,                          # Pipe to ECU process
+                 controlPipe,                      # Pipe to controlling application
+                 logPipe,                          # Pipe to Logger process
+                 workerPipe,                       # Pipe to Worker process
+                 que):                             # Result que
 
         super(Collector,self).__init__()
         self.__results = que
@@ -119,15 +121,15 @@ class Collector(Process):
             data[d]['MIN'] = self.__data[d].min
             data[d]['MAX'] = self.__data[d].max
             if type(data[d]['VAL']) in [float, int]:
-                data[d]['AVG'] = self.__data[d].avg()
-                data[d]['SUM'] = self.__data[d].sum()
+                data[d]['AVG'] = self.__data[d].avg
+                data[d]['SUM'] = self.__data[d].sum
         return data
 
     def __sum(self, m):
-        return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
+        return self.__data[m['NAME']].sum
 
     def __avg(self, m):
-        return self.__data[m['NAME']].sum(m['OFFSET'], m['LENGTH'])
+        return self.__data[m['NAME']].avg
 
     def __min(self, m):
         return self.__data[m['NAME']].min
@@ -149,12 +151,17 @@ class Collector(Process):
         # now add calculates data fields
 
         #self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp)
+        if 'ENGINE_LOAD' in self.__data:
+
+            self.__data['FAM'] =             KPI(FUNCTION = FAM,
+                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
+
         if 'MAF' in self.__data and \
-           'ENGINE_LOAD' in self.__data:
+           'FAM' in self.__data:
 
                 self.__data['LPS'] =         KPI(FUNCTION = LPS,
                                                  MAF = self.__data['MAF'],
-                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
+                                                 FAM = self.__data['FAM'])
                 self.__data['LPH'] =         KPI(FUNCTION = LPH,
                                                  LPS = self.__data['LPS'])
 
@@ -194,14 +201,6 @@ class Collector(Process):
             self.__data['OBD_DISTANCE'] =    KPI(FUNCTION = OBDdistance,
                                                  DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
 
-        # Add KPIs for GPS info should it be enabled
-        self.__data['LATITUDE'] = KPI()
-        self.__data['LONGITUDE'] = KPI()
-        self.__data['ALTITUDE'] = KPI()
-        self.__data['HEADING'] = KPI()
-        self.__data['GPS_SPEED'] = KPI()
-        self.__data['CLIMB'] = KPI()
-
         self.__ready = True
         self.__dirty = False
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
@@ -238,12 +237,12 @@ class Collector(Process):
     def __summary(self):
         d=dict()
         d['DATE'] = datetime.now() #self.__data['TIMESTAMP'].min
-        d['AVG_LP100K'] = self.__data['LP100K'].avg()
-        d['DISTANCE'] = self.__data['DISTANCE'].sum()
-        d['AVG_SPEED'] = self.__data['SPEED'].avg()
-        d['FUEL'] = self.__data['LPS'].sum()
-        d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg()
-        d['DURATION'] = self.__data['DURATION'].sum()
-        d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum()
+        d['AVG_LP100K'] = self.__data['LP100K'].avg
+        d['DISTANCE'] = self.__data['DISTANCE'].sum
+        d['AVG_SPEED'] = self.__data['SPEED'].avg
+        d['FUEL'] = self.__data['LPS'].sum
+        d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg
+        d['DURATION'] = self.__data['DURATION'].sum
+        d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum
         return d
 

@@ -4,6 +4,7 @@ from general import *
 from monitor import Monitor
 from logger import DataLogger
 import sys, logging
+
 logger = logging.getLogger('root')
 logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
 file_handler = logging.FileHandler('./'+logName) # sends output to file
@@ -17,25 +18,14 @@ lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
 snapshot=dict()
 
-OBD_PORT = '/dev/ttyUSB0'
-OBD_BAUD = 38400
-
-SETTINGS_PATH = './settings/'
-LOG_PATH = './logs/'
-TANK_CAPACITY = 53.0
-IDLE_SCREEN_TIME = 10
-ODOMETER = 66482.0
-TRIP_TIMEOUT = 900
-
-GPS_ENABLE = False
-
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
+    global config
 
     os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
-    if screentime.seconds>=IDLE_SCREEN_TIME:
+    if screentime.seconds>=config.getfloat('Application', 'Idle Screen Time'):
         currentIdleScreen+=1
         lastScreenUpdate=datetime.now()
     if currentIdleScreen>2:
@@ -71,7 +61,7 @@ def printHistory():
     sys.stdout.write('         Avg. Speed: {:8.2f} '.format(sum(history['AVG_SPEED'])/len(history['AVG_SPEED'])))
     sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(history['AVG_LP100K'])/len(history['AVG_LP100K'])))
     sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(history['DISTANCE'])))
-    sys.stdout.write('           Odometer: {:8,.0f} '.format(sum(history['DISTANCE'])+ODOMETER))
+    sys.stdout.write('           Odometer: {:8,.0f} '.format(sum(history['DISTANCE'])+config.getfloat('Vehicle', 'Odometer')))
     sys.stdout.write('      Fuel Consumed: {:8,.2f} '.format(sum(history['FUEL'])))
     sys.stdout.write('   Avg. Engine Load: {:8.2f} '.format(sum(history['AVG_LOAD'])/len(history['AVG_LOAD'])))
     sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(history['DURATION']))))
@@ -84,11 +74,13 @@ def printTank():
     sys.stdout.write('         Avg. Speed: {:8.2f} '.format(sum(tank['AVG_SPEED'])/len(tank['AVG_SPEED'])))
     sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
     sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(tank['DISTANCE'])))
-    sys.stdout.write('           Est. DTE: {:8.1f} '.format((TANK_CAPACITY-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
+    if sum(tank['AVG_LP100K']) > 0:
+        sys.stdout.write('           Est. DTE: {:8.1f} '.format((config.getfloat('Vehicle', 'Tank Capacity')-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
     sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(sum(tank['FUEL'])))
     sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(tank['DURATION']))))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
+
 
 def paintFullTable():
     os.system('clear')
@@ -96,12 +88,12 @@ def paintFullTable():
     sys.stdout.write(' Speed :     /    /          :')
     sys.stdout.write('   RPM :          /          :')
     sys.stdout.write('   LPH :          /          :')
-    sys.stdout.write(' Boost :          /          :')
+    sys.stdout.write('   FAM :          /          :')
     sys.stdout.write('  Load :          /          :')
     sys.stdout.write('   MAF :          /          :')
     sys.stdout.write('  Trip :                     :')
     sys.stdout.write('  Time :          /          :')
-    sys.stdout.write('  Fuel :                     :')
+    sys.stdout.write('  Fuel :          /          :')
     sys.stdout.write('  Gear :          /          :')
     sys.stdout.flush()
 
@@ -111,50 +103,65 @@ def printFullTable(d):
             printxy(1,10,'{:4.0f}'.format(d['SPEED']['VAL']))
             printxy(1,15,'{:4.0f}'.format(d['SPEED']['MAX']))
             printxy(1,20,'{:9.2f}'.format(d['SPEED']['AVG']))
+
             if d['SPEED']['VAL'] == 0:
                 if 'LPH' in d:
                     if d['LPH']['VAL'] is not None:
-                        printxy(3, 1, '   LPH :')
+                        printxy(3, 1, '   LPH')
                         printxy(3, 10, '{:9,.3f}'.format(d['LPH']['VAL']))
                         printxy(3, 20, '{:9,.3f}'.format(d['LPH']['AVG']))
             else:
                 if 'LP100K' in d:
                     if d['LP100K']['VAL'] is not None:
-                        printxy(3, 1, 'LP100K :')
+                        printxy(3, 1, 'LP100K')
                         printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['VAL']))
                         printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['AVG']))
+
     if 'RPM' in d:
         if d['RPM']['VAL'] is not None:
             printxy(2 ,10, '{:9,.0f}'.format(d['RPM']['VAL']))
             printxy(2, 20, '{:9,.0f}'.format(d['RPM']['MAX']))
-    if 'BOOST_PRESSURE' in d:
-        if d['BOOST_PRESSURE']['VAL'] is not None:
-            printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
-            printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
+
+#    if 'BOOST_PRESSURE' in d:
+#        if d['BOOST_PRESSURE']['VAL'] is not None:
+#            printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
+#            printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
+
+    if 'FAM' in d:
+        if d['FAM']['VAL'] is not None:
+            printxy(4, 10, '{:9.2f}'.format(d['FAM']['VAL']))
+            printxy(4, 20, '{:9.2f}'.format(d['FAM']['MAX']))
+
     if 'ENGINE_LOAD' in d:
         if d['ENGINE_LOAD']['VAL'] is not None:
             printxy(5, 10, '{:9.2f}'.format(d['ENGINE_LOAD']['VAL']))
             printxy(5, 20, '{:9.2f}'.format(d['ENGINE_LOAD']['MAX']))
+
 #    if 'COOLANT_TEMP' in d:
 #        if d['COOLANT_TEMP']['VAL'] is not None:
 #            printxy(6, 10, '{:9}'.format(d['COOLANT_TEMP']['VAL']))
 #            printxy(6, 20, '{:9}'.format(d['COOLANT_TEMP']['MAX']))
+
     if 'MAF' in d:
         if d['MAF']['VAL'] is not None:
-            printxy(6, 10, '{:9}'.format(d['MAF']['VAL']))
-            printxy(6, 20, '{:9}'.format(d['MAF']['AVG']))
+            printxy(6, 10, '{:9.2f}'.format(d['MAF']['VAL']))
+            printxy(6, 20, '{:9.2f}'.format(d['MAF']['AVG']))
+
     if 'DISTANCE' in d:
         if d['DISTANCE']['VAL'] is not None:
             printxy(7, 10, '{:9,.2f}'.format(d['DISTANCE']['SUM']))
+
     if 'DURATION' in d and 'IDLE_TIME' in d:
         if d['DURATION']['VAL'] is not None and \
            d['IDLE_TIME']['VAL'] is not None:
             printxy(8, 10, '{:>9}'.format(formatSeconds(d['DURATION']['SUM'])))
             printxy(8, 20, '{:>9}'.format(formatSeconds(d['IDLE_TIME']['SUM'])))
+
     if 'LPS' in d:
         if d['LPS']['VAL'] is not None:
             printxy(9, 10, '{:9.2f}'.format(d['LPS']['SUM']))
             printxy(9, 20, '{:9.2f}'.format(d['LPS']['VAL']))
+
     if 'GEAR' in d:
         if d['GEAR']['VAL'] is not None and \
            d['DRIVE_RATIO']['VAL'] is not None:
@@ -168,44 +175,31 @@ if __name__ == '__main__':
     history = dict()
     tank = dict()
 
-    #obd.logger.setLevel(obd.logging.DEBUG)
+    config = loadConfig()
 
     try:
 
-        tripstats = readLastTrip(SETTINGS_PATH + 'LastTrip.csv')
-        history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
-        tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
+        tripstats = readLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv')
+        history = readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
+        if history is None: history = blankHist()
+        tank = readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
+        if tank is None: tank = blankHist()
 
-        ecu = Monitor(OBD_PORT,OBD_BAUD)
+        ecu = Monitor(config.get('Application', 'OBD Port'),
+                      config.get('Application', 'OBD Baud'))
 
-        ecu.gpsEnable = GPS_ENABLE
+        ecu.logPath(config.get('Application', 'LogPath'))
+        logHeadings = config.get('Application', 'Log Headings').split(',')
 
-        ecu.logPath(LOG_PATH)
-        logHeadings = ['TIMESTAMP','RPM','SPEED','DISTANCE','OBD_DISTANCE',
-                       'LP100K','LPS','LPH','MAF','ENGINE_LOAD',
-                       'BAROMETRIC_PRESSURE','INTAKE_PRESSURE','BOOST_PRESSURE',
-                       'DISTANCE_SINCE_DTC_CLEAR','COOLANT_TEMP','DURATION',
-                       'IDLE_TIME','EGR_ERROR','COMMANDED_EGR','DISTANCE_W_MIL',
-                       'WARMUPS_SINCE_DTC_CLEAR','DRIVE_RATIO','GEAR']
+        ecu.gpsEnabled = config.getboolean('Application','GPS Enabled')
 
-        ecu.addQue('HI',10)
-        ecu.addQue('MED',1)
-        ecu.addQue('LOW',0.1)
-        ecu.addQue('ONCE',1)
-
-        ecu.deleteAfterPoll('ONCE',True)
-
-        Commands = {'HI'  : ['RPM','SPEED','MAF','ENGINE_LOAD'],
-                    'MED' : ['BAROMETRIC_PRESSURE','INTAKE_PRESSURE','COOLANT_TEMP'],
-                    'LOW' : ['DISTANCE_SINCE_DTC_CLEAR','DISTANCE_W_MIL','COMMANDED_EGR',
-                             'EGR_ERROR'],
-                    'ONCE' : ['WARMUPS_SINCE_DTC_CLEAR']}
-
-        for q in Commands:
-            for c in Commands[q]:
-                ecu.addCommand(q, c)
-
-        ecu.gpsEnable = GPS_ENABLE
+        for q in config.get('Application', 'Queues').split(','):
+            ecu.addQue(q, config.getfloat('Queue {}'.format(q), 'Frequency'))
+            if config.has_option('Queue {}'.format(q), 'Delete After Poll'):
+                ecu.deleteAfterPoll(q, config.getboolean('Queue {}'.format(q), 'Delete After Poll'))
+            if config.has_option('Queue {}'.format(q), 'Commands'):
+                for c in config.get('Queue {}'.format(q), 'Commands').split(','):
+                    ecu.addCommand(q, c)
 
         logger.debug('Starting...')
 
@@ -216,24 +210,31 @@ if __name__ == '__main__':
                 if not journey:
                     journey=True
                     paintFullTable()
-                    l = ecu.getQueCommands('ONCE')
-                    for c in Commands['ONCE']:                          # Add all the ONCE commands back into the ONCE que if they do not already exist
-                        if c not in l:
-                            ecu.addCommand('ONCE',c)
+                    for q in config.get('Application', 'Queues').split(','):
+                        if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
+                           config.has_option('Queue {}'.format(q), 'Commands'):
+                            for c in config.get('Queue {}'.format(q), 'Commands').split(','):
+                                ecu.addCommand(q, c)
                     sc = None
                     while sc is None:
                         sc = ecu.supportedcommands()
                         sleep(0.01)
-                    for c in sc:
-                        if c not in ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE'] + Commands['HI'] + Commands['MED'] + Commands['LOW'] + Commands['ONCE']:
-                            Commands['LOW'].append(c)
-                            ecu.addCommand('LOW',c)                     # Add all supported commands that arent already in a que to the LOW que
-                            logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
-                    ecu.addLogHeadings(logHeadings)
+
+                    if config.getboolean('Application', 'Log Extra Data'):
+                        loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
+                        for q in config.get('Application', 'Queues').split(','):
+                            loadedCommands.append(config.get('Queue {}'.format(q),'Commands').split(','))
+                        for q in config.get('Application', 'Queues').split(','):
+                            if config.has_option('Queue {}'.format(q), 'Default Queue'):
+                                for c in sc:
+                                    if c not in loadedCommands:
+                                        ecu.addCommand(q,c)                     # Add all supported commands that arent already in a que to the LOW que
+                                        logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
+                    ecu.logHeadings(logHeadings)
                     ecu.resume()
                 logger.info(ecu.status())
                 printFullTable(ecu.snapshot)
-                sleep(0.25)
+                sleep(config.getfloat('Application', 'Busy Screen Time'))
             while not ecu.isConnected():
                 if journey:
                     journey=False
@@ -243,15 +244,17 @@ if __name__ == '__main__':
                         ecu.discard()
                     else:
                         tripstats = ecu.summary
+                        writeLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv', tripstats)
                 if disconnected is not None:
-                    if (datetime.now()-disconnected).total_seconds() > TRIP_TIMEOUT:
+                    if (datetime.now()-disconnected).total_seconds() > config.getfloat('Application', 'Trip Timeout'):
+                        ecu.save()
                         logger.info('Finalising trip....')
-                        writeTripHistory(SETTINGS_PATH + 'TripHistory.csv', tripstats)
-                        writeTripHistory(SETTINGS_PATH + 'TankHistory.csv', tripstats)
-                        writeLastTrip(SETTINGS_PATH + 'LastTrip.csv', tripstats)
-                        history=readCSV(SETTINGS_PATH + 'TripHistory.csv')
-                        tank=readCSV(SETTINGS_PATH + 'TankHistory.csv')
-                        disconnected=None
+                        writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
+                        writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
+                        history=readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
+                        tank=readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
+                        disconnected = None
+                        ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()

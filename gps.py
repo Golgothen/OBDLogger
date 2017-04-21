@@ -3,7 +3,7 @@ from time import sleep, time
 from messages import Message
 from gps import *
 
-import logging, os, obd #, _thread
+import logging, os
 
 logger = logging.getLogger('root')
 
