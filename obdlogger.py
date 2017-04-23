@@ -101,7 +101,7 @@ def printFullTable(d):
         if d['SPEED']['VAL'] is not None:
             printxy(1,10,'{:4.0f}'.format(d['SPEED']['VAL']))
             printxy(1,15,'{:4.0f}'.format(d['SPEED']['MAX']))
-            printxy(1,20,'{:9.2f}'.format(d['SPEED']['AVG']))
+            printxy(1,20,d['SPEED'].format.format(d['SPEED']['AVG']))
 
             if d['SPEED']['VAL'] == 0:
                 if 'LPH' in d:

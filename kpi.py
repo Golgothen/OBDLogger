@@ -11,9 +11,18 @@ class KPI(object):
     def __init__(self,**kwargs):
         self.__parameters = dict()
         self.__func = None
+        self.__format = '{:9,.2f}'
+        self.__screen = None
+        self.__log = None
         for k in kwargs:
             if k == 'FUNCTION':
                 self.__func = kwargs[k]
+            elif k == 'SCREEN':
+                self.__screen = kwargs[k]
+            elif k == 'FORMAT':
+                self.__format = kwargs[k]
+            elif k == 'LOG':
+                self.__log = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
         self.__min = None
@@ -23,6 +32,41 @@ class KPI(object):
         self.__count = 0
         self.__val = None
         self.__age = None
+
+    @property
+    def format(self):
+        try:
+            return self.__format.format(self.__val)
+        except (ValueError, TypeError):
+            return None
+
+    @format.setter
+    def format(self, v):
+        self.__format = v
+
+    @property
+    def screen(self):
+        return self.__screen
+
+    @screen.setter
+    def screen(self, v):
+        self.__screen = v
+
+    @property
+    def log(self):
+        if self.__log == 'MAX':
+            return self.__format.format(self.max)
+        if self.__log == 'MIN':
+            return self.__format.format(self.min)
+        if self.__log == 'SUM':
+            return self.__format.format(self.sum)
+        if self.__log == 'AVG':
+            return self.__format.format(self.avg)
+        return self.__format.format(self.val)
+
+    @log.setter
+    def log(self, v):
+        self.__log = v
 
     @property # Getter
     def val(self):

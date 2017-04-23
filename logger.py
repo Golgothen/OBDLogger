@@ -61,7 +61,7 @@ class DataLogger(threading.Thread):
                         else:
                             if l in self.__data:
                                 if self.__data[l]['VAL'] is not None:
-                                    line += str(self.__data[l]['VAL']) + ','
+                                    line += str(self.__data[l]['LOG']) + ','
                                 else:
                                     line += '-,'
                                     logger.debug('{} is none'.format(l))

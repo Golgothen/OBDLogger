@@ -120,6 +120,7 @@ class Collector(Process):
             data[d]['VAL'] = self.__data[d].val
             data[d]['MIN'] = self.__data[d].min
             data[d]['MAX'] = self.__data[d].max
+            data[d]['LOG'] = self.__data[d].log
             if type(data[d]['VAL']) in [float, int]:
                 data[d]['AVG'] = self.__data[d].avg
                 data[d]['SUM'] = self.__data[d].sum
@@ -148,6 +149,7 @@ class Collector(Process):
             return
         for f in supportedcommands:
             self.__data[f] = KPI()
+
         # now add calculates data fields
 
         #self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp)
@@ -200,6 +202,20 @@ class Collector(Process):
 
             self.__data['OBD_DISTANCE'] =    KPI(FUNCTION = OBDdistance,
                                                  DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
+
+        # Alter a few data fields for logging
+        if 'DISTANCE' in self.__data:
+            self.__data['DISTANCE'].log = 'SUM'
+
+        # Set custom formats. Default format is {:9,.2f}
+        for d in self.__data:
+            if d in ['LPH','LP100K']:
+                self.__data[d].format = '{:9,.3f}'
+            if d in ['RPM','COOLANT_TEMP']:
+                self.__data[d].format = '{:9,.0f}'
+            if d in ['GEAR', 'DURATION', 'IDLE_TIME']:
+                self.__data[d].format = '{:>9}'
+
 
         self.__ready = True
         self.__dirty = False

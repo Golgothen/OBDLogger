@@ -118,6 +118,7 @@ def loadDefaults():
     config = ConfigParser()
     config.add_section('Application')
     config.add_section('Vehicle')
+    config.add_section('Data Screen')
 
     config.set('Application','LogPath','./logs/')
     config.set('Application','Log Frequency','1')
@@ -157,6 +158,17 @@ def loadDefaults():
     config.set('Queue Once','Commands','WARMUPS_SINCE_DTC_CLEAR')
     config.set('Queue Once','Delete After Poll','True')
     config.set('Queue Once','Reconfigure on Restart','True')
+
+    config.set('Data Screen','Line 1','SPEED')
+    config.set('Data Screen','Line 2','RPM')
+    config.set('Data Screen','Line 3','LP100K')
+    config.set('Data Screen','Line 4','FAM')
+    config.set('Data Screen','Line 5','ENGINE_LOAD')
+    config.set('Data Screen','Line 6','MAF')
+    config.set('Data Screen','Line 7','DISTANCE')
+    config.set('Data Screen','Line 8','DURATION')
+    config.set('Data Screen','Line 9','LPS')
+    config.set('Data Screen','Line 10','GEAR')
 
     return config
 
