@@ -14,8 +14,14 @@ class KPI(object):
         self.__func = None
         self.__screen = None
         self.__log = None
-        self.__defaultfmt = FMT() # Default format is {:>9,.2f}
         self.__formats = dict()
+        self.__values = dict()
+        self.__values['VAL'] = None
+        self.__values['MIN'] = None
+        self.__values['MAX'] = None
+        self.__values['SUM'] = 0
+        self.__values['AVG'] = 0
+
         for k in kwargs:
             if k == 'FUNCTION':
                 self.__func = kwargs[k]
@@ -23,83 +29,16 @@ class KPI(object):
                 self.__screen = kwargs[k]
             elif k == 'LOG':
                 self.__log = kwargs[k]
-            elif k == 'LOGFMT':
-                self.__formats['LOG'] = kwargs[k]
-            elif k == 'MINFMT':
-                self.__formats['MIN'] = kwargs[k]
-            elif k == 'MAXFMT':
-                self.__formats['MAX'] = kwargs[k]
-            elif k == 'AVGFMT':
-                self.__formats['AVG'] = kwargs[k]
-            elif k == 'SUMFMT':
-                self.__formats['SUM'] = kwargs[k]
-            elif k == 'VALFMT':
-                self.__formats['LOG'] = kwargs[k]
+            elif k[:4] == 'FMT_':
+                self.__formats[k] = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
 
-        self.__min = None
-        self.__max = None
-        self.__sum = 0.0
-        self.__avg = 0.0
+        for f in self.__values:
+            if f not in self.__formats:
+                self.__formats[f] = FMT()
         self.__count = 0
-        self.__val = None
         self.__age = None
-
-    def __call__(self, f):
-        if f == 'MIN':
-            return self.__format(self.__min)
-        if f == 'MAX':
-            return self.__format(self.__max)
-        if f == 'VAL':
-            return self.__format(self.__val)
-        if f == 'AVG':
-            return self.__format(self.__avg)
-        if f == 'SUM':
-            return self.__format(self.__sum)
-
-
-    @property
-    def format(self):
-        return self.__format.fmtstr
-
-    @format.setter
-    def format(self, **kwargs):
-        for k in kwargs:
-            if k == 'FUNCTION':
-                self.__func = kwargs[k]
-                continue
-            if k == 'SCREEN':
-                self.__screen = kwargs[k]
-                continue
-            if k == 'LOG':
-                self.__log = kwargs[k]
-                continue
-            if k == 'LENGTH':
-                self.__length = kwargs[k]
-                continue
-            if k == 'PRECISION':
-                self.__precision = kwargs[k]
-                continue
-            if k == 'TYPE':
-                self.__type = kwargs[k]
-                continue
-            if k == 'ALIGNMENT':
-                self.__alignment = kwargs[k]
-                continue
-            if k == 'COMMAS':
-                self.__commas = kwargs[k]
-                continue
-            if k == 'TRUNCATE':
-                self.__truncate = kwargs[k]
-                continue
-
-        self.__format = FMT(LENGTH    = self.__length,
-                            PRECISION = self.__precision,
-                            TYPE      = self.__type,
-                            ALIGNMENT = self.__alignment,
-                            COMMAS    = self.__commas,
-                            TRUNCATE  = self.__truncate)
 
     @property
     def screen(self):
@@ -111,15 +50,7 @@ class KPI(object):
 
     @property
     def log(self):
-        if self.__log == 'MAX':
-            return self.__format.format(self.max)
-        if self.__log == 'MIN':
-            return self.__format.format(self.min)
-        if self.__log == 'SUM':
-            return self.__format.format(self.sum)
-        if self.__log == 'AVG':
-            return self.__format.format(self.avg)
-        return self.__format.format(self.val)
+        return self.__values[self.__log]
 
     @log.setter
     def log(self, v):
@@ -130,38 +61,38 @@ class KPI(object):
         if self.__func is not None:
             v = self.__func(self.__parameters)
             if v is not None:
-                self.val = v                                     # Trigger the setter
-        if self.__val is not None:
-            return self.__val                                    # __val is the instantaneous value.  It does not take time passed since the last sample into account.
+                self.__values['VAL'] = v                         # Trigger the setter
+        return self.__values['VAL']                              # __val is the instantaneous value.  It does not take time passed since the last sample into account.
 
     @val.setter
     def val(self, v):
+        self.__values['VAL'] = v
         if v is not None:
-            self.__val = v
             self.__count += 1
-            if self.__max is None:
-                self.__max = v
+            if self.__values['[MAX'] is None:
+                self.__values['MAX'] = v
             else:
-                if v > self.__max:
-                    self.__max = v
-            if self.__min is None:
-                self.__min = v
+                if v > self.__values['MAX']:
+                    self.__values['MAX'] = v
+            if self.__values['MIN'] is None:
+                self.___values['MIN'] = v
             else:
-                if v < self.__min:
-                    self.__min = v
-            if type(v) in [float,int]:                           # only number types
-                if self.__age is not None:                       # only calculate time shared value if at least one sample has been taken before
-                    self.__sum += v * (time() - self.__age)      # Cumulative sum of time calculated value for sums
-                self.__avg += v                                  # Cumulative sum of instantaneous values for averaging
-            self.__age = time()                                  # Note the current time
+                if v < self.___values['MIN']:
+                    self.___values['MIN'] = v
+            if type(v) in [float,int]:                                      # only number types
+                if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
+                    self.___values['SUM'] += (v * (time() - self.__age))    # Cumulative sum of time calculated value for sums
+                self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
+                self.__values['AVG'] = self.__avgsum / self.__count
+            self.__age = time()                                             # Note the current time
 
     @property
     def max(self):
-        return self.__max
+        return self.__values['MAX']
 
     @property
     def min(self):
-        return self.__min
+        return self.__values['MIN']
 
     @property
     def len(self):
@@ -169,12 +100,11 @@ class KPI(object):
 
     @property
     def sum(self):
-        return self.__sum
+        return self.__values['SUM']
 
     @property
     def avg(self):
-        if self.__count == 0: return 0
-        else: return self.__avg / self.__count
+        return self.__values['AVG']
 
 # Contants used in calculations
 
