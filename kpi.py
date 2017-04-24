@@ -1,5 +1,6 @@
 from time import time
 from datetime import datetime
+from fmt import FMT
 from general import *
 
 import logging
@@ -11,20 +12,41 @@ class KPI(object):
     def __init__(self,**kwargs):
         self.__parameters = dict()
         self.__func = None
-        self.__format = '{:9,.2f}'
         self.__screen = None
         self.__log = None
+        self.__length = 9
+        self.__precision = 2
+        self.__type = 'f'
+        self.__commas = True
+        self.__alignment = '>'
+        self.__truncate = True
         for k in kwargs:
             if k == 'FUNCTION':
                 self.__func = kwargs[k]
             elif k == 'SCREEN':
                 self.__screen = kwargs[k]
-            elif k == 'FORMAT':
-                self.__format = kwargs[k]
             elif k == 'LOG':
                 self.__log = kwargs[k]
+            elif k == 'LENGTH':
+                self.__length = kwargs[k]
+            elif k == 'PRECISION':
+                self.__precision = kwargs[k]
+            elif k == 'TYPE':
+                self.__type = kwargs[k]
+            elif k == 'ALIGNMENT':
+                self.__alignment = kwargs[k]
+            elif k == 'COMMAS':
+                self.__commas = kwargs[k]
+            elif k == 'TRUNCATE':
+                self.__truncate = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
+
+        self.__format = FMT(LENGTH = self.__length,
+                            PRECISION = self.__precision,
+                            TYPE = self.__type,
+                            ALIGNMENT = self.__alignment,
+                            COMMAS = self.__commas)
         self.__min = None
         self.__max = None
         self.__sum = 0.0
