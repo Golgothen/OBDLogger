@@ -14,12 +14,8 @@ class KPI(object):
         self.__func = None
         self.__screen = None
         self.__log = None
-        self.__length = 9
-        self.__precision = 2
-        self.__type = 'f'
-        self.__commas = True
-        self.__alignment = '>'
-        self.__truncate = True
+        self.__defaultfmt = FMT() # Default format is {:>9,.2f}
+        self.__formats = dict()
         for k in kwargs:
             if k == 'FUNCTION':
                 self.__func = kwargs[k]
@@ -27,26 +23,21 @@ class KPI(object):
                 self.__screen = kwargs[k]
             elif k == 'LOG':
                 self.__log = kwargs[k]
-            elif k == 'LENGTH':
-                self.__length = kwargs[k]
-            elif k == 'PRECISION':
-                self.__precision = kwargs[k]
-            elif k == 'TYPE':
-                self.__type = kwargs[k]
-            elif k == 'ALIGNMENT':
-                self.__alignment = kwargs[k]
-            elif k == 'COMMAS':
-                self.__commas = kwargs[k]
-            elif k == 'TRUNCATE':
-                self.__truncate = kwargs[k]
+            elif k == 'LOGFMT':
+                self.__formats['LOG'] = kwargs[k]
+            elif k == 'MINFMT':
+                self.__formats['MIN'] = kwargs[k]
+            elif k == 'MAXFMT':
+                self.__formats['MAX'] = kwargs[k]
+            elif k == 'AVGFMT':
+                self.__formats['AVG'] = kwargs[k]
+            elif k == 'SUMFMT':
+                self.__formats['SUM'] = kwargs[k]
+            elif k == 'VALFMT':
+                self.__formats['LOG'] = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
 
-        self.__format = FMT(LENGTH = self.__length,
-                            PRECISION = self.__precision,
-                            TYPE = self.__type,
-                            ALIGNMENT = self.__alignment,
-                            COMMAS = self.__commas)
         self.__min = None
         self.__max = None
         self.__sum = 0.0
@@ -55,16 +46,60 @@ class KPI(object):
         self.__val = None
         self.__age = None
 
+    def __call__(self, f):
+        if f == 'MIN':
+            return self.__format(self.__min)
+        if f == 'MAX':
+            return self.__format(self.__max)
+        if f == 'VAL':
+            return self.__format(self.__val)
+        if f == 'AVG':
+            return self.__format(self.__avg)
+        if f == 'SUM':
+            return self.__format(self.__sum)
+
+
     @property
     def format(self):
-        try:
-            return self.__format.format(self.__val)
-        except (ValueError, TypeError):
-            return None
+        return self.__format.fmtstr
 
     @format.setter
-    def format(self, v):
-        self.__format = v
+    def format(self, **kwargs):
+        for k in kwargs:
+            if k == 'FUNCTION':
+                self.__func = kwargs[k]
+                continue
+            if k == 'SCREEN':
+                self.__screen = kwargs[k]
+                continue
+            if k == 'LOG':
+                self.__log = kwargs[k]
+                continue
+            if k == 'LENGTH':
+                self.__length = kwargs[k]
+                continue
+            if k == 'PRECISION':
+                self.__precision = kwargs[k]
+                continue
+            if k == 'TYPE':
+                self.__type = kwargs[k]
+                continue
+            if k == 'ALIGNMENT':
+                self.__alignment = kwargs[k]
+                continue
+            if k == 'COMMAS':
+                self.__commas = kwargs[k]
+                continue
+            if k == 'TRUNCATE':
+                self.__truncate = kwargs[k]
+                continue
+
+        self.__format = FMT(LENGTH    = self.__length,
+                            PRECISION = self.__precision,
+                            TYPE      = self.__type,
+                            ALIGNMENT = self.__alignment,
+                            COMMAS    = self.__commas,
+                            TRUNCATE  = self.__truncate)
 
     @property
     def screen(self):
