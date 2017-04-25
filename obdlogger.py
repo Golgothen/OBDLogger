@@ -94,16 +94,19 @@ def printTank():
 #    sys.stdout.write('  Gear :          /          :')
 #    sys.stdout.flush()
 
-def printFullTable(d):
-#    os.system('clear')
+def printFullTable():
+    lines = []
     for l in range(9):
-        if config.get('Data Screen','Line {}'.format(l)) == 'LP100K'
+        if config.get('Data Screen','Line {}'.format(l)) == 'LP100K':
             if ecu.val('SPEED') == 0:
-                sys.stdout.write(ecu.dataLine('LPH'))
+                lines.append(ecu.dataLine('LPH'))
             else:
-                sys.stdout.write(ecu.dataLine('LP100K'))
-        else
-            sys.stdout.write(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
+                lines.append(ecu.dataLine('LP100K'))
+        else:
+            lines.append(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
+    os.system('clear')
+    for l in lines:
+        sys.stdout.write(l)
     sys.stdout.flush()
 
 if __name__ == '__main__':
@@ -168,7 +171,7 @@ if __name__ == '__main__':
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
                 logger.info(ecu.status())
-                printFullTable(ecu.snapshot)
+                printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
             while not ecu.isConnected():
                 if journey:

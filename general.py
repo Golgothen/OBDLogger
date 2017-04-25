@@ -180,7 +180,7 @@ def loadDefaults():
     config.set('Data Layout','MAF',           '   MAF : MAF.VAL/MAF.AVG :')
     config.set('Data Layout','BOOST_PRESSURE',' Boost : BOOST_PRESSURE.VAL/BOOST_PRESSURE.MAX :')
     config.set('Data Layout','COOLANT_TEMP',  '  Temp : COOLANT_TEMP.VAL/COOLANT_TEMP.MAX :')
-    config.set('Data Layout','DISTANCE',      '  Trip : DISTANCE.SUM          :')
+    config.set('Data Layout','DISTANCE',      '  Trip : DISTANCE.SUM           :')
     config.set('Data Layout','LPS',           '  Fuel : LPS.SUM/LPS.VAL :')
     config.set('Data Layout','DURATION',      '  Time : DURATION.SUM/IDLE_TIME.SUM :')
     config.set('Data Layout','GEAR',          '  Gear : GEAR.VAL/DRIVE_RATIO.VAL :')

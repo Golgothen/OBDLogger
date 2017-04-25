@@ -118,6 +118,7 @@ class KPI(object):
         if f == 'LOG':
             return self.__formats['LOG'](self.__values[self.__log])
         else:
+            self.__values['VAL'] = self.val
             return self.__formats[f](self.__values[f])
 
     def setFormat(self, f, v):

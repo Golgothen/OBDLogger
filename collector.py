@@ -158,6 +158,8 @@ class Collector(Process):
                                                 )
 
         if 'SPEED' in self.__data:
+            self.__data['SPEED'].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 0))
+            self.__data['SPEED'].setFormat('AVG',FMT(PRECISION = 2))
 
             self.__data['DISTANCE'] =        KPI(FUNCTION = distance,
                                                  SPEED = self.__data['SPEED']
@@ -218,10 +220,8 @@ class Collector(Process):
 
         # Set custom formats. Default format is {:9,.2f}
         for d in self.__data:
-            if d in ['RPM','COOLANT_TEMP','SPEED']:
+            if d in ['RPM','COOLANT_TEMP']:
                 self.__data[d].setFormat('ALL',FMT(PRECISION = 0))
-                if d == 'SPEED':
-                    self.__data[d].setFormat('AVG',FMT(PRECISION = 2))
 
         self.__ready = True
         self.__dirty = False
