@@ -245,6 +245,18 @@ class Monitor():
         if r is not None:
             return r['MAX']
 
+    def val(self, name):
+        self.__dataComm.send(Message('VAL',NAME = name))
+        r = self.__checkDataPipe('VAL', PIPE_TIMEOUT)
+        if r is not None:
+            return r['VAL']
+
+    def dataLine(self, name):
+        self.__dataComm.send(Message('DATALINE',NAME = name))
+        r = self.__checkDataPipe('DATALINE', PIPE_TIMEOUT)
+        if r is not None:
+            return r['LINE']
+
     @property
     def snapshot(self):
         self.__dataComm.send(Message('SNAPSHOT'))

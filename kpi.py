@@ -13,7 +13,7 @@ class KPI(object):
         self.__parameters = dict()
         self.__func = None
         self.__screen = None
-        self.__log = None
+        self.__log = 'VAL'
         self.__formats = dict()
         self.__values = dict()
         self.__values['VAL'] = None
@@ -30,14 +30,22 @@ class KPI(object):
             elif k == 'LOG':
                 self.__log = kwargs[k]
             elif k[:4] == 'FMT_':
-                self.__formats[k] = kwargs[k]
+                if k[4:] == 'ALL':
+                    for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                        self.__formats[f] = kwargs[k]
+                else:
+                    self.__formats[k[4:]] = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
 
         for f in self.__values:
             if f not in self.__formats:
                 self.__formats[f] = FMT()
+        if 'LOG' not in self.__formats:
+            self.__formats['LOG'] = FMT()
+
         self.__count = 0
+        self.__avgsum = 0
         self.__age = None
 
     @property
@@ -50,7 +58,7 @@ class KPI(object):
 
     @property
     def log(self):
-        return self.__values[self.__log]
+        return self.__formats['LOG'](self.__values[self.__log])
 
     @log.setter
     def log(self, v):
@@ -69,19 +77,19 @@ class KPI(object):
         self.__values['VAL'] = v
         if v is not None:
             self.__count += 1
-            if self.__values['[MAX'] is None:
+            if self.__values['MAX'] is None:
                 self.__values['MAX'] = v
             else:
                 if v > self.__values['MAX']:
                     self.__values['MAX'] = v
             if self.__values['MIN'] is None:
-                self.___values['MIN'] = v
+                self.__values['MIN'] = v
             else:
-                if v < self.___values['MIN']:
-                    self.___values['MIN'] = v
+                if v < self.__values['MIN']:
+                    self.__values['MIN'] = v
             if type(v) in [float,int]:                                      # only number types
                 if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
-                    self.___values['SUM'] += (v * (time() - self.__age))    # Cumulative sum of time calculated value for sums
+                    self.__values['SUM'] += (v * (time() - self.__age))    # Cumulative sum of time calculated value for sums
                 self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
                 self.__values['AVG'] = self.__avgsum / self.__count
             self.__age = time()                                             # Note the current time
@@ -105,6 +113,22 @@ class KPI(object):
     @property
     def avg(self):
         return self.__values['AVG']
+
+    def format(self, f):
+        if f == 'LOG':
+            return self.__formats['LOG'](self.__values[self.__log])
+        else:
+            return self.__formats[f](self.__values[f])
+
+    def setFormat(self, f, v):
+        if f == 'ALL':
+            for field in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                self.__formats[field] = v
+        else:
+            if f in self.__formats:
+                self.__formats[f] = v
+            else:
+                raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
 
 # Contants used in calculations
 

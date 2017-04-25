@@ -1,17 +1,3 @@
-################################################################################################
-#                                                                                              #
-#                                                                                              #
-#    Collector class:                                                                          #
-#                                                                                              #
-#    Collects OBD query results from the results que and stores them in the KPI dictionary.    #
-#                                                                                              #
-#    Update History:                                                                           #
-#                                                                                              #
-#    2/4/2017 - Completed multi-process support.                                               #
-#                                                                                              #
-#                                                                                              #
-################################################################################################
-
 from multiprocessing import Process, Queue
 from messages import Message
 from kpi import *
@@ -97,7 +83,9 @@ class Collector(Process):
             if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message, AVG = self.__avg(m.params)))
             if m.message == 'MIN'                : self.__controlPipe.send(Message(m.message, MIN = self.__min(m.params)))
             if m.message == 'MAX'                : self.__controlPipe.send(Message(m.message, MAX = self.__max(m.params)))
+            if m.message == 'VAL'                : self.__controlPipe.send(Message(m.message, VAL = self.__val(m.params)))
             if m.message == 'STATUS'             : self.__controlPipe.send(Message(m.message, STATUS = self.__status()))
+            if m.message == 'DATALINE'           : self.__controlPipe.send(Message(m.message, LINE = self.__dataLine(m.params)))
 
         while self.__loggerPipe.poll():                                             # Loop through all messages on the Logger pipe
             m = self.__loggerPipe.recv()
@@ -117,13 +105,8 @@ class Collector(Process):
         data = dict()
         for d in self.__data:
             data[d] = dict()
-            data[d]['VAL'] = self.__data[d].val
-            data[d]['MIN'] = self.__data[d].min
-            data[d]['MAX'] = self.__data[d].max
-            data[d]['LOG'] = self.__data[d].log
-            if type(data[d]['VAL']) in [float, int]:
-                data[d]['AVG'] = self.__data[d].avg
-                data[d]['SUM'] = self.__data[d].sum
+            for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                data[d][f] = self.__data[d].format(f)
         return data
 
     def __sum(self, m):
@@ -137,6 +120,9 @@ class Collector(Process):
 
     def __max(self, m):
         return self.__data[m['NAME']].max
+
+    def __val(self, m):
+        return self.__data[m['NAME']].val
 
     def __reset(self):
         self.__ready = False
@@ -156,40 +142,61 @@ class Collector(Process):
         if 'ENGINE_LOAD' in self.__data:
 
             self.__data['FAM'] =             KPI(FUNCTION = FAM,
-                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD'])
+                                                 ENGINE_LOAD = self.__data['ENGINE_LOAD']
+                                                )
 
         if 'MAF' in self.__data and \
            'FAM' in self.__data:
 
                 self.__data['LPS'] =         KPI(FUNCTION = LPS,
                                                  MAF = self.__data['MAF'],
-                                                 FAM = self.__data['FAM'])
+                                                 FAM = self.__data['FAM']
+                                                )
                 self.__data['LPH'] =         KPI(FUNCTION = LPH,
-                                                 LPS = self.__data['LPS'])
+                                                 LPS = self.__data['LPS'],
+                                                 FMT_ALL = FMT(PRECISION = 3)
+                                                )
 
         if 'SPEED' in self.__data:
 
             self.__data['DISTANCE'] =        KPI(FUNCTION = distance,
-                                                 SPEED = self.__data['SPEED'])
+                                                 SPEED = self.__data['SPEED']
+                                                )
 
             if 'RPM' in self.__data:
                 self.__data['DRIVE_RATIO'] = KPI(FUNCTION = driveRatio,
                                                  SPEED = self.__data['SPEED'],
-                                                 RPM = self.__data['RPM'])
+                                                 RPM = self.__data['RPM']
+                                                )
                 self.__data['GEAR'] =        KPI(FUNCTION = gear,
-                                                 DRIVE_RATIO = self.__data['DRIVE_RATIO'])
+                                                 DRIVE_RATIO = self.__data['DRIVE_RATIO'],
+                                                 FMT_ALL = FMT(TYPE = 's',
+                                                               ALIGNMENT = '>'
+                                                              )
+                                                )
                 self.__data['IDLE_TIME'] =   KPI(FUNCTION = idleTime,
                                                  SPEED = self.__data['SPEED'],
-                                                 RPM = self.__data['RPM'])
+                                                 RPM = self.__data['RPM'],
+                                                 FMT_ALL = FMT(TYPE = 's',
+                                                               ALIGNMENT = '>'
+                                                              )
+                                                )
 
             if 'LPH' in self.__data:
                 self.__data['LP100K'] =      KPI(FUNCTION = LP100K,
                                                  SPEED = self.__data['SPEED'],
-                                                 LPH = self.__data['LPH'])
+                                                 LPH = self.__data['LPH'],
+                                                 FMT_ALL = FMT(PRECISION = 3)
+                                                )
 
         if 'RPM' in self.__data:
             self.__data['DURATION'] =        KPI(FUNCTION = duration,
-                                                 RPM = self.__data['RPM'])
+                                                 RPM = self.__data['RPM'],
+                                                 FMT_ALL = FMT(TYPE = 's',
+                                                               ALIGNMENT = '>'
+                                                              )
+
+                                                )
 
         if 'BAROMETRIC_PRESSURE' in self.__data and \
            'INTAKE_PRESSURE' in self.__data:
@@ -201,7 +208,9 @@ class Collector(Process):
         if 'DISTANCE_SINCE_DTC_CLEAR' in self.__data:
 
             self.__data['OBD_DISTANCE'] =    KPI(FUNCTION = OBDdistance,
-                                                 DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'])
+                                                 DISTANCE_SINCE_DTC_CLEAR = self.__data['DISTANCE_SINCE_DTC_CLEAR'],
+                                                 FMT_ALL = FMT(PRECISION = 0)
+                                                )
 
         # Alter a few data fields for logging
         if 'DISTANCE' in self.__data:
@@ -209,13 +218,10 @@ class Collector(Process):
 
         # Set custom formats. Default format is {:9,.2f}
         for d in self.__data:
-            if d in ['LPH','LP100K']:
-                self.__data[d].format = '{:9,.3f}'
-            if d in ['RPM','COOLANT_TEMP']:
-                self.__data[d].format = '{:9,.0f}'
-            if d in ['GEAR', 'DURATION', 'IDLE_TIME']:
-                self.__data[d].format = '{:>9}'
-
+            if d in ['RPM','COOLANT_TEMP','SPEED']:
+                self.__data[d].setFormat('ALL',FMT(PRECISION = 0))
+                if d == 'SPEED':
+                    self.__data[d].setFormat('AVG',FMT(PRECISION = 2))
 
         self.__ready = True
         self.__dirty = False
@@ -261,4 +267,17 @@ class Collector(Process):
         d['DURATION'] = self.__data['DURATION'].sum
         d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum
         return d
+
+    def __dataLine(self, m):
+        try:
+            temp = config.get('Data Layout',m['NAME'])
+        except (configparser.NoOptionError):
+            return None
+        for d in self.__data:
+            for f in ['VAL','MIN','MAX','SUM','AVG','LOG']:
+                if '{}.{}'.format(d,f) in temp:
+                    temp=temp.replace('{}.{}'.format(d,f),
+                                      '{}'.format(self.__data[d].format(f)))
+        return temp
+
 

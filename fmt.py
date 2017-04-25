@@ -1,6 +1,6 @@
 class FMT():
 
-    def __init__(self, **kwargs)
+    def __init__(self, **kwargs):
         # Set the defaults
         self.length = 9
         self.precision = 2
@@ -22,18 +22,17 @@ class FMT():
                 self.commas = kwargs[k]
             if k == 'TRUNCATE':
                 self.truncate = kwargs[k]
+        if self.type == 's':
+            self.commas = False
+            self.precision = None
+        else:
+            self.alignment = None
 
     @property
     def fmtstr(self):
         str = '{:'
         if self.type == 's':
-            self.commas = False
             str += self.alignment
-            self.precision = None
-        else:
-            self.commas = commas
-            self.precision = precision
-            self.alignment = None
         str += '{}'.format(self.length)
         if self.commas:
             str+=','
@@ -45,6 +44,8 @@ class FMT():
         return str
 
     def __call__(self, v):
+        if v is None:
+            return ' ' * self.length
         tmp = self.fmtstr.format(v)
         #print(self.fmtstr)
         if len(tmp) > self.length\
@@ -72,6 +73,6 @@ class FMT():
         return FMT(LENGTH = self.length,
                    PRECISION = self.precision,
                    TYPE = self.type,
-                   ALIGNMENT = self.alignment
+                   ALIGNMENT = self.alignment,
                    COMMAS = self.commas,
                    TRUNCATE = self.truncate)
