@@ -56,18 +56,15 @@ class DataLogger(threading.Thread):
                     line=''
                     logger.debug('Recording data')
                     for l in self.__logHeadings:
-                        if l == 'TIMESTAMP':
-                            line += str(datetime.now()) + ','
-                        else:
-                            if l in self.__data:
-                                if self.__data[l]['VAL'] is not None:
-                                    line += str(self.__data[l]['LOG']) + ','
-                                else:
-                                    line += '-,'
-                                    logger.debug('{} is none'.format(l))
+                        if l in self.__data:
+                            if self.__data[l]['VAL'] is not None:
+                                line += str(self.__data[l]['LOG']) + ','
                             else:
-                                logger.debug('{} is not in snapshot'.format(l))
                                 line += '-,'
+                                logger.debug('{} is none'.format(l))
+                        else:
+                            logger.debug('{} is not in snapshot'.format(l))
+                            line += '-,'
                     with open(self.__logName + '.log','ab') as f:
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
                     self.__refreshRequired = True

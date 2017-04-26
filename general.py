@@ -11,7 +11,7 @@ def formatSeconds(d):
     hours, remainder = divmod(d, 3600)
     minutes, seconds = divmod(remainder, 60)
     if hours > 99:
-        days,hours = divmod(hours, 24)
+        days,hours = divmod(hours, 99)
         return '{:02.0f}d{:02.0f}:{:02.0f}'.format(days, hours, minutes)
     return '{:02.0f}:{:02.0f}:{:02.0f}'.format(hours, minutes, seconds)
 

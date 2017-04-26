@@ -1,3 +1,5 @@
+from general import *
+
 class FMT():
 
     def __init__(self, **kwargs):
@@ -31,23 +33,29 @@ class FMT():
     @property
     def fmtstr(self):
         str = '{:'
-        if self.type == 's':
+        if self.type in ['s','d','t']:
             str += self.alignment
         str += '{}'.format(self.length)
         if self.commas:
             str+=','
         if self.precision is not None:
             str += '.{}'.format(self.precision)
-        if self.type != 's':
+        if self.type not in ['s','t','d']:
             str+='{}'.format(self.type)
         str += '}'
         return str
 
     def __call__(self, v):
-        if v is None:
+        if v is None:                                         # Null values
             return ' ' * self.length
-        tmp = self.fmtstr.format(v)
-        #print(self.fmtstr)
+        if self.type == 'd' and type(v) is datetime:          # Dates
+            tmp = v.strftime(self.precision)
+            return self.fmtstr.format(tmp)                    # Return it immediately. No firther processing required
+        elif self.type == 't':                                # Time counters
+            tmp = formatSeconds(v)
+            return self.fmtstr.format(tmp)                    # Return it immediately. No further processing required
+        else:                                                 # everything else
+            tmp = self.fmtstr.format(v)
         if len(tmp) > self.length\
            and self.precision is not None\
            and self.truncate:                                 # String is too long.  See if we can drop some precision to get it to fit
@@ -68,11 +76,3 @@ class FMT():
             self.precision = p
             self.commas = c
         return tmp
-
-    def clone(self):
-        return FMT(LENGTH = self.length,
-                   PRECISION = self.precision,
-                   TYPE = self.type,
-                   ALIGNMENT = self.alignment,
-                   COMMAS = self.commas,
-                   TRUNCATE = self.truncate)

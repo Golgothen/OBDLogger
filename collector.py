@@ -138,7 +138,11 @@ class Collector(Process):
 
         # now add calculates data fields
 
-        #self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp)
+        self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp,
+                                       FMT_ALL = FMT(TYPE = 'd',
+                                                     PRECISION = '%Y/%m/%d %H:%M:%S')
+                                      )
+
         if 'ENGINE_LOAD' in self.__data:
 
             self.__data['FAM'] =             KPI(FUNCTION = FAM,
@@ -179,7 +183,7 @@ class Collector(Process):
                 self.__data['IDLE_TIME'] =   KPI(FUNCTION = idleTime,
                                                  SPEED = self.__data['SPEED'],
                                                  RPM = self.__data['RPM'],
-                                                 FMT_ALL = FMT(TYPE = 's',
+                                                 FMT_ALL = FMT(TYPE = 't',
                                                                ALIGNMENT = '>'
                                                               )
                                                 )
@@ -194,7 +198,7 @@ class Collector(Process):
         if 'RPM' in self.__data:
             self.__data['DURATION'] =        KPI(FUNCTION = duration,
                                                  RPM = self.__data['RPM'],
-                                                 FMT_ALL = FMT(TYPE = 's',
+                                                 FMT_ALL = FMT(TYPE = 't',
                                                                ALIGNMENT = '>'
                                                               )
 
