@@ -231,11 +231,11 @@ def gear(p):
     if 'DRIVE_RATIO' not in p: return None
     r = p['DRIVE_RATIO'].val
     if r is None: return None
-    if r > 12.0 and r < 13.7:
+    if r > 12.0 and r < 140.0:
         return '1st'
-    if r > 6.2 and r < 7.4:
+    if r > 6.0 and r < 7.4:
         return '2nd'
-    if r > 3.8 and r < 4.2:
+    if r > 3.5 and r < 4.5:
         return '3rd'
     if r > 2.70 and r < 3.1:
         return '4th'
