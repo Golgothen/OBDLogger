@@ -69,7 +69,7 @@ class KPI(object):
         if self.__func is not None:
             v = self.__func(self.__parameters)
             if v is not None:
-                self.__values['VAL'] = v                         # Trigger the setter
+                self.val = v                                     # Trigger the setter
         return self.__values['VAL']                              # __val is the instantaneous value.  It does not take time passed since the last sample into account.
 
     @val.setter

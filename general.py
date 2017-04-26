@@ -58,7 +58,7 @@ def readLastTrip(file):
             data[h] = 0.0
     return data
 
-def writeLastTrip(file,data):
+def writeLastTrip(file, data):
     # Check the output directory exists.  Create it if it doesn't
     if not os.path.isdir(os.path.split(file)[0]):
         os.makedirs(os.path.split(file)[0])
@@ -73,7 +73,7 @@ def writeLastTrip(file,data):
             str(data['IDLE_TIME']) + '\n',
         'UTF-8'))
 
-def writeTripHistory(file,data):
+def writeTripHistory(file, data):
     # Check the output directory exists.  Create it if it doesn't
     if not os.path.isdir(os.path.split(file)[0]):
         os.makedirs(os.path.split(file)[0])

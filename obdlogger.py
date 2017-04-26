@@ -80,20 +80,6 @@ def printTank():
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
 
-
-#def paintFullTable():
-    # paint the screen
-#    sys.stdout.write('   RPM :          /          :')
-#    sys.stdout.write('   LPH :          /          :')
-#    sys.stdout.write('   FAM :          /          :')
-#    sys.stdout.write('  Load :          /          :')
-#    sys.stdout.write('   MAF :          /          :')
-##    sys.stdout.write('  Trip :                     :')
-#    sys.stdout.write('  Time :          /          :')
-#    sys.stdout.write('  Fuel :          /          :')
-#    sys.stdout.write('  Gear :          /          :')
-#    sys.stdout.flush()
-
 def printFullTable():
     lines = []
     for l in range(9):
