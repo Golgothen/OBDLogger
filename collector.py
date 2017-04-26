@@ -140,7 +140,7 @@ class Collector(Process):
 
         self.__data['TIMESTAMP'] = KPI(FUNCTION = timeStamp,
                                        FMT_ALL = FMT(TYPE = 'd',
-                                                     PRECISION = '%Y/%m/%d %H:%M:%S')
+                                                     PRECISION = '%Y-%m-%d %H:%M:%S')
                                       )
 
         if 'ENGINE_LOAD' in self.__data:
@@ -183,9 +183,7 @@ class Collector(Process):
                 self.__data['IDLE_TIME'] =   KPI(FUNCTION = idleTime,
                                                  SPEED = self.__data['SPEED'],
                                                  RPM = self.__data['RPM'],
-                                                 FMT_ALL = FMT(TYPE = 't',
-                                                               ALIGNMENT = '>'
-                                                              )
+                                                 FMT_ALL = FMT(TYPE = 't')
                                                 )
 
             if 'LPH' in self.__data:
@@ -198,9 +196,7 @@ class Collector(Process):
         if 'RPM' in self.__data:
             self.__data['DURATION'] =        KPI(FUNCTION = duration,
                                                  RPM = self.__data['RPM'],
-                                                 FMT_ALL = FMT(TYPE = 't',
-                                                               ALIGNMENT = '>'
-                                                              )
+                                                 FMT_ALL = FMT(TYPE = 't')
 
                                                 )
 
@@ -282,6 +278,7 @@ class Collector(Process):
                 if '{}.{}'.format(d,f) in temp:
                     temp=temp.replace('{}.{}'.format(d,f),
                                       '{}'.format(self.__data[d].format(f)))
+                    temp=temp.replace('*',' ')
         return temp
 
 

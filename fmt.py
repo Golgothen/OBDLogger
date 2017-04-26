@@ -1,4 +1,5 @@
 from general import *
+from datetime import datetime
 
 class FMT():
 
@@ -24,11 +25,10 @@ class FMT():
                 self.commas = kwargs[k]
             if k == 'TRUNCATE':
                 self.truncate = kwargs[k]
-        if self.type == 's':
+        if self.type in ['s','d','t']:
             self.commas = False
+        if self.type in ['s','t']:
             self.precision = None
-        else:
-            self.alignment = None
 
     @property
     def fmtstr(self):
@@ -38,7 +38,7 @@ class FMT():
         str += '{}'.format(self.length)
         if self.commas:
             str+=','
-        if self.precision is not None:
+        if self.precision is not None and self.type != 'd':
             str += '.{}'.format(self.precision)
         if self.type not in ['s','t','d']:
             str+='{}'.format(self.type)
@@ -46,21 +46,19 @@ class FMT():
         return str
 
     def __call__(self, v):
-        if v is None:                                         # Null values
+        if v is None:                                             # Null values
             return ' ' * self.length
-        if self.type == 'd' and type(v) is datetime:          # Dates
-            tmp = v.strftime(self.precision)
-            return self.fmtstr.format(tmp)                    # Return it immediately. No firther processing required
-        elif self.type == 't':                                # Time counters
-            tmp = formatSeconds(v)
-            return self.fmtstr.format(tmp)                    # Return it immediately. No further processing required
-        else:                                                 # everything else
+        if self.type == 'd' and type(v) is datetime:              # Dates
+            return self.fmtstr.format(v.strftime(self.precision)) # Return it immediately. No firther processing required
+        elif self.type == 't':                                    # Time counters
+            return self.fmtstr.format(formatSeconds(v))           # Return it immediately. No further processing required
+        else:                                                     # everything else
             tmp = self.fmtstr.format(v)
         if len(tmp) > self.length\
            and self.precision is not None\
-           and self.truncate:                                 # String is too long.  See if we can drop some precision to get it to fit
-            c = self.commas                                   # Store commas so we can reset it
-            p = self.precision                                # store the presisopn so we can reset it later
+           and self.truncate:                                     # String is too long.  See if we can drop some precision to get it to fit
+            c = self.commas                                       # Store commas so we can reset it
+            p = self.precision                                    # store the presisopn so we can reset it later
             while len(tmp) > self.length \
               and self.precision > 0:
                 self.precision -= 1
