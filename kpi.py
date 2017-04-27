@@ -18,11 +18,16 @@ class KPI(object):
         self.__log = 'VAL'
         self.__formats = dict()
         self.__values = dict()
+        self.__history = dict()
         self.__values['VAL'] = None
         self.__values['MIN'] = None
         self.__values['MAX'] = None
         self.__values['SUM'] = 0
         self.__values['AVG'] = 0
+        self.__history['VAL'] = []
+        self.__history['SUM'] = []
+        self.__history['AVG'] = []
+
 
         for k in kwargs:
             if k == 'FUNCTION':
@@ -77,6 +82,7 @@ class KPI(object):
         self.__values['VAL'] = v
         if v is not None:
             self.__count += 1
+            self.__history['VAL'].append( (time(), v) )
             if self.__values['MAX'] is None:
                 self.__values['MAX'] = v
             else:
@@ -90,8 +96,10 @@ class KPI(object):
             if type(v) in [float,int]:                                      # only number types
                 if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
                     self.__values['SUM'] += (v * (time() - self.__age))     # Cumulative sum of time calculated value for sums
+                    self.__history['SUM'].append((time(),self.__values['SUM']))
                 self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
                 self.__values['AVG'] = self.__avgsum / self.__count
+                self.__history['AVG'].append((time(),self.__values['AVG']))
             self.__age = time()                                             # Note the current time
 
     @property
@@ -131,6 +139,19 @@ class KPI(object):
             else:
                 raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
 
+    def movingAverage(self, field, length, formatted = True, offset = 0):
+        filterlist = [x for x in self.__history[field] if x[0] > (time() - offset - length) and x[0] < (time() - offset)]
+        templist = [x[1] for x in filterlist]
+        if len(templist) > 0:
+            if formatted:
+                return self.__formats[field].fmtstr.format(sum(templist) / len(templist))
+            else:
+                return sum(templist) / len(templist)
+        else:
+            if formatted:
+                return self.__formats[field].fmtdtr.format(0)
+            else:
+                return 0
 PI = 3.14159
 
 ###
