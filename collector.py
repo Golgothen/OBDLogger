@@ -220,7 +220,7 @@ class Collector(Process):
 
         # Set custom formats. Default format is {:9,.2f}
         for d in self.__data:
-            if d in ['RPM','COOLANT_TEMP']:
+            if d in ['RPM','COOLANT_TEMP','FUEL_RAIL_PRESSURE_DIRECT']:
                 self.__data[d].setFormat('ALL',FMT(PRECISION = 0))
             if d in ['CONTROL_MODULE_VOLTAGE']:
                 self.__data[d].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 1))

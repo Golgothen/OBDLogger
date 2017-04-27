@@ -219,10 +219,10 @@ def gear(p):
     if 'DRIVE_RATIO' not in p: return None
     r = p['DRIVE_RATIO'].val
     if r is None: return config.get('Transmission','Gear Neutral Label')
-    for i in range(config.getfloat('Vehicle','Transmission Speeds')):
-        if r > config.getfloat('Transmission','Gear {} Lower',format(i)) and \
-           r < config.getfloat('Transmission','Gear {} Upper'.format(i)):
-            return config.get('Transmission','Gear {} Label'.format(i))
+    for i in range(config.getint('Vehicle','Transmission Speeds')):
+        if r > config.getfloat('Transmission','Gear {} Lower'.format(i+1)) and \
+           r < config.getfloat('Transmission','Gear {} Upper'.format(i+1)):
+            return config.get('Transmission','Gear {} Label'.format(i+1))
     return config.get('Transmission','Gear Neutral Label')
 
 def duration(p):
