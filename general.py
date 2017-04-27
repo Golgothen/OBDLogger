@@ -135,7 +135,7 @@ def loadDefaults():
     config.set('Application','Log Headings','TIMESTAMP,RPM,SPEED,DISTANCE,FAM,LP100K,LPS,LPH,MAF,ENGINE_LOAD,DRIVE_RATIO,GEAR')
     config.set('Application','Pipe Timeout','3')
     config.set('Application','GPS Enabled','False')
-    config.set('Application','Data Screen Size','10')
+    config.set('Application','Data Screen Size','20')
 
     for q in config.get('Application','Queues').split(','):
         config.add_section('Queue {}'.format(q))
@@ -172,7 +172,15 @@ def loadDefaults():
     config.set('Data Screen','Line 6','DISTANCE')
     config.set('Data Screen','Line 7','TIME')
     config.set('Data Screen','Line 8','FUEL')
-    config.set('Data Screen','Line 9','GEAR')
+    config.set('Data Screen','Line 9','LPH')
+    config.set('Data Screen','Line 10','FAM')
+    config.set('Data Screen','Line 11','MAF')
+    config.set('Data Screen','Line 12','GEAR')
+    config.set('Data Screen','Line 13','VOLTAGE')
+    config.set('Data Screen','Line 14','EGR')
+    config.set('Data Screen','Line 15','AIR_TEMP')
+    config.set('Data Screen','Line 16','INTAKE_TEMP')
+    config.set('Data Screen','Line 17','FUEL_RAIL')
 
     config.set('Data Layout','SPEED',          '*Speed : SPEED.VAL/SPEED.MAX/SPEED.AVG :')
     config.set('Data Layout','RPM',            '***RPM : RPM.VAL/RPM.MAX :')
