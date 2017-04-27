@@ -6,6 +6,8 @@ from general import *
 import logging
 
 logger = logging.getLogger('root')
+config = loadConfig()
+
 
 class KPI(object):
 
@@ -67,10 +69,8 @@ class KPI(object):
     @property # Getter
     def val(self):
         if self.__func is not None:
-            v = self.__func(self.__parameters)
-            if v is not None:
-                self.val = v                                     # Trigger the setter
-        return self.__values['VAL']                              # __val is the instantaneous value.  It does not take time passed since the last sample into account.
+            self.val = self.__func(self.__parameters)            # Trigger the setter
+        return self.__values['VAL']                              # self.__values['VAL'] is the instantaneous value.  It does not take time passed since the last sample into account.
 
     @val.setter
     def val(self, v):
@@ -89,7 +89,7 @@ class KPI(object):
                     self.__values['MIN'] = v
             if type(v) in [float,int]:                                      # only number types
                 if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
-                    self.__values['SUM'] += (v * (time() - self.__age))    # Cumulative sum of time calculated value for sums
+                    self.__values['SUM'] += (v * (time() - self.__age))     # Cumulative sum of time calculated value for sums
                 self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
                 self.__values['AVG'] = self.__avgsum / self.__count
             self.__age = time()                                             # Note the current time
@@ -130,18 +130,6 @@ class KPI(object):
                 self.__formats[f] = v
             else:
                 raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
-
-# Contants used in calculations
-
-config = loadConfig()
-
-#FUEL_AIR_RATIO_IDEAL = 14.7
-#FUEL_AIR_RATIO_MIN = 25.0                 #Fuel/Air Ratio x:1
-#FUEL_AIR_RATIO_MAX = 50.0
-#FUEL_DENSITY = 850.8                      #Diesel Fuel Density g/L
-#TYRE_WIDTH = 195.0                        #Tyre Width in mm
-#ASPECT_RATIO = 0.65                       #Tyre profile
-#RIM_SIZE = 15.0                           #Rim size in inches
 
 PI = 3.14159
 
@@ -230,18 +218,12 @@ def OBDdistance(p):
 def gear(p):
     if 'DRIVE_RATIO' not in p: return None
     r = p['DRIVE_RATIO'].val
-    if r is None: return None
-    if r > 12.0 and r < 140.0:
-        return '1st'
-    if r > 6.0 and r < 7.4:
-        return '2nd'
-    if r > 3.5 and r < 4.5:
-        return '3rd'
-    if r > 2.70 and r < 3.1:
-        return '4th'
-    if r > 2.1 and r < 2.35:
-        return '5th'
-    return 'Neutal'
+    if r is None: return config.get('Transmission','Gear Neutral Label')
+    for i in range(config.getfloat('Vehicle','Transmission Speeds')):
+        if r > config.getfloat('Transmission','Gear {} Lower',format(i)) and \
+           r < config.getfloat('Transmission','Gear {} Upper'.format(i)):
+            return config.get('Transmission','Gear {} Label'.format(i))
+    return config.get('Transmission','Gear Neutral Label')
 
 def duration(p):
     if 'RPM' not in p: return None

@@ -120,6 +120,7 @@ def loadDefaults():
     config.add_section('Vehicle')
     config.add_section('Data Screen')
     config.add_section('Data Layout')
+    config.add_section('Transmission')
 
     config.set('Application','LogPath','./logs/')
     config.set('Application','Log Frequency','1')
@@ -147,6 +148,7 @@ def loadDefaults():
     config.set('Vehicle','Tyre Width','195')
     config.set('Vehicle','Aspect Ratio','65')
     config.set('Vehicle','Rim Size','15')
+    config.set('Vehicle','Transmission Speeds','5')
 
     config.set('Queue Hi','Frequency','10.0')
     config.set('Queue Hi','Commands','RPM,SPEED,MAF,ENGINE_LOAD')
@@ -184,6 +186,24 @@ def loadDefaults():
     config.set('Data Layout','LPS',           '**Fuel : LPS.SUM/LPH.VAL :')
     config.set('Data Layout','DURATION',      '**Time : DURATION.SUM/IDLE_TIME.SUM :')
     config.set('Data Layout','GEAR',          '**Gear : GEAR.VAL/DRIVE_RATIO.VAL :')
+
+    config.set('Transmission','Gear Neutral Label','Idle')
+    config.set('Transmission','Gear 1 Lower','12.0')
+    config.set('Transmission','Gear 1 Upper','14.0')
+    config.set('Transmission','Gear 1 Label','1st')
+    config.set('Transmission','Gear 2 Lower','6.0')
+    config.set('Transmission','Gear 2 Upper','7.4')
+    config.set('Transmission','Gear 2 Label','2nd')
+    config.set('Transmission','Gear 3 Lower','3.5')
+    config.set('Transmission','Gear 3 Upper','4.5')
+    config.set('Transmission','Gear 3 Label','3rd')
+    config.set('Transmission','Gear 4 Lower','2.7')
+    config.set('Transmission','Gear 4 Upper','3.1')
+    config.set('Transmission','Gear 4 Label','4th')
+    config.set('Transmission','Gear 5 Lower','2.1')
+    config.set('Transmission','Gear 5 Upper','2.35')
+    config.set('Transmission','Gear 5 Label','5th')
+
     return config
 
 def saveConfig(config):
