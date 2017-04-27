@@ -223,7 +223,7 @@ class Collector(Process):
             if d in ['RPM','COOLANT_TEMP']:
                 self.__data[d].setFormat('ALL',FMT(PRECISION = 0))
             if d in ['CONTROL_MODULE_VOLTAGE']:
-                self.__data[d].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 1)
+                self.__data[d].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 1))
 
         self.__ready = True
         self.__dirty = False

@@ -82,7 +82,7 @@ def printTank():
 
 def printFullTable():
     lines = []
-    for l in range(config.getfloat('Application','Data Screen Size')):
+    for l in range(config.getint('Application','Data Screen Size')):
         if config.has_option('Data Screen','Line {}'.format(l)):
             if config.get('Data Screen','Line {}'.format(l)) == 'LP100K':
                 if ecu.val('SPEED') == 0:
