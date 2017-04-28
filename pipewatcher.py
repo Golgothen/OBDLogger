@@ -8,6 +8,9 @@ import logging
 # Watcher thread to monitor for incomming messages on a pipe.
 # One thread per pipe.
 
+logger = logging.getlogger('root')
+
+
 class PipeWatcher(Thread):
 
     def __init__(self, parent, pipe, name):
@@ -21,6 +24,7 @@ class PipeWatcher(Thread):
 
     def run(self):
         self.__running = True
+        logger.info('Starting listener thread {}'.format(self.name))
         try:
             while self.__running:
                 while self.__pipe.poll(None):  # Block indefinately waiting for a message
@@ -29,7 +33,7 @@ class PipeWatcher(Thread):
                     if response is not None:
                         self.send(response)
         except (KeyboardInterrupt, SystemExit):
-            self,__running = False
+            self.__running = False
 
     # Public method to allow the parent to send messages to the pipe
     def send(self, msg):
