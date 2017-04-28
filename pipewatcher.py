@@ -8,7 +8,7 @@ import logging
 # Watcher thread to monitor for incomming messages on a pipe.
 # One thread per pipe.
 
-logger = logging.getlogger('root')
+logger = logging.getLogger('root')
 
 
 class PipeWatcher(Thread):

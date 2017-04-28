@@ -11,7 +11,7 @@ file_handler = logging.FileHandler('./'+logName) # sends output to file
 file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-10s.%(funcName)-17s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
@@ -22,7 +22,7 @@ def printIdleScreen():
     global currentIdleScreen
     global config
 
-    os.system('clear')
+    #os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
     if screentime.seconds>=config.getfloat('Application', 'Idle Screen Time'):
         currentIdleScreen+=1
@@ -91,7 +91,7 @@ def printFullTable():
                     lines.append(ecu.dataLine('LP100K'))
             else:
                 lines.append(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
-    os.system('clear')
+    #os.system('clear')
     for l in lines:
         sys.stdout.write(l)
     sys.stdout.flush()
@@ -157,7 +157,7 @@ if __name__ == '__main__':
                                         logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
-                logger.info(ecu.status())
+                #logger.info(ecu.status())
                 printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
             while not ecu.isConnected():
@@ -183,7 +183,7 @@ if __name__ == '__main__':
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()
-                logger.info(ecu.status())
+                #logger.info(ecu.status())
                 sleep(1)
 
     except (KeyboardInterrupt, SystemExit):

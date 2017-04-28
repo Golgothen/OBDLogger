@@ -105,13 +105,13 @@ class Worker(Process):
         if not self.__paused:
             logger.debug('Pausing worker process')
             self.__paused = True
-            self.__logPipe.send(Message("PAUSE"))
+            self.__pipes['LOG'].send(Message("PAUSE"))
 
     def resume(self, p = None):
         if self.__paused:
             logger.debug('Resuming worker process')
             self.__paused = False
-            self.__logPipe.send(Message("RESUME"))
+            self.__pipes['LOG'].send(Message("RESUME"))
 
     def status(self, p = None):
         #returns a dict of que status
@@ -175,6 +175,6 @@ class Worker(Process):
             #Connection status has changed
             logger.info('Connection status has chnged from {} to {}'.format(self.__connected, connected))
             self.__connected = connected
-            self.__ecuPipe.send(Message('CONNECTION', STATUS = self.__connected))
+            self.__pipes['ECU'].send(Message('CONNECTION', STATUS = self.__connected))
         return self.__connected
 

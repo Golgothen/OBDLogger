@@ -46,7 +46,7 @@ class ECU(Process):
         except (KeyboardInterrupt, SystemExit):
             self.__shutdown()
 
-    def supported_commands(self, p):
+    def supported_commands(self, p = None):
         return Message('SUPPORTED_COMMANDS', SUPPORTED_COMMANDS = self.__supportedcommands)
 
     def connection(self, p):
@@ -77,17 +77,17 @@ class ECU(Process):
             logger.info('Starting Que {}'.format(p['QUE']))
             self.__Que[p['QUE']].start()
 
-    def getqueues(self, p):
+    def getqueues(self, p = None):
         #Returns a list of que names
         queues = []
         for q in self.__Que:
             queues.append(q)
         return Message('GETQUEUES', QUEUES = queues)
 
-    def getcommands(self, que):
-        return Message('GETCOMMANDS', COMMANDS = self.__Que[que].getCommands())
+    def getcommands(self, p):
+        return Message('GETCOMMANDS', COMMANDS = self.__Que[p['QUE']].getCommands())
 
-    def status(self, p):
+    def status(self, p = None):
         d = dict()
         d['PID'] = self.__pid
         d['Running'] = self.__running
@@ -102,28 +102,28 @@ class ECU(Process):
         if p['QUE'] in self.__Que:
             self.__Que[p['QUE']].addCommand(p['COMMAND'], p['OVERRIDE'])
 
-    def removecommand(self,que, cmd):
+    def removecommand(self, p):
         #Remove a command to a given que
         if que in self.__Que:
-            self.__Que[que].removeCommand(cmd)
+            self.__Que[p['QUE']].removeCommand(p['COMMAND'])
 
     def setfrequency(self, p):
         logger.debug('Setting que {} frequency to {}'.format(p['QUE'], p['FREQUENCY']))
         self.__Que[p['QUE']].setFrequency(p['FREQUENCY'])
 
-    def stop(self, p):
+    def stop(self, p = None):
         self.__shutdown()
 
-    def pause(self, p):
+    def pause(self, p = None):
         if not self.__paused:
             logger.info('Pausing ECU')
             self.__paused = True
             for q in self.__Que:
                 if self.__Que[q].isAlive(): self.__Que[q].paused = True
 
-    def resume(self, p):
+    def resume(self, p = None):
         logger.info('Resuming ECU')
-        self.__dataPipe.send(Message('RESUME'))
+        self.__pipes['DATA'].send(Message('RESUME'))
         self.__paused = False
         for q in self.__Que:
             if self.__Que[q].isAlive(): self.__Que[q].paused = False

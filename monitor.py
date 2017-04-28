@@ -63,8 +63,8 @@ class Monitor():
                                    loggerWorkerPipe.r)                 # Logger <-> Worker
 
         self.__ecu.start()
-        self.__worker.start()
         self.__collector.start()
+        self.__worker.start()
         self.__logger.start()
 
     def __checkWorkerPipe(self, message, timeout):
