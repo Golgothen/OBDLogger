@@ -22,7 +22,7 @@ def printIdleScreen():
     global currentIdleScreen
     global config
 
-    #os.system('clear')
+    os.system('clear')
     screentime=datetime.now()-lastScreenUpdate
     if screentime.seconds>=config.getfloat('Application', 'Idle Screen Time'):
         currentIdleScreen+=1
@@ -91,7 +91,7 @@ def printFullTable():
                     lines.append(ecu.dataLine('LP100K'))
             else:
                 lines.append(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
-    #os.system('clear')
+    os.system('clear')
     for l in lines:
         sys.stdout.write(l)
     sys.stdout.flush()
