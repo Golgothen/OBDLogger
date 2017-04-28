@@ -72,7 +72,7 @@ class Monitor():
         while self.__workerComm.poll(timeout):
             m = self.__workerComm.recv()
             logger.debug('Received {} on Worker pipe'.format(m.message))
-            if m.message == message: 
+            if m.message == message:
                 return m.params
             else:
                 logger.info('Discarding out of sync message {}.  Expected {}'.format(m.message, message))
@@ -83,7 +83,7 @@ class Monitor():
         while self.__dataComm.poll(timeout):
             m = self.__dataComm.recv()
             logger.debug('Received {} on Collector pipe'.format(m.message))
-            if m.message == message: 
+            if m.message == message:
                 return m.params
             else:
                 logger.info('Discarding out of sync message {}. Expected {}'.format(m.message, message))
@@ -140,13 +140,13 @@ class Monitor():
         else:
             logger.warning('ECU timeout requesting que commands')
 
-    def getInterface(self):
-        self.__ecuComm.send(Message('INTERFACE'))
-        r = self.__checkECUPipe('INTERFACE', PIPE_TIMEOUT)
-        if r is not None:
-            return r['INTERFACE']
-        else:
-            logger.warning('ECU Timeout requesting interface')
+#    def getInterface(self):
+#        self.__ecuComm.send(Message('INTERFACE'))
+#        r = self.__checkECUPipe('INTERFACE', PIPE_TIMEOUT)
+#        if r is not None:
+#            return r['INTERFACE']
+#        else:
+#            logger.warning('ECU Timeout requesting interface')
 
     def addCommand(self, que, command, override=False):
         self.__ecuComm.send(Message('ADDCOMMAND',QUE = que, COMMAND = command, OVERRIDE = override))
@@ -288,8 +288,8 @@ class Monitor():
     def logHeadings(self, headings):
         self.__logComm.send(Message('HEADINGS', HEADINGS = headings))
 
-    def tripTimeout(self, timeout):
-        self.__logComm.send(Message('TIMEOUT', TIMEOUT = timeout))
+#    def tripTimeout(self, timeout):
+#        self.__logComm.send(Message('TIMEOUT', TIMEOUT = timeout))
 
     @property
     def summary(self):
