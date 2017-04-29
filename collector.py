@@ -238,7 +238,7 @@ class Collector(Process):
     def dataline(self, p):
         try:
             temp = config.get('Data Layout',p['NAME'])
-        except (configparser.NoOptionError):
+        except (ConfigParser.NoOptionError):
             return None
         for d in self.__data:
             for f in ['VAL','MIN','MAX','SUM','AVG','LOG']:
