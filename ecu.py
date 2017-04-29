@@ -5,6 +5,7 @@ from que import Que
 from multiprocessing import Process, Queue, Pipe
 from messages import Message
 from pipewatcher import PipeWatcher
+from configparser import ConfigParser
 
 from general import *
 

@@ -3,12 +3,15 @@ from datetime import datetime
 from general import *
 from monitor import Monitor
 from logger import DataLogger
+from configparser import ConfigParser
+
 import sys, logging
+
 logger = logging.getLogger('root')
 logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
 file_handler = logging.FileHandler('./'+logName) # sends output to file
 #file_handler = logging.StreamHandler() # sends output to stderr
-file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-10s.%(funcName)-17s:%(lineno)-5s] %(message)s'))
+file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
 logger.setLevel(logging.INFO)

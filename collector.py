@@ -2,6 +2,7 @@ from multiprocessing import Process, Queue
 from messages import Message
 from time import sleep
 from pipewatcher import PipeWatcher
+from configparser import ConfigParser
 
 from kpi import *
 from general import *

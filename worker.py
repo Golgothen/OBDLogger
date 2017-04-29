@@ -3,6 +3,7 @@ from datetime import datetime
 from time import sleep
 from messages import Message
 from pipewatcher import PipeWatcher
+from configparser import ConfigParser
 
 from general import *
 import logging, os, obd #, _thread

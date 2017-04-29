@@ -8,6 +8,7 @@ from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
 from pipewatcher import PipeWatcher
+from configparser import ConfigParser
 
 from general import *
 

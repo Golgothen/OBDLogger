@@ -4,6 +4,7 @@ from datetime import datetime
 import threading, gzip, shutil, os, logging
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
+from configparser import ConfigParser
 
 logger = logging.getLogger('root')
 
