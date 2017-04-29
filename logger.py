@@ -92,9 +92,9 @@ class DataLogger(threading.Thread):
         self.__logPath = p['PATH']
 
     def logname(self, p):
-        return Message('LOGNAME', NAME = self.__logName)
+        return Message('LOG_NAME', NAME = self.__logName)
 
-    def snapshot(self, p):
+    def snap_shot(self, p):
         self.__data = p['SNAPSHOT']
         self.__refreshRequired = False
 
@@ -156,7 +156,7 @@ class DataLogger(threading.Thread):
             logger.warning('Could not delete log file {}'.format(self.__logname))
         self.__logName = None
 
-    def status(self, p = None):
+    def getstatus(self, p = None):
         d = dict()
         d['Running'] = self.__running
         d['Paused'] = self.__paused
@@ -164,4 +164,4 @@ class DataLogger(threading.Thread):
         d['Frequency'] = self.__logFrequency
         d['Log Path'] = self.__logPath
         d['Headings'] = self.__logHeadings
-        return Message('STATUS', STATUS = d)
+        return Message('LOGSTATUS', STATUS = d)

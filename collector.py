@@ -71,22 +71,22 @@ class Collector(Process):
             data[d] = dict()
             for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
                 data[d][f] = self.__data[d].format(f)
-        return Message('SNAPSHOT', SNAPSHOT = data)
+        return Message('SNAP_SHOT', SNAPSHOT = data)
 
     def sum(self, p):
-        return Message('SUM', SUM = self.__data[p['NAME']].sum)
+        return Message('GETSUM', SUM = self.__data[p['NAME']].sum)
 
     def avg(self, p):
-        return Message('AVG', AVG = self.__data[p['NAME']].avg)
+        return Message('GETAVG', AVG = self.__data[p['NAME']].avg)
 
     def min(self, p):
-        return Message('MIN', MIN = self.__data[p['NAME']].min)
+        return Message('GETMIN', MIN = self.__data[p['NAME']].min)
 
     def max(self, p):
-        return Message('MAX', MAX = self.__data[p['NAME']].max)
+        return Message('GETMAX', MAX = self.__data[p['NAME']].max)
 
     def val(self, p):
-        return Message('VAL', VAL = self.__data[p['NAME']].val)
+        return Message('GETVAL', VAL = self.__data[p['NAME']].val)
 
     def reset(self, p = None):
         self.__ready = False
@@ -210,7 +210,7 @@ class Collector(Process):
             logger.debug('Stopping Collector process')
             self.__running = False
 
-    def status(self, p = None):
+    def getstatus(self, p = None):
         d = dict()
         d['Name'] = self.name
         d['Running'] = self.__running
@@ -220,7 +220,7 @@ class Collector(Process):
         d['Length'] = dict()
         for k in self.__data:
             d['Length'][k] = self.__data[k].len
-        return Message('STATUS', STATUS = d)
+        return Message('DATASTATUS', STATUS = d)
 
     def summary(self, p = None):
         d=dict()
@@ -232,7 +232,7 @@ class Collector(Process):
         d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg
         d['DURATION'] = self.__data['DURATION'].sum
         d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum
-        return Message('SUMMARY', SUMMARY = d)
+        return Message('GETSUMMARY', SUMMARY = d)
 
     def dataline(self, p):
         try:
@@ -245,4 +245,4 @@ class Collector(Process):
                     temp=temp.replace('{}.{}'.format(d,f),
                                       '{}'.format(self.__data[d].format(f)))
                     temp=temp.replace('*',' ')
-        return Message('DATALINE', LINE = temp)
+        return Message('DATA_LINE', LINE = temp)

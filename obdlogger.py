@@ -132,10 +132,9 @@ if __name__ == '__main__':
         disconnected=None
         journey = False
         while 1:
-            while ecu.isConnected() == True:
+            while ecu.isConnected:
                 if not journey:
                     journey=True
-                    #paintFullTable()
                     for q in config.get('Application', 'Queues').split(','):
                         if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
                            config.has_option('Queue {}'.format(q), 'Commands'):
@@ -143,7 +142,7 @@ if __name__ == '__main__':
                                 ecu.addCommand(q, c)
                     sc = None
                     while sc is None:
-                        sc = ecu.supportedcommands()
+                        sc = ecu.supportedCommands
                         sleep(0.01)
                     if config.getboolean('Application', 'Log Extra Data'):
                         loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
@@ -153,14 +152,14 @@ if __name__ == '__main__':
                             if config.has_option('Queue {}'.format(q), 'Default Queue'):
                                 for c in sc:
                                     if c not in loadedCommands:
-                                        ecu.addCommand(q,c)                     # Add all supported commands that arent already in a que to the LOW que
+                                        ecu.addCommand(q, c)                     # Add all supported commands that arent already in a que to the LOW que
                                         logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
                 #logger.info(ecu.status())
                 printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
-            while not ecu.isConnected():
+            while not ecu.isConnected:
                 if journey:
                     journey=False
                     ecu.pause()

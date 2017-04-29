@@ -87,7 +87,7 @@ class ECU(Process):
     def getcommands(self, p):
         return Message('GETCOMMANDS', COMMANDS = self.__Que[p['QUE']].getCommands())
 
-    def status(self, p = None):
+    def getstatus(self, p = None):
         d = dict()
         d['PID'] = self.__pid
         d['Running'] = self.__running
@@ -95,7 +95,7 @@ class ECU(Process):
         for q in self.__Que:
             if self.__Que[q] is not None:
                 d['Que: ' + q] = self.__Que[q].status()
-        return Message('STATUS', STATUS = d)
+        return Message('ECUSTATUS', STATUS = d)
 
     def addcommand(self, p):
         #Append a command to a given que

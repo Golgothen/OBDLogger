@@ -92,8 +92,8 @@ class Worker(Process):
             self.__running = False
             return
 
-    def commands(self, p = None):
-        return Message('COMMANDS', COMMANDS = self.__commands)
+    def getcommands(self, p = None):
+        return Message('GETCOMMANDS', COMMANDS = self.__commands)
 
     def supported_commands(self, p = None):
         return Message('SUPPORTED_COMMANDS', SUPPORTED_COMMANDS = self.__supported_commands)
@@ -113,7 +113,7 @@ class Worker(Process):
             self.__paused = False
             self.__pipes['LOG'].send(Message("RESUME"))
 
-    def status(self, p = None):
+    def getstatus(self, p = None):
         #returns a dict of que status
         d = dict()
         d['Name'] = self.name
@@ -129,7 +129,7 @@ class Worker(Process):
         d['Poll Count'] = self.__pollCount
         d['Poll Rate'] = self.__pollRate
         d['Pid'] = self.__pid
-        return Message('STATUS', STATUS = d)
+        return Message('WORKERSTATUS', STATUS = d)
 
     def stop(self, p = None):
         logger.info('Stopping worker process')
