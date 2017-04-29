@@ -76,13 +76,14 @@ class Worker(Process):
                             if self.__workQue.qsize() > self.__maxQueLength:
                                 self.__maxQueLength = self.__workQue.qsize()
                             m = self.__workQue.get()
-                            q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
-                            self.__pollCount+=1
-                            if self.__firstPoll is None:
-                                self.__firstPoll = datetime.now()
-                            if not q.is_null():                                                                            # todo: uncomment after testing
-                                logger.debug('{} - {}'.format(m, q.value))
-                                self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
+                            if self.__isConnected():
+                                q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
+                                self.__pollCount+=1
+                                if self.__firstPoll is None:
+                                    self.__firstPoll = datetime.now()
+                                if not q.is_null():                                                                            # todo: uncomment after testing
+                                    logger.debug('{} - {}'.format(m, q.value))
+                                    self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
                             #self.__resultQue.put(Message(m, VALUE = 0.0))                                                 # todo: delete after testing
                         self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
                 sleep(1.0 / self.__frequency)
@@ -170,7 +171,7 @@ class Worker(Process):
                 self.resume()
             else:
                 self.pause()
-                self.__interface.close()
+                #self.__interface.close()
         #self.__connected = True                             # TODO - Delete after testing
         if self.__connected != connected:
             #Connection status has changed

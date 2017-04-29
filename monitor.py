@@ -260,10 +260,9 @@ class Monitor():
     def getval(self, p):                                                      # Callback function for IsConnected
        self.__val_return = p                                                  # Store the response returned for the caller to find
 
-    @property
-    def dataLine(self):
+    def dataLine(self, name):
         self.__dataline_return = None                                         # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('DATALINE'))                        # Send message for incomming request
+        self.__pipes['DATA'].send(Message('DATALINE', NAME = name))           # Send message for incomming request
         while self.__dataline_return is None:                                 #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__dataline_return['LINE']                                 # Return the response from the callback to the caller
