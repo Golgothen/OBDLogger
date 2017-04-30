@@ -2,6 +2,9 @@ from multiprocessing import Process, Queue, Pipe
 from datetime import datetime
 from time import sleep
 from messages import Message
+from pipewatcher import PipeWatcher
+from configparser import ConfigParser
+
 from general import *
 import logging, os, obd #, _thread
 
@@ -34,10 +37,11 @@ class Worker(Process):
         self.__resultQue = resultQue
         self.__firstPoll = None
         self.__pid = None
-        self.__ecuPipe = ecuPipe
-        self.__controlPipe = controlPipe
-        self.__dataPipe = dataPipe
-        self.__logPipe = logPipe
+        self.__pipes = {}
+        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'WORKER.ECU')
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'WORKER.APPLICATION')
+        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'WORKER.DATA')
+        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'WORKER.LOG')
         self.__baud = baud
         self.__port = port
         self.__interface = obd.OBD(port, baud)
@@ -50,15 +54,16 @@ class Worker(Process):
                 self.__commands.append(c.name)
         self.__connect()
         logger.debug('Worker process initalised')
-        self.__checkPipe()
 
     def run(self):
         self.__running = True
         self.__pid = os.getpid()
         logger.info('Starting Worker process on PID {}'.format(self.__pid))
+        # Start watcher threads for pipes
+        for p in self.__pipes:
+            self.__pipes[p].start()
         try:
             while self.__running:
-                self.__checkPipe()
                 if not self.__isConnected():
                     self.__paused = True
                     self.__firstPoll = None
@@ -71,13 +76,14 @@ class Worker(Process):
                             if self.__workQue.qsize() > self.__maxQueLength:
                                 self.__maxQueLength = self.__workQue.qsize()
                             m = self.__workQue.get()
-                            q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
-                            self.__pollCount+=1
-                            if self.__firstPoll is None:
-                                self.__firstPoll = datetime.now()
-                            if not q.is_null():                                                                            # todo: uncomment after testing
-                                logger.debug('{} - {}'.format(m, q.value))
-                                self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
+                            if self.__isConnected():
+                                q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
+                                self.__pollCount+=1
+                                if self.__firstPoll is None:
+                                    self.__firstPoll = datetime.now()
+                                if not q.is_null():                                                                            # todo: uncomment after testing
+                                    logger.debug('{} - {}'.format(m, q.value))
+                                    self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
                             #self.__resultQue.put(Message(m, VALUE = 0.0))                                                 # todo: delete after testing
                         self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
                 sleep(1.0 / self.__frequency)
@@ -88,66 +94,48 @@ class Worker(Process):
             self.__running = False
             return
 
-    def __checkPipe(self):
-        # Check for commands comming from the ECU process
-        while self.__ecuPipe.poll():
-            m = self.__ecuPipe.recv()
-            logger.info('Received {} on ECU pipe'.format(m.message))
+    def getcommands(self, p = None):
+        return Message('GETCOMMANDS', COMMANDS = self.__commands)
 
-            if m.message == 'STOP'                : self.__stop()
-            if m.message == 'PAUSE'               : self.__pause()
-            if m.message == 'RESUME'              : self.__resume()
+    def supported_commands(self, p = None):
+        return Message('SUPPORTED_COMMANDS', SUPPORTED_COMMANDS = self.__supported_commands)
 
-        # Check for commands comming from the Application
-        while self.__controlPipe.poll():
-            m = self.__controlPipe.recv()
-            logger.info('Received {} on Controller pipe'.format(m.message))
+    def connected(self, p = None):
+        return Message('CONNECTED', STATUS = self.__isConnected())
 
-            if m.message == 'STOP'                : self.__stop()
-            if m.message == 'PAUSE'               : self.__pause()
-            if m.message == 'RESUME'              : self.__resume()
-            if m.message == 'COMMANDS'            : self.__controlPipe.send(Message(m.message, COMMANDS = self.__commands))
-            if m.message == 'SUPPORTED_COMMANDS'  : self.__controlPipe.send(Message(m.message, SUPPORTED_COMMANDS = self.__supported_commands))
-            if m.message == 'CONNECTED'           : self.__controlPipe.send(Message(m.message, STATUS = self.__isConnected()))
-            if m.message == 'STATUS'              : self.__controlPipe.send(Message(m.message, STATUS = self.__status()))
-
-        while self.__dataPipe.poll():
-            m = self.__dataPipe.recv()
-            logger.info('Received {} on Collector pipe'.format(m.message))
-
-            if m.message == 'SUPPORTED_COMMANDS'  : self.__dataPipe.send(Message(m.message,SUPPORTED_COMMANDS = self.__supported_commands))
-
-    def __isConnected(self):
-        connected = False    # TODO: delete after testing
-        #connected = True
-        #self.__resume()
-        # TODO - uncomment after testing
-        if self.__interface is not None:
-            if self.__interface.status() == 'Car Connected':
-                connected = True
-                self.__resume()
-            else:
-                self.__pause()
-                self.__interface.close()
-        #self.__connected = True                             # TODO - Delete after testing
-        if self.__connected != connected:
-            #Connection status has changed
-            logger.info('Connection status has chnged from {} to {}'.format(self.__connected, connected))
-            self.__connected = connected
-            self.__ecuPipe.send(Message('CONNECTION', STATUS = self.__connected))
-        return self.__connected
-
-    def __pause(self):
+    def pause(self, p = None):
         if not self.__paused:
             logger.debug('Pausing worker process')
             self.__paused = True
-            self.__logPipe.send(Message("PAUSE"))
+            self.__pipes['LOG'].send(Message("PAUSE"))
 
-    def __resume(self):
+    def resume(self, p = None):
         if self.__paused:
             logger.debug('Resuming worker process')
             self.__paused = False
-            self.__logPipe.send(Message("RESUME"))
+            self.__pipes['LOG'].send(Message("RESUME"))
+
+    def getstatus(self, p = None):
+        #returns a dict of que status
+        d = dict()
+        d['Name'] = self.name
+        d['Frequency'] = self.__frequency
+        d['Running'] = self.__running
+        d['Paused'] = self.__paused
+        d['Connected'] = self.__isConnected()
+        if self.__isConnected():                                            #todo: uncomment after testing
+            d['Interface'] = self.__interface.status()
+            d['Supported Commands'] = self.__supported_commands
+        d['Que Length'] = self.__workQue.qsize()
+        d['Max Que Length'] = self.__maxQueLength
+        d['Poll Count'] = self.__pollCount
+        d['Poll Rate'] = self.__pollRate
+        d['Pid'] = self.__pid
+        return Message('WORKERSTATUS', STATUS = d)
+
+    def stop(self, p = None):
+        logger.info('Stopping worker process')
+        self.__running = False
 
     def __connect(self):
         self.__interface = obd.OBD(self.__port, self.__baud)
@@ -172,25 +160,23 @@ class Worker(Process):
         #self.__supported_commands.append('EGR_ERROR')
         #self.__supported_commands.append('COMMANDED_EGR')
 
-    def __status(self):
-        #returns a dict of que status
-        d = dict()
-        d['Name'] = self.name
-        d['Frequency'] = self.__frequency
-        d['Running'] = self.__running
-        d['Paused'] = self.__paused
-        d['Connected'] = self.__isConnected()
-        if self.__isConnected():                                            #todo: uncomment after testing
-            d['Interface'] = self.__interface.status()
-            d['Supported Commands'] = self.__supported_commands
-        d['Que Length'] = self.__workQue.qsize()
-        d['Max Que Length'] = self.__maxQueLength
-        d['Poll Count'] = self.__pollCount
-        d['Poll Rate'] = self.__pollRate
-        d['Pid'] = self.__pid
-        return d
-
-    def __stop(self):
-        logger.info('Stopping worker process')
-        self.__running = False
+    def __isConnected(self):
+        connected = False    # TODO: delete after testing
+        #connected = True
+        #self.__resume()
+        # TODO - uncomment after testing
+        if self.__interface is not None:
+            if self.__interface.status() == 'Car Connected':
+                connected = True
+                self.resume()
+            else:
+                self.pause()
+                #self.__interface.close()
+        #self.__connected = True                             # TODO - Delete after testing
+        if self.__connected != connected:
+            #Connection status has changed
+            logger.info('Connection status has chnged from {} to {}'.format(self.__connected, connected))
+            self.__connected = connected
+            self.__pipes['ECU'].send(Message('CONNECTION', STATUS = self.__connected))
+        return self.__connected
 

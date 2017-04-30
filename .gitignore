@@ -7,9 +7,9 @@ RUN*.log
 # Python cache
 __pycache__
 
-# Data files
-settings/*.csv
-
 # Log files
 logs/*
+
+# Config file
+obdlogger.cfg
 

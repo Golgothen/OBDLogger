@@ -1,11 +1,14 @@
 from time import time
 from datetime import datetime
 import math
+from fmt import FMT
 from general import *
 
 import logging
 
 logger = logging.getLogger('root')
+config = loadConfig()
+
 
 config = loadConfig()
 
@@ -14,57 +17,94 @@ class KPI(object):
     def __init__(self,**kwargs):
         self.__parameters = dict()
         self.__func = None
+        self.__screen = None
+        self.__log = 'VAL'
+        self.__formats = dict()
+        self.__values = dict()
+        self.__values['VAL'] = None
+        self.__values['MIN'] = None
+        self.__values['MAX'] = None
+        self.__values['SUM'] = 0
+        self.__values['AVG'] = 0
+
         for k in kwargs:
             if k == 'FUNCTION':
                 self.__func = kwargs[k]
+            elif k == 'SCREEN':
+                self.__screen = kwargs[k]
+            elif k == 'LOG':
+                self.__log = kwargs[k]
+            elif k[:4] == 'FMT_':
+                if k[4:] == 'ALL':
+                    for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                        self.__formats[f] = kwargs[k]
+                else:
+                    self.__formats[k[4:]] = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
-        self.__min = None
-        self.__max = None
-        self.__sum = 0.0
-        self.__avg = 0.0
+
+        for f in self.__values:
+            if f not in self.__formats:
+                self.__formats[f] = FMT()
+        if 'LOG' not in self.__formats:
+            self.__formats['LOG'] = FMT()
+
         self.__count = 0
-        self.__val = None
+        self.__avgsum = 0
         self.__age = None
+
+    @property
+    def screen(self):
+        return self.__screen
+
+    @screen.setter
+    def screen(self, v):
+        self.__screen = v
+
+    @property
+    def log(self):
+        return self.__formats['LOG'](self.__values[self.__log])
+
+    @log.setter
+    def log(self, v):
+        self.__log = v
 
     @property # Getter
     def val(self):
         if self.__func is not None:
-            v = self.__func(self.__parameters)
-            if v is not None:
-                self.val = v                                     # Trigger the setter
-        if self.__val is not None:
-            return self.__val                                    # __val is the instantaneous value.  It does not take time passed since the last sample into account.
+            self.val = self.__func(self.__parameters)            # Trigger the setter
+        return self.__values['VAL']                              # self.__values['VAL'] is the instantaneous value.  It does not take time passed since the last sample into account.
 
     @val.setter
     def val(self, v):
+        self.__values['VAL'] = v
         if v is not None:
-            if math.isnan(v): return
-            self.__val = v
-            self.__count += 1
-            if self.__max is None:
-                self.__max = v
-            else:
-                if v > self.__max:
-                    self.__max = v
-            if self.__min is None:
-                self.__min = v
-            else:
-                if v < self.__min:
-                    self.__min = v
-            if type(v) in [float,int]:                           # only number types
-                if self.__age is not None:                       # only calculate time shared value if at least one sample has been taken before
-                    self.__sum += v * (time() - self.__age)      # Cumulative sum of time calculated value for sums
-                self.__avg += v                                  # Cumulative sum of instantaneous values for averaging
-            self.__age = time()                                  # Note the current time
+            if not math.isnan(v):
+                self.__count += 1
+                if self.__values['MAX'] is None:
+                    self.__values['MAX'] = v
+                else:
+                    if v > self.__values['MAX']:
+                        self.__values['MAX'] = v
+                if self.__values['MIN'] is None:
+                    self.__values['MIN'] = v
+                else:
+                    if v < self.__values['MIN']:
+                        self.__values['MIN'] = v
+                if type(v) in [float,int]:                                      # only number types
+                    if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
+                        self.__values['SUM'] += (v * (time() - self.__age))     # Cumulative sum of time calculated value for sums
+                    self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
+                    self.__values['AVG'] = self.__avgsum / self.__count
+                self.__age = time()                                             # Note the current time
 
     @property
     def max(self):
-        return self.__max
+        return self.__values['MAX']
 
     @property
     def min(self):
-        return self.__min
+        return self.__values['MIN']
 
     @property
     def len(self):
@@ -72,24 +112,28 @@ class KPI(object):
 
     @property
     def sum(self):
-        return self.__sum
+        return self.__values['SUM']
 
     @property
     def avg(self):
-        if self.__count == 0: return 0
-        else: return self.__avg / self.__count
+        return self.__values['AVG']
 
-# Contants used in calculations
+    def format(self, f):
+        if f == 'LOG':
+            return self.__formats['LOG'](self.__values[self.__log])
+        else:
+            self.__values['VAL'] = self.val
+            return self.__formats[f](self.__values[f])
 
-config = loadConfig()
-
-#FUEL_AIR_RATIO_IDEAL = 14.7
-#FUEL_AIR_RATIO_MIN = 25.0                 #Fuel/Air Ratio x:1
-#FUEL_AIR_RATIO_MAX = 50.0
-#FUEL_DENSITY = 850.8                      #Diesel Fuel Density g/L
-#TYRE_WIDTH = 195.0                        #Tyre Width in mm
-#ASPECT_RATIO = 0.65                       #Tyre profile
-#RIM_SIZE = 15.0                           #Rim size in inches
+    def setFormat(self, f, v):
+        if f == 'ALL':
+            for field in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                self.__formats[field] = v
+        else:
+            if f in self.__formats:
+                self.__formats[f] = v
+            else:
+                raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
 
 PI = 3.14159
 
@@ -178,18 +222,12 @@ def OBDdistance(p):
 def gear(p):
     if 'DRIVE_RATIO' not in p: return None
     r = p['DRIVE_RATIO'].val
-    if r is None: return None
-    if r > 12.0 and r < 13.7:
-        return '1st'
-    if r > 6.2 and r < 7.4:
-        return '2nd'
-    if r > 3.8 and r < 4.2:
-        return '3rd'
-    if r > 2.70 and r < 3.1:
-        return '4th'
-    if r > 2.1 and r < 2.35:
-        return '5th'
-    return 'Neutal'
+    if r is None: return config.get('Transmission','Gear Neutral Label')
+    for i in range(config.getint('Vehicle','Transmission Speeds')):
+        if r > config.getfloat('Transmission','Gear {} Lower'.format(i+1)) and \
+           r < config.getfloat('Transmission','Gear {} Upper'.format(i+1)):
+            return config.get('Transmission','Gear {} Label'.format(i+1))
+    return config.get('Transmission','Gear Neutral Label')
 
 def duration(p):
     if 'RPM' not in p: return None

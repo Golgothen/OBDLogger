@@ -3,16 +3,18 @@ from datetime import datetime
 from general import *
 from monitor import Monitor
 from logger import DataLogger
+from configparser import ConfigParser
+
 import sys, logging
 
 logger = logging.getLogger('root')
 logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
 file_handler = logging.FileHandler('./'+logName) # sends output to file
 #file_handler = logging.StreamHandler() # sends output to stderr
-file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-10s.%(funcName)-17s:%(lineno)-5s] %(message)s'))
+file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
@@ -81,92 +83,20 @@ def printTank():
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
 
-
-def paintFullTable():
-    os.system('clear')
-    # paint the screen
-    sys.stdout.write(' Speed :     /    /          :')
-    sys.stdout.write('   RPM :          /          :')
-    sys.stdout.write('   LPH :          /          :')
-    sys.stdout.write('   FAM :          /          :')
-    sys.stdout.write('  Load :          /          :')
-    sys.stdout.write('   MAF :          /          :')
-    sys.stdout.write('  Trip :                     :')
-    sys.stdout.write('  Time :          /          :')
-    sys.stdout.write('  Fuel :          /          :')
-    sys.stdout.write('  Gear :          /          :')
-    sys.stdout.flush()
-
-def printFullTable(d):
-    if 'SPEED' in d:
-        if d['SPEED']['VAL'] is not None:
-            printxy(1,10,'{:4.0f}'.format(d['SPEED']['VAL']))
-            printxy(1,15,'{:4.0f}'.format(d['SPEED']['MAX']))
-            printxy(1,20,'{:9.2f}'.format(d['SPEED']['AVG']))
-
-            if d['SPEED']['VAL'] == 0:
-                if 'LPH' in d:
-                    if d['LPH']['VAL'] is not None:
-                        printxy(3, 1, '   LPH')
-                        printxy(3, 10, '{:9,.3f}'.format(d['LPH']['VAL']))
-                        printxy(3, 20, '{:9,.3f}'.format(d['LPH']['AVG']))
+def printFullTable():
+    lines = []
+    for l in range(config.getint('Application','Data Screen Size')):
+        if config.has_option('Data Screen','Line {}'.format(l)):
+            if config.get('Data Screen','Line {}'.format(l)) == 'LP100K':
+                if ecu.val('SPEED') == 0:
+                    lines.append(ecu.dataLine('LPH'))
+                else:
+                    lines.append(ecu.dataLine('LP100K'))
             else:
-                if 'LP100K' in d:
-                    if d['LP100K']['VAL'] is not None:
-                        printxy(3, 1, 'LP100K')
-                        printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['VAL']))
-                        printxy(3, 10, '{:9,.3f}'.format(d['LP100K']['AVG']))
-
-    if 'RPM' in d:
-        if d['RPM']['VAL'] is not None:
-            printxy(2 ,10, '{:9,.0f}'.format(d['RPM']['VAL']))
-            printxy(2, 20, '{:9,.0f}'.format(d['RPM']['MAX']))
-
-#    if 'BOOST_PRESSURE' in d:
-#        if d['BOOST_PRESSURE']['VAL'] is not None:
-#            printxy(4, 10, '{:9.2f}'.format(d['BOOST_PRESSURE']['VAL']))
-#            printxy(4, 20, '{:9.2f}'.format(d['BOOST_PRESSURE']['MAX']))
-
-    if 'FAM' in d:
-        if d['FAM']['VAL'] is not None:
-            printxy(4, 10, '{:9.2f}'.format(d['FAM']['VAL']))
-            printxy(4, 20, '{:9.2f}'.format(d['FAM']['MAX']))
-
-    if 'ENGINE_LOAD' in d:
-        if d['ENGINE_LOAD']['VAL'] is not None:
-            printxy(5, 10, '{:9.2f}'.format(d['ENGINE_LOAD']['VAL']))
-            printxy(5, 20, '{:9.2f}'.format(d['ENGINE_LOAD']['MAX']))
-
-#    if 'COOLANT_TEMP' in d:
-#        if d['COOLANT_TEMP']['VAL'] is not None:
-#            printxy(6, 10, '{:9}'.format(d['COOLANT_TEMP']['VAL']))
-#            printxy(6, 20, '{:9}'.format(d['COOLANT_TEMP']['MAX']))
-
-    if 'MAF' in d:
-        if d['MAF']['VAL'] is not None:
-            printxy(6, 10, '{:9.2f}'.format(d['MAF']['VAL']))
-            printxy(6, 20, '{:9.2f}'.format(d['MAF']['AVG']))
-
-    if 'DISTANCE' in d:
-        if d['DISTANCE']['VAL'] is not None:
-            printxy(7, 10, '{:9,.2f}'.format(d['DISTANCE']['SUM']))
-
-    if 'DURATION' in d and 'IDLE_TIME' in d:
-        if d['DURATION']['VAL'] is not None and \
-           d['IDLE_TIME']['VAL'] is not None:
-            printxy(8, 10, '{:>9}'.format(formatSeconds(d['DURATION']['SUM'])))
-            printxy(8, 20, '{:>9}'.format(formatSeconds(d['IDLE_TIME']['SUM'])))
-
-    if 'LPS' in d:
-        if d['LPS']['VAL'] is not None:
-            printxy(9, 10, '{:9.2f}'.format(d['LPS']['SUM']))
-            printxy(9, 20, '{:9.2f}'.format(d['LPS']['VAL']))
-
-    if 'GEAR' in d:
-        if d['GEAR']['VAL'] is not None and \
-           d['DRIVE_RATIO']['VAL'] is not None:
-            printxy(10, 10, '{:>9}'.format(d['GEAR']['VAL']))
-            printxy(10, 20, '{:9.2f}'.format(d['DRIVE_RATIO']['VAL']))
+                lines.append(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
+    os.system('clear')
+    for l in lines:
+        sys.stdout.write(l)
     sys.stdout.flush()
 
 if __name__ == '__main__':
@@ -206,10 +136,9 @@ if __name__ == '__main__':
         disconnected=None
         journey = False
         while 1:
-            while ecu.isConnected() == True:
+            while ecu.isConnected:
                 if not journey:
                     journey=True
-                    paintFullTable()
                     for q in config.get('Application', 'Queues').split(','):
                         if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
                            config.has_option('Queue {}'.format(q), 'Commands'):
@@ -217,7 +146,7 @@ if __name__ == '__main__':
                                 ecu.addCommand(q, c)
                     sc = None
                     while sc is None:
-                        sc = ecu.supportedcommands()
+                        sc = ecu.supportedCommands
                         sleep(0.01)
 
                     if config.getboolean('Application', 'Log Extra Data'):
@@ -228,14 +157,14 @@ if __name__ == '__main__':
                             if config.has_option('Queue {}'.format(q), 'Default Queue'):
                                 for c in sc:
                                     if c not in loadedCommands:
-                                        ecu.addCommand(q,c)                     # Add all supported commands that arent already in a que to the LOW que
+                                        ecu.addCommand(q, c)                     # Add all supported commands that arent already in a que to the LOW que
                                         logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
-                logger.info(ecu.status())
-                printFullTable(ecu.snapshot)
+                #logger.info(ecu.status())
+                printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
-            while not ecu.isConnected():
+            while not ecu.isConnected:
                 if journey:
                     journey=False
                     ecu.pause()
@@ -258,7 +187,7 @@ if __name__ == '__main__':
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()
-                logger.info(ecu.status())
+                #logger.info(ecu.status())
                 sleep(1)
 
     except (KeyboardInterrupt, SystemExit):

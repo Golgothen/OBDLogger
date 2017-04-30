@@ -3,6 +3,8 @@ from time import time, sleep
 from datetime import datetime
 import threading, gzip, shutil, os, logging
 from messages import Message, PipeCont
+from pipewatcher import PipeWatcher
+from configparser import ConfigParser
 
 logger = logging.getLogger('root')
 
@@ -22,9 +24,10 @@ class DataLogger(threading.Thread):
         self.__logPath = './'                       # Path for logfile. Default to current directory
         self.deamon=True                            # Sets the process to daemon. Stops if the parent process stops
         self.name='Logger'                          # Sets the process name. Helps with debigging.
-        self.__controlPipe = controlPipe            # Communication pipe with the controlling application
-        self.__dataPipe = dataPipe                  # Comminication pipe with the Data Collector process
-        self.__workerPipe = workerPipe              # Comminication pipe with the Data Collector process
+        self.__pipes = {}
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'LOGGER.APPLICATION')            # Communication pipe with the controlling application
+        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'LOGGER.DATA')                  # Comminication pipe with the Data Collector process
+        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'LOGGER.WORKER')              # Comminication pipe with the Data Collector process
         self.__data = dict()                        # Data dictionary to use to write log diles
         self.__refreshRequired = True               # Flag to determine if the dictionary needs to be refreshed
         self.__refreshRequested = False             # Flag to determine if the refresh request has been sent
@@ -38,36 +41,35 @@ class DataLogger(threading.Thread):
         self.__running=True
         self.__pid = os.getpid()
         logger.info('Starting Logger process on PID {}'.format(self.__pid))
+        for p in self.__pipes:
+            self.__pipes[p].start()
         try:
             timer=time()
             while self.__running:
-                self.__checkPipe()
                 if self.__logName is None:
                     logger.debug('Logger name not set. Pausing')
-                    self.__pause()
+                    self.pause()
                 logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                 if not self.__paused:
                     if self.__refreshRequired:
                         if not self.__refreshRequested:
                             logger.debug('Getting snapshot')
-                            self.__dataPipe.send(Message('SNAPSHOT'))
+                            self.__pipes['DATA'].send(Message('SNAPSHOT'))
                             self.__refreshRequested = True
+                            sleep(0.001)
                         continue
                     line=''
                     logger.debug('Recording data')
                     for l in self.__logHeadings:
-                        if l == 'TIMESTAMP':
-                            line += str(datetime.now()) + ','
-                        else:
-                            if l in self.__data:
-                                if self.__data[l]['VAL'] is not None:
-                                    line += str(self.__data[l]['VAL']) + ','
-                                else:
-                                    line += '-,'
-                                    logger.debug('{} is none'.format(l))
+                        if l in self.__data:
+                            if self.__data[l]['VAL'] is not None:
+                                line += str(self.__data[l]['LOG']) + ','
                             else:
-                                logger.debug('{} is not in snapshot'.format(l))
                                 line += '-,'
+                                logger.debug('{} is none'.format(l))
+                        else:
+                            logger.debug('{} is not in snapshot'.format(l))
+                            line += '-,'
                     with open(self.__logName + '.log','ab') as f:
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
                     self.__refreshRequired = True
@@ -84,42 +86,18 @@ class DataLogger(threading.Thread):
             self.__running = False
             return
 
-    def __checkPipe(self):
-        # Check controller pipe
-        logger.debug('Checking Pipes')
-        while self.__controlPipe.poll():
-            m = self.__controlPipe.recv()
-            logger.debug('Received {} on controller pipe'.format(m.message))
+    def frequency(self, p):
+        self.__logFrequency = p['FREQUENCY']
 
-            if m.message == 'STOP'            : self.__stop()
-            if m.message == 'SAVE'            : self.__save()
-            if m.message == 'DISCARD'         : self.__discard()
-            if m.message == 'PAUSE'           : self.__pause()
-            if m.message == 'RESUME'          : self.__resume()
-            if m.message == 'RESTART'         : self.__restart()
-            if m.message == 'LOGPATH'         : self.__logPath = m.params['PATH']
-            if m.message == 'LOGNAME'         : self.__controlPipe.send(Message(m.message,NAME=self.__logName))
-            if m.message == 'STATUS'          : self.__controlPipe.send(Message(m.message,STATUS=self.__status()))
-            if m.message == 'FREQUENCY'       : self.__logFrequency = m.params['FREQUENCY']
-            if m.message == 'TIMEOUT'         : self.__tripTimeout = m.params['TIMEOUT']
-            if m.message == 'ADD_HEADINGS'    : self.__addColHeadings(m.params['HEADINGS'])
-            if m.message == 'REMOVE_HEADINGS' : self.__removeColHeadings(m.params['HEADINGS'])
+    def logpath(self, p):
+        self.__logPath = p['PATH']
 
-        while self.__workerPipe.poll():
-            m = self.__workerPipe.recv()
-            logger.debug('Received {} on worker pipe'.format(m.message))
+    def logname(self, p):
+        return Message('LOG_NAME', NAME = self.__logName)
 
-            if m.message == 'PAUSE'       : self.__pause()
-            if m.message == 'RESUME'      : self.__resume()
-
-
-        while self.__dataPipe.poll():
-            m = self.__dataPipe.recv()
-            logger.debug('Reveived {} on data pipe'.format(m.message))
-
-            if m.message == 'SNAPSHOT':
-                self.__data = m.params['DATA']
-                self.__refreshRequired = False
+    def snap_shot(self, p):
+        self.__data = p['SNAPSHOT']
+        self.__refreshRequired = False
 
     def __setName(self):
         if self.__logHeadings == []:
@@ -133,39 +111,31 @@ class DataLogger(threading.Thread):
             with open(self.__logName + '.log','wb') as f:        # Clobber output file if it exists
                 f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
 
-    def __addColHeadings(self, headings):
+    def headings(self, p):
         #Set the log headings
-        for h in headings:
-            if h not in self.__logHeadings:
-                self.__logHeadings.append(h)
+        self.__logHeadings = p['HEADINGS']
 
-    def __removeColHeadings(self, headings):
-        #Set the log headings
-        for h in headings:
-            if h in self.__logHeadings:
-                self.__logHeadings.remove(h)
-
-    def __stop(self):
+    def stop(self, p = None):
         #Stop logging.    Thread stops - This is final.    Cannot be restarted
         self.__running=False
 
-    def __resume(self):
+    def resume(self, p = None):
         #Resume Logging
         logger.info('Logging resumed')
         self.__paused = self.__pauseLog = False
         if self.__logName is None:
             self.__setName()
 
-    def __pause(self):
+    def pause(self, p = None):
         #Pause logging, thread keeps running
         if not self.__paused:
             logger.info('Logging paused')
             self.__paused = True
 
-    def __save(self):
+    def save(self, p = None):
         #Compress the logfile
         if not self.__paused:
-            self.__pause()
+            self.pause()
         try:
             with open(self.__logName + '.log', 'rb') as f:
                 with gzip.open(self.__logName + '.gz', 'wb') as z:
@@ -177,7 +147,7 @@ class DataLogger(threading.Thread):
         os.remove(self.__logName + '.log')
         self.logName = None
 
-    def __discard(self):
+    def discard(self, p = None):
         #Delete the logfile
         if self.__paused:
             self.__paused = True
@@ -187,7 +157,7 @@ class DataLogger(threading.Thread):
             logger.warning('Could not delete log file {}'.format(self.__logname))
         self.__logName = None
 
-    def __status(self):
+    def getstatus(self, p = None):
         d = dict()
         d['Running'] = self.__running
         d['Paused'] = self.__paused
@@ -195,4 +165,4 @@ class DataLogger(threading.Thread):
         d['Frequency'] = self.__logFrequency
         d['Log Path'] = self.__logPath
         d['Headings'] = self.__logHeadings
-        return d
+        return Message('LOGSTATUS', STATUS = d)
