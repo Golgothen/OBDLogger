@@ -144,11 +144,11 @@ class KPI(object):
         if f == 'ALL':
             for field in ['VAL','MIN','MAX','AVG','SUM','LOG']:
                 for k in kwargs:
-                    setattr(self.__formats[field], k, kwargs[k])
+                    setattr(self.__formats[field], k.lower(), kwargs[k])
         else:
             if f in self.__formats:
                 for k in kwargs:
-                    setattr(self.__formats[field], k, kwargs[k])
+                    setattr(self.__formats[f], k.lower(), kwargs[k])
             else:
                 raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
 

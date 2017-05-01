@@ -50,7 +50,7 @@ class FMT():
 
     def __call__(self, v):
         if v is None:                                             # Null values
-            return self.none + ' ' * (self.length - len(self.none))
+            return ' ' * (self.length - len(self.none)) + self.none
         if self.type == 'd' and type(v) is datetime:              # Dates
             return self.fmtstr.format(v.strftime(self.precision)) # Return it immediately. No firther processing required
         elif self.type == 't':                                    # Time counters

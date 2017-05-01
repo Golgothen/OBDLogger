@@ -127,8 +127,8 @@ class Collector(Process):
                                                 )
 
         if 'SPEED' in self.__data:
-            self.__data['SPEED'].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 0))
-            self.__data['SPEED'].setFormat('AVG',FMT(PRECISION = 2))
+            self.__data['SPEED'].setFormat('ALL', LENGTH = 4, PRECISION = 0)
+            self.__data['SPEED'].setFormat('AVG', LENGTH = 9, PRECISION = 2)
 
             self.__data['DISTANCE'] =        KPI(FUNCTION = distance,
                                                  SPEED = self.__data['SPEED']
@@ -187,7 +187,7 @@ class Collector(Process):
             if d in ['RPM','COOLANT_TEMP','FUEL_RAIL_PRESSURE_DIRECT','WARMUPS_SINCE_DTC_CLEAR','DISTANCE_W_MIL']:
                 self.__data[d].setFormat('ALL', PRECISION = 0)
             if d in ['CONTROL_MODULE_VOLTAGE']:
-                self.__data[d].setFormat('ALL', LENGTH = 4, PRECISION = 1)
+                self.__data[d].setFormat('ALL', LENGTH = 5, PRECISION = 2)
             self.__data[d].setFormat('LOG', COMMAS = False)
 
         self.__ready = True
