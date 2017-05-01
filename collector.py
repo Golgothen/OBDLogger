@@ -162,7 +162,6 @@ class Collector(Process):
             self.__data['DURATION'] =        KPI(FUNCTION = duration,
                                                  RPM = self.__data['RPM'],
                                                  FMT_ALL = FMT(TYPE = 't')
-
                                                 )
 
         if 'BAROMETRIC_PRESSURE' in self.__data and \

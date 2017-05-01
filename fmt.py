@@ -11,6 +11,7 @@ class FMT():
         self.alignment = '>'
         self.commas = True
         self.truncate = True
+        self.none = '- '
 
         for k in kwargs:
             if k == 'LENGTH':
@@ -25,6 +26,8 @@ class FMT():
                 self.commas = kwargs[k]
             if k == 'TRUNCATE':
                 self.truncate = kwargs[k]
+            if k == 'NONE':
+                self.none = kwargs[k]
         if self.type in ['s','d','t']:
             self.commas = False
         if self.type in ['s','t']:
@@ -47,7 +50,7 @@ class FMT():
 
     def __call__(self, v):
         if v is None:                                             # Null values
-            return ' ' * self.length
+            return self.none + ' ' * (self.length - len(self.none))
         if self.type == 'd' and type(v) is datetime:              # Dates
             return self.fmtstr.format(v.strftime(self.precision)) # Return it immediately. No firther processing required
         elif self.type == 't':                                    # Time counters

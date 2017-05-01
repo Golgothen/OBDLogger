@@ -62,11 +62,7 @@ class DataLogger(threading.Thread):
                     logger.debug('Recording data')
                     for l in self.__logHeadings:
                         if l in self.__data:
-                            if self.__data[l]['VAL'] is not None:
-                                line += str(self.__data[l]['LOG']) + ','
-                            else:
-                                line += '-,'
-                                logger.debug('{} is none'.format(l))
+                            line += str(self.__data[l]['LOG']).strip() + ','
                         else:
                             logger.debug('{} is not in snapshot'.format(l))
                             line += '-,'
