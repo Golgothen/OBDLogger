@@ -2,6 +2,7 @@ from multiprocessing import Process, Queue, Pipe
 from time import sleep, time
 from messages import Message
 from gps3 import agps3
+from pipewatcher import PipeWatcher
 
 from general import *
 
@@ -34,9 +35,10 @@ class GPS(Process):
         self.__pollCount = 0
         self.__resultQue = resultQue
         self.__pid = None
-        self.__controlPipe = controlPipe
+        self.__pipes['GPS'] = PipeWatcher(self, controlPipe, 'GPS.APPLICATION')
+        seld.__pipes['GPS'].start()
+
         logger.debug('GPS process initalised')
-        self.__checkPipe()
 
     def run(self):
         self.__running = True
@@ -44,7 +46,6 @@ class GPS(Process):
         logger.info('Starting GPS process on PID {}'.format(self.__pid))
         try:
             while self.__running:
-                self.__checkPipe()
                 if not self.__paused and self.__running:
                     t = time()
                     self.__gpsd.next()
@@ -65,28 +66,17 @@ class GPS(Process):
             self.__running = False
             return
 
-    def __checkPipe(self):
-        # Check for commands comming from the Application
-        while self.__controlPipe.poll():
-            m = self.__controlPipe.recv()
-            logger.info('Received {} on Controller pipe'.format(m.message))
-
-            if m.message == 'STOP'                : self.__stop()
-            if m.message == 'PAUSE'               : self.__pause()
-            if m.message == 'RESUME'              : self.__resume()
-            if m.message == 'STATUS'              : self.__controlPipe.send(Message(m.message, STATUS = self.__stataus()))
-
-    def __pause(self):
+    def pause(self):
         if not self.__paused:
             logger.info('Pausing GPS process')
             self.__paused = True
 
-    def __resume(self):
+    def resume(self):
         if self.__paused:
             logger.info('Resuming GPS process')
             self.__paused = False
 
-    def __status(self):
+    def status(self):
         #returns a dict of que status
         d = dict()
         d['Name'] = self.name
@@ -95,9 +85,9 @@ class GPS(Process):
         d['Paused'] = self.__paused
         d['Poll Count'] = self.__pollCount
         d['Pid'] = self.__pid
-        return d
+        return Message('STATUS', STATUS = d)
 
-    def __stop(self):
+    def stop(self):
         logger.info('Stopping GPS process')
         self.__running = False
 

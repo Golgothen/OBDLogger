@@ -44,6 +44,7 @@ class Monitor():
         self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APPLICATION.WORKER')
         self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APPLICATION.DATA')
         self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APPLICATION.LOG')
+        self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'APPLICATION.GPS')
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
@@ -78,8 +79,7 @@ class Monitor():
         self.__collector.start()
         self.__worker.start()
         self.__logger.start()
-        if self.__gpsEnabled:
-            self.__gps.start()
+        self.__gps.start()
         for p in self.__pipes:
             self.__pipes[p].start()
 
@@ -98,14 +98,19 @@ class Monitor():
     def stop(self):
         self.__pipes['ECU'].send(Message('STOP'))
         self.__pipes['LOG'].send(Message('STOP'))
+        self.__pipes['GPS'].send(Message('STOP'))
 
     def pause(self):
         self.__pipes['ECU'].send(Message('PAUSE'))
         self.__pipes['ECU'].send(Message('PAUSE'))
+        if self.__gpsEnabled:
+            self.__pipes['GPS'].send(Message('PAUSE'))
 
     def resume(self):
         self.__pipes['ECU'].send(Message('RESUME'))
         self.__pipes['LOG'].send(Message('RESUME'))
+        if self.__gpsEnabled:
+            self.__pipes['GPS'].send(Message('RESUME'))
 
     def reset(self):
         self.__pipes['DATA'].send(Message('RESET'))
