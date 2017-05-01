@@ -3,15 +3,18 @@ from datetime import datetime
 from general import *
 from monitor import Monitor
 from logger import DataLogger
+from configparser import ConfigParser
+
 import sys, logging
+
 logger = logging.getLogger('root')
 logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
 file_handler = logging.FileHandler('./'+logName) # sends output to file
 #file_handler = logging.StreamHandler() # sends output to stderr
-file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-10s.%(funcName)-17s:%(lineno)-5s] %(message)s'))
+file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
@@ -82,7 +85,7 @@ def printTank():
 
 def printFullTable():
     lines = []
-    for l in range(config.getfloat('Application','Data Screen Size')):
+    for l in range(config.getint('Application','Data Screen Size')):
         if config.has_option('Data Screen','Line {}'.format(l)):
             if config.get('Data Screen','Line {}'.format(l)) == 'LP100K':
                 if ecu.val('SPEED') == 0:
@@ -132,10 +135,9 @@ if __name__ == '__main__':
         disconnected=None
         journey = False
         while 1:
-            while ecu.isConnected() == True:
+            while ecu.isConnected:
                 if not journey:
                     journey=True
-                    #paintFullTable()
                     for q in config.get('Application', 'Queues').split(','):
                         if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
                            config.has_option('Queue {}'.format(q), 'Commands'):
@@ -143,7 +145,7 @@ if __name__ == '__main__':
                                 ecu.addCommand(q, c)
                     sc = None
                     while sc is None:
-                        sc = ecu.supportedcommands()
+                        sc = ecu.supportedCommands
                         sleep(0.01)
                     if config.getboolean('Application', 'Log Extra Data'):
                         loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
@@ -153,14 +155,14 @@ if __name__ == '__main__':
                             if config.has_option('Queue {}'.format(q), 'Default Queue'):
                                 for c in sc:
                                     if c not in loadedCommands:
-                                        ecu.addCommand(q,c)                     # Add all supported commands that arent already in a que to the LOW que
+                                        ecu.addCommand(q, c)                     # Add all supported commands that arent already in a que to the LOW que
                                         logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
-                logger.info(ecu.status())
+                #logger.info(ecu.status())
                 printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
-            while not ecu.isConnected():
+            while not ecu.isConnected:
                 if journey:
                     journey=False
                     ecu.pause()
@@ -183,7 +185,7 @@ if __name__ == '__main__':
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 printIdleScreen()
-                logger.info(ecu.status())
+                #logger.info(ecu.status())
                 sleep(1)
 
     except (KeyboardInterrupt, SystemExit):

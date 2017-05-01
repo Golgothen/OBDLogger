@@ -1,8 +1,11 @@
 from multiprocessing import Process, Queue
 from messages import Message
+from time import sleep
+from pipewatcher import PipeWatcher
+from configparser import ConfigParser
+
 from kpi import *
 from general import *
-from time import sleep
 
 import os, logger
 
@@ -23,10 +26,11 @@ class Collector(Process):
         super(Collector,self).__init__()
         self.__results = que
         self.__data = dict()
-        self.__ecuPipe = ecuPipe
-        self.__controlPipe = controlPipe
-        self.__loggerPipe = logPipe
-        self.__workerPipe = workerPipe
+        self.__pipes = {}
+        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'COLLECTOR.ECU')
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'COLLECTOR.APPLICATION')
+        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'COLLECTOR.LOG')
+        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'COLLECTOR.WORKER')
         self.__pid = None
         self.__paused = False
         self.__running = False
@@ -40,100 +44,61 @@ class Collector(Process):
         self.__running = True
         self.__pid = os.getpid()
         logger.info('Starting Collector process on PID {}'.format(str(self.__pid)))
+        for p in self.__pipes:
+            self.__pipes[p].start()
         try:
             while self.__running:                                                   # Running set to False by STOP command
-                self.__checkPipe()                                                  # Check all pipes for commands
                 if self.__ready:                                                    # Ready set to True when data dictonary has been built
                     logger.debug('Collector is ready')
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
                         while self.__results.qsize() > 0:                           # Loop while there are results in the que
                             m = self.__results.get()                                # Pull result message from que
                             self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
-                        self.__checkPipe()                                          # Check pipes for commands after the que has been cleared
                     sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
                 else:                                                               # Not ready?
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
                         self.__SCreq = True                                         # Only send the above request once
-                        self.__reset()                                              # Empty data dictionary and request a list of supported commands
-                        sleep(0.25)
+                        self.reset()                                              # Empty data dictionary and request a list of supported commands
+                        sleep(1.0 / self.__frequency)
                 sleep(1.0 / self.__frequency)                                       # Release CPU
             logger.info('Collector process stopped')                                # Running has been set to False
         except (KeyboardInterrupt, SystemExit):                                     # Pick up interrups and system shutdown
             self.__running = False                                                  # Set Running to false, causing the above loop to exit
 
-    def __checkPipe(self):
-        # Check all pipes to other processes for commands/requests
-        while self.__ecuPipe.poll():                                                # Loop through all messages on the ECU pipe
-            m = self.__ecuPipe.recv()                                               # Grab the first message in the pipe
-            logger.info('Received {} on ECU pipe'.format(m.message))
-
-            if m.message == 'PAUSE'              : self.__pause()
-            if m.message == 'RESUME'             : self.__resume()
-            if m.message == 'STOP'               : self.__stop()
-            if m.message == 'RESET'              : self.__reset()
-
-        while self.__controlPipe.poll():                                            # Loop through all messages on the Application pipe
-            m = self.__controlPipe.recv()
-            logger.info('Received {} on controller pipe'.format(m.message))
-
-            if m.message == 'RESET'              : self.__reset()
-            if m.message == 'SNAPSHOT'           : self.__controlPipe.send(Message(m.message, SNAPSHOT = self.__snapshot()))
-            if m.message == 'SUMMARY'            : self.__controlPipe.send(Message(m.message, SUMMARY = self.__summary()))
-            if m.message == 'SUM'                : self.__controlPipe.send(Message(m.message, SUM = self.__sum(m.params)))
-            if m.message == 'AVG'                : self.__controlPipe.send(Message(m.message, AVG = self.__avg(m.params)))
-            if m.message == 'MIN'                : self.__controlPipe.send(Message(m.message, MIN = self.__min(m.params)))
-            if m.message == 'MAX'                : self.__controlPipe.send(Message(m.message, MAX = self.__max(m.params)))
-            if m.message == 'VAL'                : self.__controlPipe.send(Message(m.message, VAL = self.__val(m.params)))
-            if m.message == 'STATUS'             : self.__controlPipe.send(Message(m.message, STATUS = self.__status()))
-            if m.message == 'DATALINE'           : self.__controlPipe.send(Message(m.message, LINE = self.__dataLine(m.params)))
-
-        while self.__loggerPipe.poll():                                             # Loop through all messages on the Logger pipe
-            m = self.__loggerPipe.recv()
-            logger.info('Received {} on logger pipe'.format(m.message))
-
-            if m.message == 'SNAPSHOT'           : self.__loggerPipe.send(Message(m.message, DATA = self.__snapshot()))
-            if m.message == 'RESET'              : self.__reset()
-
-        while self.__workerPipe.poll():                                             # Loop through all messages on the Worker pipe
-            m = self.__workerPipe.recv()
-            logger.debug('Received {} on Worker pipe'.format(m.message))
-
-            if m.message == 'SUPPORTED_COMMANDS' : self.__buildDict(m.params['SUPPORTED_COMMANDS'])
-
-    def __snapshot(self):
+    def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values
         data = dict()
         for d in self.__data:
             data[d] = dict()
             for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
                 data[d][f] = self.__data[d].format(f)
-        return data
+        return Message('SNAP_SHOT', SNAPSHOT = data)
 
-    def __sum(self, m):
-        return self.__data[m['NAME']].sum
+    def sum(self, p):
+        return Message('GETSUM', SUM = self.__data[p['NAME']].sum)
 
-    def __avg(self, m):
-        return self.__data[m['NAME']].avg
+    def avg(self, p):
+        return Message('GETAVG', AVG = self.__data[p['NAME']].avg)
 
-    def __min(self, m):
-        return self.__data[m['NAME']].min
+    def min(self, p):
+        return Message('GETMIN', MIN = self.__data[p['NAME']].min)
 
-    def __max(self, m):
-        return self.__data[m['NAME']].max
+    def max(self, p):
+        return Message('GETMAX', MAX = self.__data[p['NAME']].max)
 
-    def __val(self, m):
-        return self.__data[m['NAME']].val
+    def val(self, p):
+        return Message('GETVAL', VAL = self.__data[p['NAME']].val)
 
-    def __reset(self):
+    def reset(self, p = None):
         self.__ready = False
         self.__data = dict()
-        self.__workerPipe.send(Message('SUPPORTED_COMMANDS'))
+        self.__pipes['WORKER'].send(Message('SUPPORTED_COMMANDS'))
 
-    def __buildDict(self, supportedcommands):
+    def supported_commands(self, p):
         self.__SCreq = False
-        if supportedcommands == []:
+        if p['SUPPORTED_COMMANDS'] == []:
             return
-        for f in supportedcommands:
+        for f in p['SUPPORTED_COMMANDS']:
             self.__data[f] = KPI()
 
         # now add calculates data fields
@@ -220,33 +185,33 @@ class Collector(Process):
 
         # Set custom formats. Default format is {:9,.2f}
         for d in self.__data:
-            if d in ['RPM','COOLANT_TEMP']:
+            if d in ['RPM','COOLANT_TEMP','FUEL_RAIL_PRESSURE_DIRECT']:
                 self.__data[d].setFormat('ALL',FMT(PRECISION = 0))
             if d in ['CONTROL_MODULE_VOLTAGE']:
-                self.__data[d].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 1)
+                self.__data[d].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 1))
 
         self.__ready = True
         self.__dirty = False
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
 
-    def __pause(self):
+    def pause(self, p = None):
         if not self.__paused:
             logger.info('Pausing Collector process')
             self.__dirty = self.__paused = True
 
-    def __resume(self):
+    def resume(self, p = None):
         if self.__paused:
             logger.info('Resuming Collector process')
             self.__paused = False
             if self.__dirty:
                 logger.warning('Collector resumed without reset - Data set may have changed')
 
-    def __stop(self):
+    def stop(self, p = None):
         if self.__running:
             logger.debug('Stopping Collector process')
             self.__running = False
 
-    def __status(self):
+    def getstatus(self, p = None):
         d = dict()
         d['Name'] = self.name
         d['Running'] = self.__running
@@ -256,9 +221,9 @@ class Collector(Process):
         d['Length'] = dict()
         for k in self.__data:
             d['Length'][k] = self.__data[k].len
-        return d
+        return Message('DATASTATUS', STATUS = d)
 
-    def __summary(self):
+    def summary(self, p = None):
         d=dict()
         d['DATE'] = datetime.now() #self.__data['TIMESTAMP'].min
         d['AVG_LP100K'] = self.__data['LP100K'].avg
@@ -268,12 +233,12 @@ class Collector(Process):
         d['AVG_LOAD'] = self.__data['ENGINE_LOAD'].avg
         d['DURATION'] = self.__data['DURATION'].sum
         d['IDLE_TIME'] = self.__data['IDLE_TIME'].sum
-        return d
+        return Message('GETSUMMARY', SUMMARY = d)
 
-    def __dataLine(self, m):
+    def dataline(self, p):
         try:
-            temp = config.get('Data Layout',m['NAME'])
-        except (configparser.NoOptionError):
+            temp = config.get('Data Layout',p['NAME'])
+        except (ConfigParser.NoOptionError):
             return None
         for d in self.__data:
             for f in ['VAL','MIN','MAX','SUM','AVG','LOG']:
@@ -281,6 +246,4 @@ class Collector(Process):
                     temp=temp.replace('{}.{}'.format(d,f),
                                       '{}'.format(self.__data[d].format(f)))
                     temp=temp.replace('*',' ')
-        return temp
-
-
+        return Message('DATA_LINE', LINE = temp)

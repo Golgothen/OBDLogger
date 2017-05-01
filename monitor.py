@@ -7,6 +7,9 @@ from que import Que
 from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
+from pipewatcher import PipeWatcher
+from configparser import ConfigParser
+
 from general import *
 
 import sys, logging
@@ -33,10 +36,12 @@ class Monitor():
 
         workQue = Queue()
         resultQue = Queue()
-        self.__ecuComm = ecuControlPipe.s
-        self.__workerComm = workerControlPipe.s
-        self.__dataComm = collectorControlPipe.s
-        self.__logComm = loggerControlPipe.s
+
+        self.__pipes = {}
+        self.__pipes['ECU'] = PipeWatcher(self, ecuControlPipe.s, 'APPLICATION.ECU')
+        self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APPLICATION.WORKER')
+        self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APPLICATION.DATA')
+        self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APPLICATION.LOG')
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
@@ -63,238 +68,252 @@ class Monitor():
                                    loggerWorkerPipe.r)                 # Logger <-> Worker
 
         self.__ecu.start()
-        self.__worker.start()
         self.__collector.start()
+        self.__worker.start()
         self.__logger.start()
-
-    def __checkWorkerPipe(self, message, timeout):
-        # Check Worker pipe
-        while self.__workerComm.poll(timeout):
-            m = self.__workerComm.recv()
-            logger.debug('Received {} on Worker pipe'.format(m.message))
-            if m.message == message: 
-                return m.params
-            else:
-                logger.info('Discarding out of sync message {}.  Expected {}'.format(m.message, message))
-        return None
-
-    def __checkDataPipe(self, message, timeout):
-        # Check Collector pipe
-        while self.__dataComm.poll(timeout):
-            m = self.__dataComm.recv()
-            logger.debug('Received {} on Collector pipe'.format(m.message))
-            if m.message == message: 
-                return m.params
-            else:
-                logger.info('Discarding out of sync message {}. Expected {}'.format(m.message, message))
-        return None
-
-    def __checkECUPipe(self, message, timeout):
-        # Check ECU pipe
-        while self.__ecuComm.poll(timeout):
-            m = self.__ecuComm.recv()
-            logger.debug(m.message + 'Received {} on ECU pipe'.format(m.message))
-            if m.message == message:
-                return m.params
-            else:
-                logger.info('Discarding out of sync message {}. Expected {}'.format(m.message, message))
-        return None
-
-    def __checkLoggerPipe(self, message, timeout):
-        # Check Logger pipe
-        while self.__logComm.poll(timeout):
-            m = self.__logComm.recv()
-            logger.debug('Received {} on Logger pipe'.format(m.message))
-            if m.message == message:
-                return m.params
-            else:
-                logger.info('Discarding out of sync message {}. Expected {}'.format(m.message, message))
-        return None
-
-    def isConnected(self):
-        self.__workerComm.send(Message('CONNECTED'))
-        r = self.__checkWorkerPipe('CONNECTED', PIPE_TIMEOUT)
-        if r is not None:
-            return r['STATUS']
-        else:
-            logger.warning('Worker Timeout requesting connection status')
-            return False
+        for p in self.__pipes:
+            self.__pipes[p].start()
 
     def addQue(self, que, frequency):
-        self.__ecuComm.send(Message('ADDQUE',QUE = que, FREQUENCY = frequency))
-        logger.debug('Add Que {} message sent'.format(que))
-
-    def getQueues(self):
-        self.__ecuComm.send(Message('GETQUEUES'))
-        r = self.__checkECUPipe('GETQUEUES', PIPE_TIMEOUT)
-        if r is not None:
-            return r['QUEUES']
-        else:
-            logger.warning('ECU Timeout requesting Que List')
-
-    def getQueCommands(self, que):
-        self.__ecuComm.send(Message('GETCOMMANDS', QUE = que))
-        r = self.__checkECUPipe('GETCOMMANDS', PIPE_TIMEOUT)
-        if r is not None:
-            return r['COMMANDS']
-        else:
-            logger.warning('ECU timeout requesting que commands')
-
-    def getInterface(self):
-        self.__ecuComm.send(Message('INTERFACE'))
-        r = self.__checkECUPipe('INTERFACE', PIPE_TIMEOUT)
-        if r is not None:
-            return r['INTERFACE']
-        else:
-            logger.warning('ECU Timeout requesting interface')
+        self.__pipes['ECU'].send(Message('ADDQUE',QUE = que, FREQUENCY = frequency))
 
     def addCommand(self, que, command, override=False):
-        self.__ecuComm.send(Message('ADDCOMMAND',QUE = que, COMMAND = command, OVERRIDE = override))
-        logger.debug('Add Command {} on que {} sent'.format(command, que))
+        self.__pipes['ECU'].send(Message('ADDCOMMAND',QUE = que, COMMAND = command, OVERRIDE = override))
 
     def setQueFrequency(self, que, frequency):
-        self.__ecuComm.send(Message('SETFREQUENCY',QUE = que, FREQUENCY = frequency))
-        logger.debug('Set frequency on que {} sent'.format(que))
+        self.__pipes['ECU'].send(Message('SETFREQUENCY',QUE = que, FREQUENCY = frequency))
 
     def deleteAfterPoll(self, que, flag):
-        self.__ecuComm.send(Message('DELETEAFTERPOLL',QUE = que, FLAG = flag))
-        logger.debug('Delete after poll on que {} sent'.format(que))
-
-    def commands(self):
-        self.__workerComm.send(Message('COMMANDS'))
-        r = self.__checkWorkerPipe('COMMANDS', PIPE_TIMEOUT)
-        if r is not None:
-            return r['COMMANDS']
-        else:
-            logger.warning('ECU Timeout requesting commands')
-
-    def supportedcommands(self):
-        self.__workerComm.send(Message('SUPPORTED_COMMANDS'))
-        r = self.__checkWorkerPipe('SUPPORTED_COMMANDS', PIPE_TIMEOUT)
-        if r is not None:
-            return r['SUPPORTED_COMMANDS']
-        else:
-            logger.warning('ECU Timeout requesting commands')
-
-    def status(self):
-        d = dict()
-        self.__ecuComm.send(Message('STATUS'))
-        self.__dataComm.send(Message('STATUS'))
-        self.__workerComm.send(Message('STATUS'))
-        self.__logComm.send(Message('STATUS'))
-
-        r = self.__checkWorkerPipe('STATUS', PIPE_TIMEOUT)
-        if r is not None:
-            d['Worker Status'] = r['STATUS']
-        else:
-            logger.warning('Worker Timeout requesting status')
-
-        r = self.__checkECUPipe('STATUS',PIPE_TIMEOUT)
-        if r is not None:
-            d['ECU Status'] = r['STATUS']
-        else:
-            logger.warning('ECU Timeout requesting status')
-
-        r = self.__checkLoggerPipe('STATUS', PIPE_TIMEOUT)
-        if r is not None:
-            d['Logger Status'] = r['STATUS']
-        else:
-            logger.warning('Logger Timeout requesting status')
-
-        r = self.__checkDataPipe('STATUS', PIPE_TIMEOUT)
-        if r is not None:
-            d['Collector Status'] = r['STATUS']
-        else:
-            logger.warning('Collector Timeout requesting status')
-        return d
+        self.__pipes['ECU'].send(Message('DELETEAFTERPOLL',QUE = que, FLAG = flag))
 
     def stop(self):
-        self.__ecuComm.send(Message('STOP'))
-        self.__logComm.send(Message('STOP'))
+        self.__pipes['ECU'].send(Message('STOP'))
+        self.__pipes['LOG'].send(Message('STOP'))
 
     def pause(self):
-        self.__ecuComm.send(Message('PAUSE'))
-        self.__logComm.send(Message('PAUSE'))
+        self.__pipes['ECU'].send(Message('PAUSE'))
+        self.__pipes['ECU'].send(Message('PAUSE'))
 
     def resume(self):
-        self.__ecuComm.send(Message('RESUME'))
-        logger.info('Starting logger')
-        self.__logComm.send(Message('RESUME'))
+        self.__pipes['ECU'].send(Message('RESUME'))
+        self.__pipes['LOG'].send(Message('RESUME'))
+
+    def reset(self):
+        self.__pipes['DATA'].send(Message('RESET'))
+
+    def save(self):
+        self.__pipes['LOG'].send(Message('SAVE'))
+
+    def discard(self):
+        self.__pipes['LOG'].send(Message('DISCARD'))
+
+    def logPath(self, path):
+        self.__pipes['LOG'].send(Message('LOGPATH',PATH = path))
+
+    def logFrequency(self, frequency):
+        self.__pipes['LOG'].send(Message('FREQUENCY', FREQUENCY = frequency))
+
+    def logHeadings(self, headings):
+        self.__pipes['LOG'].send(Message('HEADINGS', HEADINGS = headings))
+
+    @property
+    def isConnected(self):
+        self.__connected_return = None                                        # Stores the response from the callback
+        self.__pipes['WORKER'].send(Message('CONNECTED'))                     # Send message for incomming request
+        while self.__connected_return is None:                                #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__connected_return['STATUS']                              # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def connected(self, p):                                                   # Callback function for IsConnected
+       self.__connected_return = p                                            # Store the response returned for the caller to find
+
+    @property
+    def queues(self):
+        self.__queues_return = None                                           # Stores the response from the callback
+        self.__pipes['ECU'].send(Message('GETQUEUES'))                        # Send message for incomming request
+        while self.__queues_return is None:                                   #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__queues_return['QUEUES']                                 # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getqueues(self, p):                                                   # Callback function for IsConnected
+       self.__queues_return = p                                               # Store the response returned for the caller to find
+
+    @property
+    def commands(self):
+        self.__commands_return = None                                         # Stores the response from the callback
+        self.__pipes['WORKER'].send(Message('GETCOMMANDS'))                   # Send message for incomming request
+        while self.__commands_return is None:                                 #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__commands_return['COMMANDS']                             # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getcommands(self, p):                                                 # Callback function for IsConnected
+       self.__commands_return = p                                             # Store the response returned for the caller to find
+
+    @property
+    def supportedCommands(self):
+        self.__s_commands_return = None                                       # Stores the response from the callback
+        self.__pipes['WORKER'].send(Message('SUPPORTED_COMMANDS'))            # Send message for incomming request
+        while self.__s_commands_return is None:                               #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__s_commands_return['SUPPORTED_COMMANDS']                 # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def supported_commands(self, p):                                          # Callback function for IsConnected
+       self.__s_commands_return = p                                           # Store the response returned for the caller to find
+
+    @property
+    def status(self):
+        s = {}
+        self.__s_ecu_return = None                                            # Stores the response from the callback
+        self.__s_data_return = None                                           # Stores the response from the callback
+        self.__s_worker_return = None                                         # Stores the response from the callback
+        self.__s_log_return = None                                            # Stores the response from the callback
+        self.__pipes['WORKER'].send(Message('GETSTATUS'))                     # Send message for incomming request
+        self.__pipes['ECU'].send(Message('GETSTATUS'))                        # Send message for incomming request
+        self.__pipes['DATA'].send(Message('GETSTATUS'))                       # Send message for incomming request
+        self.__pipes['LOG'].send(Message('GETSTATUS'))                        # Send message for incomming request
+        while self.__s_ecu_return is None:                                    #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        s['ECU'] = self.__s_ecu_return['STATUS']
+        while self.__s_data_return is None:                                   #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        s['DATA'] = self.__s_data_returnn['STATUS']
+        while self.__s_worker_return is None:                                 #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        s['WORKER'] = self.__s_ecu_returnn['STATUS']
+        while self.__s_log_return is None:                                    #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        s['LOG'] = self.__s_ecu_returnn['STATUS']
+        return s                                                              # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def workerstatus(self, p):                                                # Callback function for IsConnected
+       self.__s_worker_return = p                                             # Store the response returned for the caller to find
+
+    # Callback function must be lower case of the message it is to respond to
+    def ecustatus(self, p):                                                   # Callback function for IsConnected
+       self.__s_ecu_return = p                                                # Store the response returned for the caller to find
+
+    # Callback function must be lower case of the message it is to respond to
+    def datastatus(self, p):                                                  # Callback function for IsConnected
+       self.__s_data_return = p                                               # Store the response returned for the caller to find
+
+    # Callback function must be lower case of the message it is to respond to
+    def logstatus(self, p):                                                   # Callback function for IsConnected
+       self.__s_log_return = p                                                # Store the response returned for the caller to find
 
     def sum(self, name):
-        self.__dataComm.send(Message('SUM',NAME = name))
-        r = self.__checkDataPipe('SUM', PIPE_TIMEOUT)
-        if r is not None:
-            return r['SUM']
+        self.__sum_return = None                                              # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('SUM', NAME = name))                # Send message for incomming request
+        while self.__sum_return is None:                                      #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__sum_return['SUM']                                       # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getsum(self, p):                                                      # Callback function for IsConnected
+       self.__sum_return = p                                                  # Store the response returned for the caller to find
 
     def avg(self, name):
-        self.__dataComm.send(Message('AVG',NAME = name))
-        r = self.__checkDataPipe('AVG', PIPE_TIMEOUT)
-        if r is not None:
-            return r['AVG']
+        self.__avg_return = None                                              # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('AVG', NAME = name))                # Send message for incomming request
+        while self.__avg_return is None:                                      #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__avg_return['AVG']                                       # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getavg(self, p):                                                      # Callback function for IsConnected
+       self.__avg_return = p                                                  # Store the response returned for the caller to find
 
     def min(self, name):
-        self.__dataComm.send(Message('MIN', NAME = name))
-        r = self.__checkDataPipe('MIN', PIPE_TIMEOUT)
-        if r is not None:
-            return r['MIN']
+        self.__min_return = None                                              # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('MIN', NAME = name))                # Send message for incomming request
+        while self.__MIN_return is None:                                      #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__MIN_return['MIN']                                       # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getmin(self, p):                                                      # Callback function for IsConnected
+       self.__min_return = p                                                  # Store the response returned for the caller to find
 
     def max(self, name):
-        self.__dataComm.send(Message('MAX',NAME = name))
-        r = self.__checkDataPipe('MAX', PIPE_TIMEOUT)
-        if r is not None:
-            return r['MAX']
+        self.__max_return = None                                              # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('MAX', NAME = name))                # Send message for incomming request
+        while self.__max_return is None:                                      #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__max_return['MAX']                                       # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getmax(self, p):                                                      # Callback function for IsConnected
+       self.__max_return = p                                                  # Store the response returned for the caller to find
 
     def val(self, name):
-        self.__dataComm.send(Message('VAL',NAME = name))
-        r = self.__checkDataPipe('VAL', PIPE_TIMEOUT)
-        if r is not None:
-            return r['VAL']
+        self.__val_return = None                                              # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('VAL', NAME = name))                # Send message for incomming request
+        while self.__val_return is None:                                      #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__val_return['VAL']                                       # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def getval(self, p):                                                      # Callback function for IsConnected
+       self.__val_return = p                                                  # Store the response returned for the caller to find
 
     def dataLine(self, name):
-        self.__dataComm.send(Message('DATALINE',NAME = name))
-        r = self.__checkDataPipe('DATALINE', PIPE_TIMEOUT)
-        if r is not None:
-            return r['LINE']
+        self.__dataline_return = None                                         # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('DATALINE', NAME = name))           # Send message for incomming request
+        while self.__dataline_return is None:                                 #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__dataline_return['LINE']                                 # Return the response from the callback to the caller
+
+    # Callback function must be lower case of the message it is to respond to
+    def data_line(self, p):                                                   # Callback function for IsConnected
+       self.__dataline_return = p                                             # Store the response returned for the caller to find
 
     @property
     def snapshot(self):
-        self.__dataComm.send(Message('SNAPSHOT'))
-        r = self.__checkDataPipe('SNAPSHOT', PIPE_TIMEOUT)
-        if r is not None:
-            return r['SNAPSHOT']
+        self.__snapshot_return = None                                         # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('SNAPSHOT'))                        # Send message for incomming request
+        while self.__snapshot_return is None:                                 #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__snapshot_return['SNAPSHOT']                             # Return the response from the callback to the caller
 
-    def reset(self):
-        self.__dataComm.send(Message('RESET'))
+    # Callback function must be lower case of the message it is to respond to
+    def snap_shot(self, p):                                                   # Callback function for IsConnected
+       self.__snapshot_return = p                                             # Store the response returned for the caller to find
 
-    def save(self):
-        self.__logComm.send(Message('SAVE'))
-
-    def discard(self):
-        self.__logComm.send(Message('DISCARD'))
-
-    def logPath(self, path):
-        self.__logComm.send(Message('LOGPATH',PATH = path))
-
-    def logFrequency(self, frequency):
-        self.__logComm.send(Message('FREQUENCY', FREQUENCY = frequency))
-
+    @property
     def logName(self):
-        self.__logComm.send(Message('LOGNAME'))
-        r = self.__checkLoggerPipe('LOGNAME', PIPE_TIMEOUT)
-        if r is not None:
-            return r['NAME']
+        self.__logname_return = None                                          # Stores the response from the callback
+        self.__pipes['LOG'].send(Message('LOGNAME'))                          # Send message for incomming request
+        while self.__logname_return is None:                                  #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__logname_return['NAME']                                  # Return the response from the callback to the caller
 
-    def logHeadings(self, headings):
-        self.__logComm.send(Message('HEADINGS', HEADINGS = headings))
-
-    def tripTimeout(self, timeout):
-        self.__logComm.send(Message('TIMEOUT', TIMEOUT = timeout))
+    # Callback function must be lower case of the message it is to respond to
+    def log_name(self, p):                                                    # Callback function for IsConnected
+       self.__logname_return = p                                              # Store the response returned for the caller to find
 
     @property
     def summary(self):
-        self.__dataComm.send(Message('SUMMARY'))
-        r = self.__checkDataPipe('SUMMARY', PIPE_TIMEOUT)
-        if r is not None:
-            return r['SUMMARY']
+        self.__summary_return = None                                          # Stores the response from the callback
+        self.__pipes['DATA'].send(Message('SUMMARY'))                         # Send message for incomming request
+        while self.__summary_return is None:                                  #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        return self.__summary_return['SUMMARY']                               # Return the response from the callback to the caller
 
+    # Callback function must be lower case of the message it is to respond to
+    def getsummary(self, p):                                                  # Callback function for IsConnected
+       self.__summary_return = p                                              # Store the response returned for the caller to find
+
+#    def tripTimeout(self, timeout):
+#        self.__logComm.send(Message('TIMEOUT', TIMEOUT = timeout))
+
+#    def getQueCommands(self, que):
+#        self.__ecuComm.send(Message('GETCOMMANDS', QUE = que))
+#        r = self.__checkECUPipe('GETCOMMANDS', PIPE_TIMEOUT)
+#        if r is not None:
+#            return r['COMMANDS']
+#        else:
+#            logger.warning('ECU timeout requesting que commands')
