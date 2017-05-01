@@ -184,10 +184,11 @@ class Collector(Process):
 
         # Set custom formats. Default format is {:9,.2f}
         for d in self.__data:
-            if d in ['RPM','COOLANT_TEMP','FUEL_RAIL_PRESSURE_DIRECT']:
-                self.__data[d].setFormat('ALL',FMT(PRECISION = 0))
+            if d in ['RPM','COOLANT_TEMP','FUEL_RAIL_PRESSURE_DIRECT','WARMUPS_SINCE_DTC_CLEAR','DISTANCE_W_MIL']:
+                self.__data[d].setFormat('ALL', PRECISION = 0)
             if d in ['CONTROL_MODULE_VOLTAGE']:
-                self.__data[d].setFormat('ALL',FMT(LENGTH = 4, PRECISION = 1))
+                self.__data[d].setFormat('ALL', LENGTH = 4, PRECISION = 1)
+            self.__data[d].setFormat('LOG', COMMAS = False)
 
         self.__ready = True
         self.__dirty = False
@@ -197,6 +198,8 @@ class Collector(Process):
         if not self.__paused:
             logger.info('Pausing Collector process')
             self.__dirty = self.__paused = True
+            for d in self.__data:
+                self.__data[d].paused = True
 
     def resume(self, p = None):
         if self.__paused:
@@ -204,6 +207,8 @@ class Collector(Process):
             self.__paused = False
             if self.__dirty:
                 logger.warning('Collector resumed without reset - Data set may have changed')
+            for d in self.__data:
+                self.__data[d].paused = False
 
     def stop(self, p = None):
         if self.__running:

@@ -150,13 +150,16 @@ if __name__ == '__main__':
                     if config.getboolean('Application', 'Log Extra Data'):
                         loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
                         for q in config.get('Application', 'Queues').split(','):
-                            loadedCommands.append(config.get('Queue {}'.format(q),'Commands').split(','))
+                            for c in config.get('Queue {}'.format(q),'Commands').split(','):
+                                loadedCommands.append(c)
                         for q in config.get('Application', 'Queues').split(','):
                             if config.has_option('Queue {}'.format(q), 'Default Queue'):
                                 for c in sc:
                                     if c not in loadedCommands:
                                         ecu.addCommand(q, c)                     # Add all supported commands that arent already in a que to the LOW que
-                                        logHeadings.append(c)                       # Add any added commands to the log headings so they get logged
+                                    if c not in logHeadings:
+                                        logHeadings.append(c)                    # Add any added commands to the log headings so they get logged
+                                break
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
                 #logger.info(ecu.status())

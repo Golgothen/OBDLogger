@@ -27,7 +27,7 @@ class KPI(object):
         self.__history['VAL'] = []
         self.__history['SUM'] = []
         self.__history['AVG'] = []
-
+        self.__paused = True
 
         for k in kwargs:
             if k == 'FUNCTION':
@@ -55,13 +55,21 @@ class KPI(object):
         self.__avgsum = 0
         self.__age = None
 
-    @property
-    def screen(self):
-        return self.__screen
+#    @property
+#    def screen(self):
+#        return self.__screen
 
-    @screen.setter
-    def screen(self, v):
-        self.__screen = v
+#    @screen.setter
+#    def screen(self, v):
+#        self.__screen = v
+
+    @property
+    def paused(self):
+        return self.__paused
+
+    @paused.setter
+    def paused(self, v):
+        self.__paused = v
 
     @property
     def log(self):
@@ -100,7 +108,10 @@ class KPI(object):
                 self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
                 self.__values['AVG'] = self.__avgsum / self.__count
                 self.__history['AVG'].append((time(),self.__values['AVG']))
-            self.__age = time()                                             # Note the current time
+            if self.__paused:
+                self.__age = None
+            else:
+                self.__age = time()                                             # Note the current time
 
     @property
     def max(self):
@@ -129,17 +140,19 @@ class KPI(object):
             self.__values['VAL'] = self.val
             return self.__formats[f](self.__values[f])
 
-    def setFormat(self, f, v):
+    def setFormat(self, f, **kwargs):
         if f == 'ALL':
             for field in ['VAL','MIN','MAX','AVG','SUM','LOG']:
-                self.__formats[field] = v
+                for k in kwargs:
+                    setattr(self.__formats[field], k, kwargs[k])
         else:
             if f in self.__formats:
-                self.__formats[f] = v
+                for k in kwargs:
+                    setattr(self.__formats[field], k, kwargs[k])
             else:
                 raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
 
-    def movingAverage(self, field, length, formatted = True, offset = 0):
+    def movingAverage(self, field, length, offset = 0, formatted = True):
         filterlist = [x for x in self.__history[field] if x[0] > (time() - offset - length) and x[0] < (time() - offset)]
         templist = [x[1] for x in filterlist]
         if len(templist) > 0:
@@ -152,6 +165,7 @@ class KPI(object):
                 return self.__formats[field].fmtdtr.format(0)
             else:
                 return 0
+
 PI = 3.14159
 
 ###
