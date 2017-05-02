@@ -29,8 +29,10 @@ class PipeWatcher(Thread):
             while self.__running:
                 while self.__pipe.poll(None):  # Block indefinately waiting for a message
                     m = self.__pipe.recv()
+                    logger.debug('{} received.'.format(m.message))
                     response = getattr(self.__parent, m.message.lower())(m.params)
                     if response is not None:
+                        logger.debug('{} response.'.format(response.message))
                         self.send(response)
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
