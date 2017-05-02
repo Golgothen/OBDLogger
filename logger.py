@@ -162,3 +162,14 @@ class DataLogger(threading.Thread):
         d['Log Path'] = self.__logPath
         d['Headings'] = self.__logHeadings
         return Message('LOGSTATUS', STATUS = d)
+
+    def add_headings(self, p):
+        for h in p['HEADINGS']:
+            if h not in self.__logHeadings:
+                self.__logHeadings.append(h)
+
+    def remove_headings(self, p):
+        for h in p['HEADINGS']:
+            if h in self.__logHeadings:
+                self.__logHeadings.remove(h)
+

@@ -121,7 +121,7 @@ if __name__ == '__main__':
         ecu.logPath(config.get('Application', 'LogPath'))
         logHeadings = config.get('Application', 'Log Headings').split(',')
 
-        ecu.gpsEnabled = config.getboolean('Application','GPS Enabled')
+        #ecu.gpsEnable = config.getboolean('Application','GPS Enabled')
 
         for q in config.get('Application', 'Queues').split(','):
             ecu.addQue(q, config.getfloat('Queue {}'.format(q), 'Frequency'))

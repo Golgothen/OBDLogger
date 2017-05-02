@@ -73,7 +73,7 @@ class Monitor():
         self.__gps = GPS(resultQue,
                          gpsControlPipe.r)                             # GPS <-> Application
 
-        self.__gpsEnabled = config.getboolean('Application', 'GPS Enabled')
+        self.gpsEnable = config.getboolean('Application', 'GPS Enabled')
 
         self.__ecu.start()
         self.__collector.start()
@@ -293,14 +293,11 @@ class Monitor():
     def gpsEnable(self, v):
         self.__gpsEnabled = v
         if self.__gpsEnabled:
-            if self.__gps.is_alive():
-                self.__gpsComm.send(Message('RESUME'))
-            else:
-                self.__gps.start()
-            self.__logComm.send('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB'])
+            self.__pipes['GPS'].send(Message('RESUME'))
+            self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']))
         else:
-            self.__gpsComm.send(Message('PAUSE'))
-            self.__logComm.send('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB'])
+            self.__pipes['GPS'].send(Message('PAUSE'))
+            self.__pipes['LOG'].send(Message('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']))
 
     @property
     def snapshot(self):

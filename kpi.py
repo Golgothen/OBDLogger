@@ -92,31 +92,25 @@ class KPI(object):
     def val(self, v):
         self.__values['VAL'] = v
         if v is not None:
-            if not math.isnan(v):
-                self.__count += 1
-                self.__history['VAL'].append( (time(), v) )
-                if self.__values['MAX'] is None:
-                    self.__values['MAX'] = v
-                else:
-                    if v > self.__values['MAX']:
+            if type(v) in [float, int]:
+                if not math.isnan(v):
+                    self.__count += 1
+                    self.__history['VAL'].append( (time(), v) )
+                    if self.__values['MAX'] is None:
                         self.__values['MAX'] = v
-                if self.__values['MIN'] is None:
-                    self.__values['MIN'] = v
-                else:
-                    if v < self.__values['MIN']:
+                    else:
+                        if v > self.__values['MAX']:
+                            self.__values['MAX'] = v
+                    if self.__values['MIN'] is None:
                         self.__values['MIN'] = v
-                if type(v) in [float,int]:                                      # only number types
+                    else:
+                        if v < self.__values['MIN']:
+                            self.__values['MIN'] = v
                     if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
                         self.__values['SUM'] += (v * (time() - self.__age))     # Cumulative sum of time calculated value for sums
                     self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
                     self.__values['AVG'] = self.__avgsum / self.__count
-            if type(v) in [float,int]:                                      # only number types
-                if self.__age is not None:                                  # only calculate time shared value if at least one sample has been taken before
-                    self.__values['SUM'] += (v * (time() - self.__age))     # Cumulative sum of time calculated value for sums
-                    self.__history['SUM'].append((time(),self.__values['SUM']))
-                self.__avgsum += v                                          # Cumulative sum of instantaneous values for averaging
-                self.__values['AVG'] = self.__avgsum / self.__count
-                self.__history['AVG'].append((time(),self.__values['AVG']))
+                    self.__history['AVG'].append((time(),self.__values['AVG']))
             if self.__paused:
                 self.__age = None
             else:
