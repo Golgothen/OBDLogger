@@ -178,6 +178,14 @@ class Collector(Process):
                                                  FMT_ALL = FMT(PRECISION = 0)
                                                 )
 
+        self.__data['ALTITUDE'] = KPI(FMT_ALL = FMT(PRECISION = 1))
+        self.__data['LATITUDE'] = KPI(FMT_ALL = FMT(PRECISION = 5))
+        self.__data['LONGITUDE'] = KPI(FMT_ALL = FMT(PRECISION = 5))
+        self.__data['GPS_SPEED'] = KPI(FMT_ALL = FMT()
+        self.__data['HEADING'] = KPI(FMT_ALL = FMT()
+        self.__data['CLIMB'] = KPI(FMT_ALL = FMT(PRECISION = 1))
+
+
         # Alter a few data fields for logging
         if 'DISTANCE' in self.__data:
             self.__data['DISTANCE'].log = 'SUM'
