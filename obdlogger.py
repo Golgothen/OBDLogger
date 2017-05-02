@@ -14,7 +14,7 @@ file_handler = logging.FileHandler('./'+logName) # sends output to file
 file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.WARNING)
 
 lastScreenUpdate = datetime.now()
 currentIdleScreen = 0

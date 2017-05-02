@@ -27,7 +27,7 @@ class KPI(object):
         self.__history['VAL'] = []
         self.__history['SUM'] = []
         self.__history['AVG'] = []
-        self.__paused = True
+        self.__paused = False
 
         for k in kwargs:
             if k == 'FUNCTION':
