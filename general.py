@@ -134,7 +134,7 @@ def loadDefaults():
     config.set('Application','Queues','Hi,Medium,Low,Once')
     config.set('Application','Log Headings','TIMESTAMP,RPM,SPEED,DISTANCE,FAM,LP100K,LPS,LPH,MAF,ENGINE_LOAD,DRIVE_RATIO,GEAR')
     config.set('Application','Pipe Timeout','3')
-    config.set('Application','GPS Enabled','False')
+    config.set('Application','GPS Enabled','True')
     config.set('Application','Data Screen Size','18')
 
     for q in config.get('Application','Queues').split(','):

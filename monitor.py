@@ -7,6 +7,8 @@ from que import Que
 from logger import DataLogger
 from messages import Message, PipeCont
 from time import sleep
+
+from gps import GPS
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
 
@@ -23,16 +25,16 @@ class Monitor():
 
     def __init__(self, port, baud):
         #super(Monitor,self).__init__()
-        ecuWorkerPipe = PipeCont()                  # ECU <-> Worker
-        ecuDataPipe = PipeCont()                    # ECU <-> Collector
-        ecuControlPipe = PipeCont()                 # ECU <-> Application
-        workerDataPipe = PipeCont()                 # Worker <-> Collector
-        workerControlPipe = PipeCont()              # Worker <-> Application
-        collectorControlPipe = PipeCont()           # Collector <-> Application
-        loggerControlPipe = PipeCont()              # Logger <-> Application
-        loggerDataPipe = PipeCont()                 # Logger <-> Collector
-        loggerWorkerPipe = PipeCont()               # Logger <-> Worker
-        gpsControlPipe = PipeCont()                 # GPS <-> Application
+        ecuWorkerPipe = PipeCont()                                     # ECU <-> Worker
+        ecuDataPipe = PipeCont()                                       # ECU <-> Collector
+        ecuControlPipe = PipeCont()                                    # ECU <-> Application
+        workerDataPipe = PipeCont()                                    # Worker <-> Collector
+        workerControlPipe = PipeCont()                                 # Worker <-> Application
+        collectorControlPipe = PipeCont()                              # Collector <-> Application
+        loggerControlPipe = PipeCont()                                 # Logger <-> Application
+        loggerDataPipe = PipeCont()                                    # Logger <-> Collector
+        loggerWorkerPipe = PipeCont()                                  # Logger <-> Worker
+        gpsControlPipe = PipeCont()                                    # GPS <-> Application
 
         workQue = Queue()
         resultQue = Queue()
@@ -42,6 +44,7 @@ class Monitor():
         self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APPLICATION.WORKER')
         self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APPLICATION.DATA')
         self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APPLICATION.LOG')
+        self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'APPLICATION.GPS')
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
@@ -67,10 +70,16 @@ class Monitor():
                                    loggerDataPipe.s,                   # Logger <-> Collector
                                    loggerWorkerPipe.r)                 # Logger <-> Worker
 
+        self.__gps = GPS(resultQue,
+                         gpsControlPipe.r)                             # GPS <-> Application
+
+        self.__gpsEnabled = config.getboolean('Application', 'GPS Enabled')
+
         self.__ecu.start()
         self.__collector.start()
         self.__worker.start()
         self.__logger.start()
+        self.__gps.start()
         for p in self.__pipes:
             self.__pipes[p].start()
 
@@ -89,14 +98,19 @@ class Monitor():
     def stop(self):
         self.__pipes['ECU'].send(Message('STOP'))
         self.__pipes['LOG'].send(Message('STOP'))
+        self.__pipes['GPS'].send(Message('STOP'))
 
     def pause(self):
         self.__pipes['ECU'].send(Message('PAUSE'))
         self.__pipes['ECU'].send(Message('PAUSE'))
+        if self.__gpsEnabled:
+            self.__pipes['GPS'].send(Message('PAUSE'))
 
     def resume(self):
         self.__pipes['ECU'].send(Message('RESUME'))
         self.__pipes['LOG'].send(Message('RESUME'))
+        if self.__gpsEnabled:
+            self.__pipes['GPS'].send(Message('RESUME'))
 
     def reset(self):
         self.__pipes['DATA'].send(Message('RESET'))
@@ -272,6 +286,23 @@ class Monitor():
        self.__dataline_return = p                                             # Store the response returned for the caller to find
 
     @property
+    def gpsEnable(self):
+        return self.__gpsEnabled
+
+    @gpsEnable.setter
+    def gpsEnable(self, v):
+        self.__gpsEnabled = v
+        if self.__gpsEnabled:
+            if self.__gps.is_alive():
+                self.__gpsComm.send(Message('RESUME'))
+            else:
+                self.__gps.start()
+            self.__logComm.send('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB'])
+        else:
+            self.__gpsComm.send(Message('PAUSE'))
+            self.__logComm.send('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB'])
+
+    @property
     def snapshot(self):
         self.__snapshot_return = None                                         # Stores the response from the callback
         self.__pipes['DATA'].send(Message('SNAPSHOT'))                        # Send message for incomming request
@@ -306,14 +337,3 @@ class Monitor():
     # Callback function must be lower case of the message it is to respond to
     def getsummary(self, p):                                                  # Callback function for IsConnected
        self.__summary_return = p                                              # Store the response returned for the caller to find
-
-#    def tripTimeout(self, timeout):
-#        self.__logComm.send(Message('TIMEOUT', TIMEOUT = timeout))
-
-#    def getQueCommands(self, que):
-#        self.__ecuComm.send(Message('GETCOMMANDS', QUE = que))
-#        r = self.__checkECUPipe('GETCOMMANDS', PIPE_TIMEOUT)
-#        if r is not None:
-#            return r['COMMANDS']
-#        else:
-#            logger.warning('ECU timeout requesting que commands')

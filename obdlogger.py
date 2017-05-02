@@ -119,8 +119,9 @@ if __name__ == '__main__':
                       config.get('Application', 'OBD Baud'))
 
         ecu.logPath(config.get('Application', 'LogPath'))
-        ecu.gpsEnabled = config.getboolean('Application','GPS Enabled')
         logHeadings = config.get('Application', 'Log Headings').split(',')
+
+        ecu.gpsEnabled = config.getboolean('Application','GPS Enabled')
 
         for q in config.get('Application', 'Queues').split(','):
             ecu.addQue(q, config.getfloat('Queue {}'.format(q), 'Frequency'))
@@ -147,6 +148,7 @@ if __name__ == '__main__':
                     while sc is None:
                         sc = ecu.supportedCommands
                         sleep(0.01)
+
                     if config.getboolean('Application', 'Log Extra Data'):
                         loadedCommands = ['STATUS','OBD_COMPLIANCE','STATUS_DRIVE_CYCLE']
                         for q in config.get('Application', 'Queues').split(','):
