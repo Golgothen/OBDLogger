@@ -134,7 +134,7 @@ class DataLogger(threading.Thread):
             self.pause()
         try:
             with open(self.__logName + '.log', 'rb') as f:
-                with gzip.open(self.__logName + '.gz', 'wb') as z:
+                with gzip.open(self.__logName + '.log.gz', 'wb') as z:
                     shutil.copyfileobj(f, z)
         except:
             logger.error('Error compressing log file {}'.format(self.__logName))
