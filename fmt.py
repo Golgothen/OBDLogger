@@ -28,15 +28,15 @@ class FMT():
                 self.truncate = kwargs[k]
             if k == 'NONE':
                 self.none = kwargs[k]
-        if self.type in ['s','d','t']:
+        if self.type in ['s','d','t','lat','lon']:
             self.commas = False
-        if self.type in ['s','t']:
+        if self.type in ['s','t','lat','lon']:
             self.precision = None
 
     @property
     def fmtstr(self):
         str = '{:'
-        if self.type in ['s','d','t']:
+        if self.type in ['s','d','t','lat','lon']:
             str += self.alignment
         str += '{}'.format(self.length)
         if self.commas:
@@ -55,6 +55,10 @@ class FMT():
             return self.fmtstr.format(v.strftime(self.precision)) # Return it immediately. No firther processing required
         elif self.type == 't':                                    # Time counters
             return self.fmtstr.format(formatSeconds(v))           # Return it immediately. No further processing required
+        elif self.type == 'lat':                                  # Latitude
+            return self.fmtstr.format(formatLatitude(v))          # Return it immediately. No further processing required
+        elif self.type == 'lon':                                  # Longitude
+            return self.fmtstr.format(formatLongitude(v))         # Return it immediately. No further processing required
         else:                                                     # everything else
             tmp = self.fmtstr.format(v)
         if len(tmp) > self.length\

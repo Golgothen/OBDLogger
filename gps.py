@@ -31,7 +31,7 @@ class GPS(Process):
         self.__stream = agps3.DataStream()
         self.__frequency = 1
         self.__running = False
-        self.__paused = True
+        self.__paused = False
         self.__pollCount = 0
         self.__resultQue = resultQue
         self.__pid = None
@@ -54,15 +54,15 @@ class GPS(Process):
                     for new_data in self.__gpsd:
                         if new_data:
                             logger.debug('New Data')
-                            #self.__gpsd.next()
                             self.__stream.unpack(new_data)
                             self.__pollCount += 1
                             self.__resultQue.put(Message('ALTITUDE', VALUE=self.__stream.alt))
                             self.__resultQue.put(Message('LATITUDE', VALUE=self.__stream.lat))
                             self.__resultQue.put(Message('LONGITUDE', VALUE=self.__stream.lon))
                             self.__resultQue.put(Message('HEADING', VALUE=self.__stream.track))
-                            self.__resultQue.put(Message('GPS_SPEED', VALUE=self.__stream.speed))
-                            self.__resultQue.put(Message('CLIMB', VALUE=self.__stream.climb))
+                            self.__resultQue.put(Message('GPS_SPEED', VALUE=self.__stream.speed*3.6)) # GPS reports speed in m/s
+                            #self.__resultQue.put(Message('CLIMB', VALUE=self.__stream.climb))
+                            #self.__gpsd.next()
                     sleeptime = time() - t - (1.0 / self.__frequency)
                     if sleeptime > 0: sleep(sleeptime)
                 else:

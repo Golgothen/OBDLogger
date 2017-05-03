@@ -178,12 +178,11 @@ class Collector(Process):
                                                  FMT_ALL = FMT(PRECISION = 0)
                                                 )
 
-        self.__data['ALTITUDE'] = KPI(FMT_ALL = FMT(PRECISION = 1))
-        self.__data['LATITUDE'] = KPI(FMT_ALL = FMT(PRECISION = 5))
-        self.__data['LONGITUDE'] = KPI(FMT_ALL = FMT(PRECISION = 5))
-        self.__data['GPS_SPEED'] = KPI(FMT_ALL = FMT()
+        self.__data['ALTITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 5, COMMAS = False, PRECISION = 0))
+        self.__data['LATITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 19, TYPE = 'lat'))
+        self.__data['LONGITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 19, TYPE = 'lon'))
+        self.__data['GPS_SPEED'] = KPI(FMT_ALL = FMT(LENGTH=5, PRECISION = 1)
         self.__data['HEADING'] = KPI(FMT_ALL = FMT()
-        self.__data['CLIMB'] = KPI(FMT_ALL = FMT(PRECISION = 1))
 
 
         # Alter a few data fields for logging
@@ -197,6 +196,10 @@ class Collector(Process):
             if d in ['CONTROL_MODULE_VOLTAGE']:
                 self.__data[d].setFormat('ALL', LENGTH = 5, PRECISION = 2)
             self.__data[d].setFormat('LOG', COMMAS = False)
+
+        # Log Latitude and Longitude as decimals
+        self.__data['LATITUDE'].setFormat('LOG', TYPE = 'f', LENGTH = 9, PRECISION = 5)
+        self.__data['LONGITUDE'].setFormat('LOG', TYPE = 'f', LENGTH = 9, PRECISION = 5)
 
         self.__ready = True
         self.__dirty = False

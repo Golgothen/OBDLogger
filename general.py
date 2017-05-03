@@ -15,6 +15,26 @@ def formatSeconds(d):
         return '{:02.0f}d{:02.0f}:{:02.0f}'.format(days, hours, minutes)
     return '{:02.0f}:{:02.0f}:{:02.0f}'.format(hours, minutes, seconds)
 
+def formatLatitude(d):
+    if d < 0: heading = 'S'
+    elif d == 0: heading = '0'
+    else: heading = 'N'
+    minor, deg = modf(abs(d))
+    minor, min = modf(minor*60)
+    sec = minor * 60
+    deg_sign = u'\N{DEGREE SIGN}'
+    return '{:3.0f}{}{:2.0f}\'{:2.2f}"{}'.format(deg, deg_sign, min, sec, heading)
+
+def formatLongitude(d):
+    if d < 0: heading = 'E'
+    elif d == 0: heading = '0'
+    else: heading = 'W'
+    minor, deg = modf(abs(d))
+    minor, min = modf(minor*60)
+    sec = minor * 60
+    deg_sign = u'\N{DEGREE SIGN}'
+    return '{:3.0f}{}{:2.0f}\'{:2.2f}"{}'.format(deg, deg_sign, min, sec, heading)
+
 def readCSV(file):
     if os.path.isfile(file):
         data = dict()
@@ -135,7 +155,7 @@ def loadDefaults():
     config.set('Application','Log Headings','TIMESTAMP,RPM,SPEED,DISTANCE,FAM,LP100K,LPS,LPH,MAF,ENGINE_LOAD,DRIVE_RATIO,GEAR')
     config.set('Application','Pipe Timeout','3')
     config.set('Application','GPS Enabled','True')
-    config.set('Application','Data Screen Size','18')
+    config.set('Application','Data Screen Size','23')
 
     for q in config.get('Application','Queues').split(','):
         config.add_section('Queue {}'.format(q))
@@ -173,19 +193,24 @@ def loadDefaults():
     config.set('Data Screen','Line 7','TIME')
     config.set('Data Screen','Line 8','FUEL')
     config.set('Data Screen','Line 9','LPH')
-    config.set('Data Screen','Line 10','FAM')
+    config.set('Data Screen','Line 10','GEAR')
     config.set('Data Screen','Line 11','MAF')
-    config.set('Data Screen','Line 12','GEAR')
+    config.set('Data Screen','Line 12','FAM')
     config.set('Data Screen','Line 13','VOLTAGE')
     config.set('Data Screen','Line 14','EGR')
     config.set('Data Screen','Line 15','AIR_TEMP')
     config.set('Data Screen','Line 16','INTAKE_TEMP')
     config.set('Data Screen','Line 17','FUEL_RAIL')
+    config.set('Data Screen','Line 18','LATITUDE')
+    config.set('Data Screen','Line 19','LONGITUDE')
+    config.set('Data Screen','Line 20','ALTITUDE')
+    config.set('Data Screen','Line 21','GPS_SPEED')
+    config.set('Data Screen','Line 22','HEADING')
 
     config.set('Data Layout','SPEED',          '*Speed : SPEED.VAL/SPEED.MAX/SPEED.AVG :')
     config.set('Data Layout','RPM',            '***RPM : RPM.VAL/RPM.MAX :')
     config.set('Data Layout','LPH',            '***LPH : LPH.VAL/LPH.AVG :')
-    config.set('Data Layout','LP100K',         'LP100k : LP100K.VAL/LP100K.AVG :')
+    config.set('Data Layout','LP100K',         'L/100K : LP100K.VAL/LP100K.AVG :')
     config.set('Data Layout','FAM',            '***FAM : FAM.VAL/FAM.MAX :')
     config.set('Data Layout','ENGINE_LOAD',    '**Load : ENGINE_LOAD.VAL/ENGINE_LOAD.AVG :')
     config.set('Data Layout','MAF',            '***MAF : MAF.VAL/MAF.AVG :')
@@ -198,8 +223,13 @@ def loadDefaults():
     config.set('Data Layout','VOLTAGE',        '*Volts : CONTROL_MODULE_VOLTAGE.VAL/ CONTROL_MODULE_VOLTAGE.MIN/ CONTROL_MODULE_VOLTAGE.MAX :')
     config.set('Data Layout','EGR',            '***EGR : COMMANDED_EGR.VAL/EGR_ERROR.VAL :')
     config.set('Data Layout','AIR_TEMP',       '*Air C : AMBIANT_AIR_TEMP.VAL/AMBIANT_AIR_TEMP.MAX :')
-    config.set('Data Layout','INTAKE_TEMP',    'Intake : INTAKE_TEMP.VAL/INTAKE_TEMP.MAX :')
     config.set('Data Layout','FUEL_RAIL',      '**Rail : FUEL_RAIL_PRESSURE_DIRECT.VAL/FUEL_RAIL_PRESSURE_DIRECT.MAX :')
+    config.set('Data Layout','INTAKE_TEMP',    'Intake : INTAKE_TEMP.VAL/INTAKE_TEMP.MAX :')
+    config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL :')
+    config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL :')
+    config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX  :')
+    config.set('Data Layout','GPS_SPEED',      'GPS Kh : GPS_SPEED.VAL/GPS_SPEED.MAX/GPS_SPEED.AVG  :')
+    config.set('Data Layout','HEADING',        '*Track : HEADING.VAL           :')
 
     config.set('Transmission','Gear Neutral Label','Idle')
     config.set('Transmission','Gear 1 Lower','12.0')
