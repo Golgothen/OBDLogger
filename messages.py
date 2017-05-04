@@ -13,4 +13,4 @@ class Message():
         self.params = dict()
         for k in kwargs:
             self.params[k] = kwargs[k]
-        logger.info('Message: {} : {}'.format(self.message, self.params))
+        logger.debug('Message: {} : {}'.format(self.message, self.params))

@@ -56,11 +56,11 @@ class GPS(Process):
                             logger.debug('New Data')
                             self.__stream.unpack(new_data)
                             self.__pollCount += 1
-                            self.__resultQue.put(Message('ALTITUDE', VALUE = self.__stream.alt))
-                            self.__resultQue.put(Message('LATITUDE', VALUE = self.__stream.lat))
-                            self.__resultQue.put(Message('LONGITUDE', VALUE = self.__stream.lon))
-                            self.__resultQue.put(Message('HEADING', VALUE = self.__stream.track))
-                            self.__resultQue.put(Message('GPS_SPD', VALUE = self.__stream.speed*3.6)) # GPS reports speed in m/s
+                            self.__resultQue.put(Message('ALTITUDE', VALUE = None if type(self.__stream.alt) is not float else self.__stream.alt))
+                            self.__resultQue.put(Message('LATITUDE', VALUE =  None if type(self.__stream.lat) is not float else self.__stream.lat))
+                            self.__resultQue.put(Message('LONGITUDE', VALUE =  None if type(self.__stream.lon) is not float else self.__stream.lon))
+                            self.__resultQue.put(Message('HEADING', VALUE =  None if type(self.__stream.track) is not float else self.__stream.track))
+                            self.__resultQue.put(Message('GPS_SPD', VALUE =  None if type(self.__stream.speed) is not float else self.__stream.speed*3.6)) # GPS reports speed in m/s
                     sleeptime = time() - t - (1.0 / self.__frequency)
                     if sleeptime > 0: sleep(sleeptime)
                 else:

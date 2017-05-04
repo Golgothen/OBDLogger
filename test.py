@@ -46,7 +46,7 @@ if __name__ == '__main__':
     g.start()
     #sleep(2)
     data = {}
-    headings = ['LATITUDE','LONGITUDE','GPS_SPEED','HEADING','ALTITUDE']
+    headings = ['LATITUDE','LONGITUDE','GPS_SPD','HEADING','ALTITUDE']
     outfile = open('test.txt',mode = 'wt', buffering = 1, encoding = 'UTF-8')
     l = ''
     for h in headings:
