@@ -230,8 +230,8 @@ def loadDefaults():
     config.set('Data Layout','INTAKE_TEMP',    'Intake : INTAKE_TEMP.VAL/INTAKE_TEMP.MAX :')
     config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL           :')
     config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL           :')
-    config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX    :')
-    config.set('Data Layout','GPS_SPEED',      'GPS Kh : GPS_SPD.VAL/GPS_SPD.MAX/GPS_SPD.AVG  :')
+    config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX   :')
+    config.set('Data Layout','GPS_SPD',        'GPS Kh : GPS_SPD.VAL/GPS_SPD.MAX/GPS_SPD.AVG   :')
     config.set('Data Layout','HEADING',        '*Track : HEADING.VAL           :')
 
     config.set('Transmission','Gear Neutral Label','Idle')

@@ -60,7 +60,12 @@ class FMT():
         elif self.type == 'lon':                                  # Longitude
             return self.fmtstr.format(formatLongitude(v))         # Return it immediately. No further processing required
         else:                                                     # everything else
-            tmp = self.fmtstr.format(v)
+            if type(v) in [float, int]:
+                tmp = self.fmtstr.format(v)
+            else:
+                self.type = 's'
+                self.precision = None
+                tmp = self.fmtstr.format(v)
         if len(tmp) > self.length\
            and self.precision is not None\
            and self.truncate:                                     # String is too long.  See if we can drop some precision to get it to fit
