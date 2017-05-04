@@ -76,17 +76,16 @@ class Worker(Process):
                                 self.__maxQueLength = self.__workQue.qsize()
                             m = self.__workQue.get()
                             if self.__isConnected():
-                                q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
+                                #q = self.__interface.query(obd.commands[m])                                                    # todo: uncomment after testing
                                 self.__pollCount+=1
                                 if self.__firstPoll is None:
                                     self.__firstPoll = datetime.now()
-                                if not q.is_null():                                                                            # todo: uncomment after testing
-                                    logger.debug('{} - {}'.format(m, q.value))
-                                    self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
-                            #self.__resultQue.put(Message(m, VALUE = 0.0))                                                 # todo: delete after testing
+                                #if not q.is_null():                                                                            # todo: uncomment after testing
+                                #    logger.debug('{} - {}'.format(m, q.value))
+                                #    self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
+                                self.__resultQue.put(Message(m, VALUE = 0.0))                                                 # todo: delete after testing
                         self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
                 sleep(1.0 / self.__frequency)
-
             logger.info('Worker process stopping')
             return
         except (KeyboardInterrupt, SystemExit):
@@ -137,40 +136,44 @@ class Worker(Process):
         self.__running = False
 
     def __connect(self):
-        self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
-        logger.info('Worker connection status = {}'.format(self.__interface.status()))
+        #self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
+        #logger.info('Worker connection status = {}'.format(self.__interface.status()))
+        logger.info('Worker connection status = Fake OBD')
         self.__supported_commands = []
         #if self.__interface.status() == 'Not Connected': sleep(1)
-        if self.__interface.status() == 'Car Connected':
-            for c in self.__interface.supported_commands:
-                if c.mode == 1 and c.name[:4] != 'PIDS':
-                    self.__supported_commands.append(c.name)
+        #if self.__interface.status() == 'Car Connected':
+        #    for c in self.__interface.supported_commands:
+        #        if c.mode == 1 and c.name[:4] != 'PIDS':
+        #            self.__supported_commands.append(c.name)
         # TODO - Delete after testing
-        #self.__supported_commands.append('RPM')
-        ##self.__supported_commands.append('SPEED')
-        #self.__supported_commands.append('MAF')
-        #self.__supported_commands.append('BAROMETRIC_PRESSURE')
-        #self.__supported_commands.append('COOLANT_TEMP')
-        #self.__supported_commands.append('INTAKE_PRESSURE')
-        #self.__supported_commands.append('DISTANCE_SINCE_DTC_CLEAR')
-        #self.__supported_commands.append('DISTANCE_W_MIL')
-        #self.__supported_commands.append('WARMUPS_SINCE_DTC_CLEAR')
-        #self.__supported_commands.append('ENGINE_LOAD')
-        #self.__supported_commands.append('EGR_ERROR')
-        #self.__supported_commands.append('COMMANDED_EGR')
+        self.__supported_commands.append('RPM')
+        self.__supported_commands.append('SPEED')
+        self.__supported_commands.append('MAF')
+        self.__supported_commands.append('BAROMETRIC_PRESSURE')
+        self.__supported_commands.append('COOLANT_TEMP')
+        self.__supported_commands.append('INTAKE_PRESSURE')
+        self.__supported_commands.append('DISTANCE_SINCE_DTC_CLEAR')
+        self.__supported_commands.append('DISTANCE_W_MIL')
+        self.__supported_commands.append('WARMUPS_SINCE_DTC_CLEAR')
+        self.__supported_commands.append('ENGINE_LOAD')
+        self.__supported_commands.append('EGR_ERROR')
+        self.__supported_commands.append('COMMANDED_EGR')
+        self.__supported_commands.append('FUEL_RAIL_PRESSURE_DIRECT')
+        self.__supported_commands.append('CONTROL_MODULE_VOLTAGE')
+        self.__supported_commands.append('AMBIANT_AIR_TEMP')
+        self.__supported_commands.append('INTAKE_TEMP')
 
     def __isConnected(self):
-        connected = False    # TODO: delete after testing
-        #connected = True
-        #self.__resume()
+        #connected = False    # TODO: uncomment after testing
+        connected = True      # TODO: comment after testing
+        self.resume()       # TODO: comment after testing
         # TODO - uncomment after testing
-        if self.__interface is not None:
-            if self.__interface.status() == 'Car Connected':
-                connected = True
-                self.resume()
-            else:
-                self.pause()
-                #self.__interface.close()
+        #if self.__interface is not None:
+        #    if self.__interface.status() == 'Car Connected':
+        #        connected = True
+        #        self.resume()
+        #    else:
+        #        self.pause()
         #self.__connected = True                             # TODO - Delete after testing
         if self.__connected != connected:
             #Connection status has changed

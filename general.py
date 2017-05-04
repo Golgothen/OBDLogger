@@ -207,7 +207,7 @@ def loadDefaults():
     config.set('Data Screen','Line 18','LATITUDE')
     config.set('Data Screen','Line 19','LONGITUDE')
     config.set('Data Screen','Line 20','ALTITUDE')
-    config.set('Data Screen','Line 21','GPS_SPEED')
+    config.set('Data Screen','Line 21','GPS_SPD')
     config.set('Data Screen','Line 22','HEADING')
 
     config.set('Data Layout','SPEED',          '*Speed : SPEED.VAL/SPEED.MAX/SPEED.AVG :')
@@ -228,10 +228,10 @@ def loadDefaults():
     config.set('Data Layout','AIR_TEMP',       '*Air C : AMBIANT_AIR_TEMP.VAL/AMBIANT_AIR_TEMP.MAX :')
     config.set('Data Layout','FUEL_RAIL',      '**Rail : FUEL_RAIL_PRESSURE_DIRECT.VAL/FUEL_RAIL_PRESSURE_DIRECT.MAX :')
     config.set('Data Layout','INTAKE_TEMP',    'Intake : INTAKE_TEMP.VAL/INTAKE_TEMP.MAX :')
-    config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL :')
-    config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL :')
-    config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX  :')
-    config.set('Data Layout','GPS_SPEED',      'GPS Kh : GPS_SPEED.VAL/GPS_SPEED.MAX/GPS_SPEED.AVG  :')
+    config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL           :')
+    config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL           :')
+    config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX    :')
+    config.set('Data Layout','GPS_SPEED',      'GPS Kh : GPS_SPD.VAL/GPS_SPD.MAX/GPS_SPD.AVG  :')
     config.set('Data Layout','HEADING',        '*Track : HEADING.VAL           :')
 
     config.set('Transmission','Gear Neutral Label','Idle')
