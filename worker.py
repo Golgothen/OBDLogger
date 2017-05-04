@@ -21,9 +21,7 @@ class Worker(Process):
                  ecuPipe,                        # Worker <-> ECU
                  controlPipe,                    # Worker <-> Application
                  dataPipe,                       # Worker <-> Collector
-                 logPipe,                        # Worker <-> Logger
-                 port,
-                 baud):
+                 logPipe):                       # Worker <-> Logger
 
         super(Worker,self).__init__()
         #self.daemon=False
@@ -42,9 +40,10 @@ class Worker(Process):
         self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'WORKER.APPLICATION')
         self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'WORKER.DATA')
         self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'WORKER.LOG')
-        self.__baud = baud
-        self.__port = port
-        self.__interface = obd.OBD(port, baud)
+        self.__baud = config.getint('Application','OBD Baud')
+        self.__port = getBlockPath(config.get('Application','OBD Vendor ID'),config.get('Application','OBD Product ID'))
+        logger.info('ELM device found at /dev/{}'.format(self.__port))
+        #self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
         self.__connected = False
         self.__commands = []
         self.__supported_commands = []
@@ -138,7 +137,7 @@ class Worker(Process):
         self.__running = False
 
     def __connect(self):
-        self.__interface = obd.OBD(self.__port, self.__baud)
+        self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
         logger.info('Worker connection status = {}'.format(self.__interface.status()))
         self.__supported_commands = []
         #if self.__interface.status() == 'Not Connected': sleep(1)

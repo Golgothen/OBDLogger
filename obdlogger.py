@@ -14,7 +14,7 @@ file_handler = logging.FileHandler('./'+logName) # sends output to file
 file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
 logger.addHandler(file_handler)
 
-logger.setLevel(logging.WARNING)
+logger.setLevel(logging.INFO)
 
 lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
@@ -115,8 +115,7 @@ if __name__ == '__main__':
         tank = readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
         if tank is None: tank = blankHist()
 
-        ecu = Monitor(config.get('Application', 'OBD Port'),
-                      config.get('Application', 'OBD Baud'))
+        ecu = Monitor()
 
         ecu.logPath(config.get('Application', 'LogPath'))
         logHeadings = config.get('Application', 'Log Headings').split(',')

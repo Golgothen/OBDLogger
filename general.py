@@ -1,4 +1,4 @@
-import os, csv, logging, sys
+import os, csv, logging, sys, subprocess
 from configparser import ConfigParser
 
 ###
@@ -149,12 +149,15 @@ def loadDefaults():
     config.set('Application','Busy Screen Time','0.25')
     config.set('Application','Trip Timeout','900')
     config.set('Application','Log Extra Data','True')
-    config.set('Application','OBD Port','/dev/ttyUSB0')
+    config.set('Application','OBD Product ID','2303')
+    config.set('Application','OBD Vendor ID','067b')
     config.set('Application','OBD Baud','38400')
     config.set('Application','Queues','Hi,Medium,Low,Once')
     config.set('Application','Log Headings','TIMESTAMP,RPM,SPEED,DISTANCE,FAM,LP100K,LPS,LPH,MAF,ENGINE_LOAD,DRIVE_RATIO,GEAR')
     config.set('Application','Pipe Timeout','3')
     config.set('Application','GPS Enabled','True')
+    config.set('Application','GPS Product ID','ea60')
+    config.set('Application','GPS Vendor ID','10c4')
     config.set('Application','Data Screen Size','23')
 
     for q in config.get('Application','Queues').split(','):
@@ -252,3 +255,46 @@ def loadDefaults():
 
 def saveConfig(config):
     config.write(open('obdlogger.cfg','w'))
+
+def getUSBDevices():
+    devices = {}
+    # put all dmesg messages into a list
+    output_list = []
+    output_list = str(subprocess.check_output('dmesg')).split('\\n')
+
+    # Look for 'New USB device' messages
+    filter_list = [x for x in output_list if 'New USB device found' in x]
+    for f in filter_list:
+        # This message gives us vendor, product and bus ID's
+        bus_id = f.split(':')[0].split(']')[1].strip()
+        devices[bus_id] = {}
+        devices[bus_id]['VENDOR'] =  f.split(',')[1].strip().split('=')[1]
+        devices[bus_id]['PRODUCT'] =  f.split(',')[2].strip().split('=')[1]
+        # list to store all other details about the device
+        device_details = []
+        # pull out all messages from dmesg in relation to the bus ID
+        device_details = [x for x in output_list if bus_id in x]
+        # Pick out the info we need:
+        for d in device_details:
+            if 'Product:' in d:
+                # Product Name
+                devices[bus_id]['NAME'] = d.split(':')[2].strip()
+            if 'Manufacturer' in d:
+                # Manufacturer Name
+                devices[bus_id]['MANUFACTURER'] = d.split(':')[2].strip()
+            if 'now attached to' in d:
+                # Block device - if it has one
+                devices[bus_id]['FILE'] = d.split('now attached to')[1].strip()
+    return devices
+
+def getBlockPath(vendor, product):
+    device_path = None
+    devices = getUSBDevices()
+    for d in devices:
+        if devices[d]['VENDOR'] == vendor and \
+           devices[d]['PRODUCT'] == product:
+            if 'FILE' in devices[d]:
+                device_path = devices[d]['FILE']
+                break
+    return device_path
+

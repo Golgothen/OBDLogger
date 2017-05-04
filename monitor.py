@@ -23,7 +23,7 @@ PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 class Monitor():
 
-    def __init__(self, port, baud):
+    def __init__(self):
         #super(Monitor,self).__init__()
         ecuWorkerPipe = PipeCont()                                     # ECU <-> Worker
         ecuDataPipe = PipeCont()                                       # ECU <-> Collector
@@ -56,9 +56,7 @@ class Monitor():
                                ecuWorkerPipe.r,                        # Worker <-> ECU
                                workerControlPipe.r,                    # Worker <-> Application
                                workerDataPipe.s,                       # Worker <-> Collector
-                               loggerWorkerPipe.s,                     # Worker <-> Logger
-                               port,
-                               baud)
+                               loggerWorkerPipe.s)                     # Worker <-> Logger
 
         self.__collector = Collector(ecuDataPipe.r,                    # Collector <-> ECU
                                      collectorControlPipe.r,           # Collector <-> Application

@@ -181,8 +181,8 @@ class Collector(Process):
         self.__data['ALTITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 5, COMMAS = False, PRECISION = 0))
         self.__data['LATITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 19, TYPE = 'lat'))
         self.__data['LONGITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 19, TYPE = 'lon'))
-        self.__data['GPS_SPEED'] = KPI(FMT_ALL = FMT(LENGTH=5, PRECISION = 1)
-        self.__data['HEADING'] = KPI(FMT_ALL = FMT()
+        self.__data['GPS_SPEED'] = KPI(FMT_ALL = FMT(LENGTH=5, PRECISION = 1))
+        self.__data['HEADING'] = KPI(FMT_ALL = FMT())
 
 
         # Alter a few data fields for logging
