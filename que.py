@@ -1,9 +1,9 @@
-import os, logging #, _thread
+import os, logging, sys
 from threading import Thread
 from multiprocessing import Queue
 from datetime import datetime
 from time import sleep
-from copy import copy
+#from copy import copy
 #from general import *
 
 logger = logging.getLogger('root')
@@ -30,24 +30,30 @@ class Que(Thread):
         self.running = True
         self.__lastPolled = datetime.now()
         logger.info('Que {} starting'.format(self.name))
-        while self.running:
-            self.__lastPolled = datetime.now()
-            if self.ready and not self.paused:
-                self.pauseReady = False
-                for s in self.__commands:
-                    self.__que.put(s)
-                    if self.deleteAfterPoll:
-                        self.removeCommand(s)
-                        break
-                    if len(self.__commands)>0:
-                        sleep(1.0/self.__frequency/len(self.__commands))
-                    else:
-                        sleep(1.0/self.__frequency)
-            else:
-                if self.paused:
-                    self.pauseReady = True
-                sleep(0.5)
-        logger.info('Que {} stopped'.format(self.name))
+        try:
+            while self.running:
+                self.__lastPolled = datetime.now()
+                if self.ready and not self.paused:
+                    self.pauseReady = False
+                    for s in self.__commands:
+                        self.__que.put(s)
+                        if self.deleteAfterPoll:
+                            self.removeCommand(s)
+                            break
+                        if len(self.__commands)>0:
+                            sleep(1.0/self.__frequency/len(self.__commands))
+                        else:
+                            sleep(1.0/self.__frequency)
+                else:
+                    if self.paused:
+                        self.pauseReady = True
+                    sleep(0.5)
+            logger.info('Que {} stopped'.format(self.name))
+        except (KeyboarInterrupt, SystemExit):
+            self.running = False
+        except:
+            logger.critical('Unhandled exception occured in Queue Thread {}: {}'.format(self.name, sys.exc_info))
+
 
     def setFrequency(self, frequency):
         self.__frequency = frequency
@@ -67,11 +73,11 @@ class Que(Thread):
             l.append(c)
         return l
 
-    def removeCommand(self,command):
+    def removeCommand(self, command):
         logger.debug('Removing sensor {} from que {}'.format(command, self.name))
         if command in self.__commands:
             del self.__commands[command]
-            if len(self.__commands)==0: 
+            if len(self.__commands)==0:
                 self.ready=False
                 logger.info('Que {} not ready due to zero length'.format(self.name))
 

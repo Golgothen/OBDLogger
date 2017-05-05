@@ -2,7 +2,7 @@ from multiprocessing import Pipe
 from threading import Thread
 from messages import Message
 
-import logging
+import logging, sys
 
 
 # Watcher thread to monitor for incomming messages on a pipe.
@@ -36,6 +36,8 @@ class PipeWatcher(Thread):
                         self.send(response)
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
+        except:
+            logger.critical('Unhandled exception occured in PipeWatcher thread {}: {}'.format(self.name, sys.exc_info))
 
     # Public method to allow the parent to send messages to the pipe
     def send(self, msg):

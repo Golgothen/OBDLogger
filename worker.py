@@ -6,7 +6,7 @@ from pipewatcher import PipeWatcher
 from configparser import ConfigParser
 
 from general import *
-import logging, os, obd #, _thread
+import logging, os, obd, sys
 
 logger = logging.getLogger('root')
 
@@ -91,6 +91,9 @@ class Worker(Process):
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
             return
+        except:
+            logger.critical('Unhandled exception occured in Worker process: {}'.format(sys.exc_info))
+
 
     def getcommands(self, p = None):
         return Message('GETCOMMANDS', COMMANDS = self.__commands)

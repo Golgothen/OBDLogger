@@ -1,4 +1,4 @@
-import os, _thread
+import logging, sys, os, _thread
 from time import sleep
 from worker import Worker
 from que import Que
@@ -12,7 +12,6 @@ from general import *
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
-import logging
 
 logger = logging.getLogger('root')
 
@@ -46,6 +45,9 @@ class ECU(Process):
             self.__shutdown()
         except (KeyboardInterrupt, SystemExit):
             self.__shutdown()
+        except:
+            logger.critical('Unhandled exception occured in ECU process: {}'.format(sys.exc_info))
+
 
     def supported_commands(self, p = None):
         return Message('SUPPORTED_COMMANDS', SUPPORTED_COMMANDS = self.__supportedcommands)

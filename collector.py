@@ -7,7 +7,7 @@ from configparser import ConfigParser
 from kpi import *
 from general import *
 
-import os, logger
+import os, logger, sys
 
 logger = logging.getLogger('root')
 
@@ -64,6 +64,8 @@ class Collector(Process):
             logger.info('Collector process stopped')                                # Running has been set to False
         except (KeyboardInterrupt, SystemExit):                                     # Pick up interrups and system shutdown
             self.__running = False                                                  # Set Running to false, causing the above loop to exit
+        except:
+            logger.critical('Unhandled exception occured in Collector process: {}'.format(sys.exc_info))
 
     def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values

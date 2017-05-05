@@ -6,7 +6,7 @@ from pipewatcher import PipeWatcher
 
 from general import *
 
-import logging, os
+import logging, os, sys
 
 logger = logging.getLogger('root')
 
@@ -71,6 +71,9 @@ class GPS(Process):
             self.__running = False
             self.__gpsd.close()
             return
+        except:
+            logger.critical('Unhandled exception occured in GPS process: {}'.format(sys.exc_info))
+
 
     def pause(self, p = None):
         if not self.__paused:

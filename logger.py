@@ -1,7 +1,7 @@
+import threading, gzip, shutil, os, logging, sys
 from multiprocessing import Process
 from time import time, sleep
 from datetime import datetime
-import threading, gzip, shutil, os, logging
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
@@ -81,6 +81,9 @@ class DataLogger(threading.Thread):
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
             return
+        except:
+            logger.critical('Unhandled exception occured in Logger process: {}'.format(sys.exc_info))
+
 
     def frequency(self, p):
         self.__logFrequency = p['FREQUENCY']
