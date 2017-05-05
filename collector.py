@@ -27,10 +27,10 @@ class Collector(Process):
         self.__results = que
         self.__data = dict()
         self.__pipes = {}
-        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'COLLECTOR.ECU')
-        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'COLLECTOR.APPLICATION')
-        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'COLLECTOR.LOG')
-        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'COLLECTOR.WORKER')
+        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'ECU->COLLECTOR')
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'APP->COLLECTOR')
+        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'LOG->COLLECTOR')
+        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'WORKER->COLLECTOR')
         self.__pid = None
         self.__paused = False
         self.__running = False
@@ -253,10 +253,7 @@ class Collector(Process):
         return Message('GETSUMMARY', SUMMARY = d)
 
     def dataline(self, p):
-        try:
-            temp = config.get('Data Layout',p['NAME'])
-        except:
-            return None
+        temp = config.get('Data Layout',p['NAME'])
         for d in self.__data:
             for f in ['VAL','MIN','MAX','SUM','AVG','LOG']:
                 if '{}.{}'.format(d,f) in temp:

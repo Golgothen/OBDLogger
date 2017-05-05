@@ -43,7 +43,7 @@ class FMT():
             str+=','
         if self.precision is not None and self.type != 'd':
             str += '.{}'.format(self.precision)
-        if self.type not in ['s','t','d']:
+        if self.type not in ['s','t','d','lat','lon']:
             str+='{}'.format(self.type)
         str += '}'
         return str

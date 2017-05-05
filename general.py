@@ -1,5 +1,6 @@
 import os, csv, logging, sys, subprocess
 from configparser import ConfigParser
+from math import modf
 
 ###
 
@@ -26,9 +27,9 @@ def formatLatitude(d):
     return '{:3.0f}{}{:2.0f}\'{:2.2f}"{}'.format(deg, deg_sign, min, sec, heading)
 
 def formatLongitude(d):
-    if d < 0: heading = 'E'
+    if d < 0: heading = 'W'
     elif d == 0: heading = '0'
-    else: heading = 'W'
+    else: heading = 'E'
     minor, deg = modf(abs(d))
     minor, min = modf(minor*60)
     sec = minor * 60
@@ -231,7 +232,7 @@ def loadDefaults():
     config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL           :')
     config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL           :')
     config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX   :')
-    config.set('Data Layout','GPS_SPD',        'GPS Kh : GPS_SPD.VAL/GPS_SPD.MAX/GPS_SPD.AVG   :')
+    config.set('Data Layout','GPS_SPD',        'GPS Kh : GPS_SPD.VAL/ GPS_SPD.MAX/ GPS_SPD.AVG :')
     config.set('Data Layout','HEADING',        '*Track : HEADING.VAL           :')
 
     config.set('Transmission','Gear Neutral Label','Idle')

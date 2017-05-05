@@ -36,10 +36,10 @@ class Worker(Process):
         self.__firstPoll = None
         self.__pid = None
         self.__pipes = {}
-        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'WORKER.ECU')
-        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'WORKER.APPLICATION')
-        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'WORKER.DATA')
-        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'WORKER.LOG')
+        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'ECU->WORKER')
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'APP->WORKER')
+        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'COLLECTOR->WORKER')
+        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'LOG->WORKER')
         self.__baud = config.getint('Application','OBD Baud')
         self.__port = getBlockPath(config.get('Application','OBD Vendor ID'),config.get('Application','OBD Product ID'))
         logger.info('ELM device found at /dev/{}'.format(self.__port))

@@ -40,11 +40,11 @@ class Monitor():
         resultQue = Queue()
 
         self.__pipes = {}
-        self.__pipes['ECU'] = PipeWatcher(self, ecuControlPipe.s, 'APPLICATION.ECU')
-        self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APPLICATION.WORKER')
-        self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APPLICATION.DATA')
-        self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APPLICATION.LOG')
-        self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'APPLICATION.GPS')
+        self.__pipes['ECU'] = PipeWatcher(self, ecuControlPipe.s, 'APP->ECU')
+        self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APP->WORKER')
+        self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APP->COLLECTOR')
+        self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APP->LOG')
+        self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'APP->GPS')
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
@@ -290,8 +290,15 @@ class Monitor():
     @gpsEnable.setter
     def gpsEnable(self, v):
         self.__gpsEnabled = v
+#        if getBlockPath(
+#               config.get('Application', 'GPS Vendor ID'),
+#               config.get('Application', 'GPS Product ID')
+#           ) is None:
+#            logger.info('GPS Device not found.  Disabling GPS.')
+#            self.__gpsEnabled = False
+
         if self.__gpsEnabled:
-            self.__pipes['GPS'].send(Message('RESUME'))
+            #self.__pipes['GPS'].send(Message('RESUME'))
             self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']))
         else:
             self.__pipes['GPS'].send(Message('PAUSE'))

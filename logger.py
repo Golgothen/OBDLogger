@@ -25,9 +25,9 @@ class DataLogger(threading.Thread):
         self.deamon=True                            # Sets the process to daemon. Stops if the parent process stops
         self.name='Logger'                          # Sets the process name. Helps with debigging.
         self.__pipes = {}
-        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'LOGGER.APPLICATION')            # Communication pipe with the controlling application
-        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'LOGGER.DATA')                  # Comminication pipe with the Data Collector process
-        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'LOGGER.WORKER')              # Comminication pipe with the Data Collector process
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'APP->LOGGER')            # Communication pipe with the controlling application
+        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'COLLECTOR->LOGGER')                  # Comminication pipe with the Data Collector process
+        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'WORKER->LOGGER')              # Comminication pipe with the Data Collector process
         self.__data = dict()                        # Data dictionary to use to write log diles
         self.__refreshRequired = True               # Flag to determine if the dictionary needs to be refreshed
         self.__refreshRequested = False             # Flag to determine if the refresh request has been sent
@@ -110,9 +110,9 @@ class DataLogger(threading.Thread):
             with open(self.__logName + '.log','wb') as f:        # Clobber output file if it exists
                 f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
 
-    def headings(self, p):
-        #Set the log headings
-        self.__logHeadings = p['HEADINGS']
+#    def headings(self, p):
+#        #Set the log headings
+#        self.__logHeadings = p['HEADINGS']
 
     def stop(self, p = None):
         #Stop logging.    Thread stops - This is final.    Cannot be restarted
@@ -170,9 +170,11 @@ class DataLogger(threading.Thread):
         for h in p['HEADINGS']:
             if h not in self.__logHeadings:
                 self.__logHeadings.append(h)
+        logger.info('Log headings updated to {}'.format(self.__logHeadings))
 
     def remove_headings(self, p):
         for h in p['HEADINGS']:
             if h in self.__logHeadings:
                 self.__logHeadings.remove(h)
+        logger.info('Log headings updated to {}'.format(self.__logHeadings))
 

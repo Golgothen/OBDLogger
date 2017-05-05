@@ -136,7 +136,7 @@ if __name__ == '__main__':
 
         disconnected=None
         journey = False
-        while 1:
+        while True:
             while ecu.isConnected:
                 if not journey:
                     journey=True

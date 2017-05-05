@@ -24,9 +24,9 @@ class ECU(Process):
         self.__workerQue = que                         # Work que that all que threads submit their commands to
         self.__pid = None
         self.__pipes = {}
-        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'ECU.WORKER')                          # Communication pipe to the worker process
-        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'ECU.APPLICATION')                         # Communication pipe to the controlling process
-        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'ECU.DATA')                            # Communication pipe to the collector process
+        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'ECU->WORKER')                          # Communication pipe to the worker process
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'ECU->APP')                         # Communication pipe to the controlling process
+        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'ECU->COLLECTOR')                            # Communication pipe to the collector process
         self.__paused = True
         self.__name = 'ECU'
         self.__running = False
