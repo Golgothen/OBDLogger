@@ -4,6 +4,7 @@ from general import *
 from monitor import Monitor
 from logger import DataLogger
 from configparser import ConfigParser
+from threading import Timer
 
 import sys, logging
 
@@ -16,20 +17,18 @@ logger.addHandler(file_handler)
 
 logger.setLevel(logging.WARNING)
 
-lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
 snapshot=dict()
+timer = None
 
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
     global config
+    global timer
 
     #os.system('clear')
-    screentime=datetime.now()-lastScreenUpdate
-    if screentime.seconds>=config.getfloat('Application', 'Idle Screen Time'):
-        currentIdleScreen+=1
-        lastScreenUpdate=datetime.now()
+    currentIdleScreen+=1
     if currentIdleScreen>2:
         currentIdleScreen=0
     if currentIdleScreen==0:
@@ -44,6 +43,8 @@ def printIdleScreen():
             printHistory()
         else:
             printTrip()
+    timer = Timer(config.getfloat('Application', 'Idle Screen Time'), printIdleScreen)
+    timer.start()
 
 def printTrip():
     sys.stdout.write(' Last Trip:                   ')
@@ -115,6 +116,8 @@ if __name__ == '__main__':
         tank = readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
         if tank is None: tank = blankHist()
 
+        printIdleScreen()
+
         ecu = Monitor(config.get('Application', 'OBD Port'),
                       config.get('Application', 'OBD Baud'))
 
@@ -138,6 +141,7 @@ if __name__ == '__main__':
             while ecu.isConnected:
                 if not journey:
                     journey=True
+                    timer.cancel()
                     for q in config.get('Application', 'Queues').split(','):
                         if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
                            config.has_option('Queue {}'.format(q), 'Commands'):
@@ -168,6 +172,7 @@ if __name__ == '__main__':
             while not ecu.isConnected:
                 if journey:
                     journey=False
+                    printIdleScreen()
                     ecu.pause()
                     disconnected = datetime.now()
                     if ecu.sum('DURATION') == 0:
@@ -187,11 +192,11 @@ if __name__ == '__main__':
                         ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
-                printIdleScreen()
                 #logger.info(ecu.status())
-                sleep(1)
+                sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
         ecu.stop()
+        timer.cancel()
         print('Done.')
 
