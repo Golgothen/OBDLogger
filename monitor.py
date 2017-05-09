@@ -1,4 +1,4 @@
-from multiprocessing import Queue #, Manager
+from multiprocessing import Queue, Event
 #from threading import Thread
 from ecu import ECU
 from worker import Worker
@@ -34,19 +34,28 @@ class Monitor():
         loggerWorkerPipe = PipeCont()               # Logger <-> Worker
         gpsControlPipe = PipeCont()                 # GPS <-> Application
 
+        events = {}
+
+        events['ECU'] = {}
+        for p in ['ECU', 'WORKER', 'COLLECTOR', 'LOG']
+            events[p] = {}
+            for e in ['STOP', 'PAUSE', 'RESUME']
+                events[p][e] = Event()
+
         workQue = Queue()
         resultQue = Queue()
 
         self.__pipes = {}
         self.__pipes['ECU'] = PipeWatcher(self, ecuControlPipe.s, 'APPLICATION.ECU')
         self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APPLICATION.WORKER')
-        self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APPLICATION.DATA')
+        self.__pipes['COLLECTOR'] = PipeWatcher(self, collectorControlPipe.s, 'APPLICATION.COLLECTOR')
         self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APPLICATION.LOG')
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
                          ecuControlPipe.r,                             # ECU <-> Application
-                         ecuDataPipe.s)                                # ECU <-> Collector
+                         ecuDataPipe.s,                                # ECU <-> Collector
+                         events['ECU'])                                # Flow control events
 
         self.__worker = Worker(workQue,
                                resultQue,
@@ -55,17 +64,22 @@ class Monitor():
                                workerDataPipe.s,                       # Worker <-> Collector
                                loggerWorkerPipe.s,                     # Worker <-> Logger
                                port,
-                               baud)
+                               baud,
+                               events['WORKER'])                       # Flow control events
+
 
         self.__collector = Collector(ecuDataPipe.r,                    # Collector <-> ECU
                                      collectorControlPipe.r,           # Collector <-> Application
                                      loggerDataPipe.r,                 # Collector <-> Logger
                                      workerDataPipe.r,                 # Collector <-> Worker
-                                     resultQue)
+                                     resultQue,
+                                     events['COLLECTOR'])              # Flow control events
+
 
         self.__logger = DataLogger(loggerControlPipe.r,                # Logger <-> Application
                                    loggerDataPipe.s,                   # Logger <-> Collector
-                                   loggerWorkerPipe.r)                 # Logger <-> Worker
+                                   loggerWorkerPipe.r,                 # Logger <-> Worker
+                                   events['LOG'])                      # Flow control events
 
         self.__ecu.start()
         self.__collector.start()
@@ -87,19 +101,20 @@ class Monitor():
         self.__pipes['ECU'].send(Message('DELETEAFTERPOLL',QUE = que, FLAG = flag))
 
     def stop(self):
-        self.__pipes['ECU'].send(Message('STOP'))
-        self.__pipes['LOG'].send(Message('STOP'))
+        # fire all stop events
+        for p in events:
+            events[p]['STOP'].set()
 
     def pause(self):
-        self.__pipes['ECU'].send(Message('PAUSE'))
-        self.__pipes['ECU'].send(Message('PAUSE'))
+        events['ECU']['PAUSE'].set()
+        events['LOG']['PAUSE'].set()
 
     def resume(self):
-        self.__pipes['ECU'].send(Message('RESUME'))
-        self.__pipes['LOG'].send(Message('RESUME'))
+        events['ECU']['RESUME'].set()
+        events['LOG']['RESUME'].set()
 
     def reset(self):
-        self.__pipes['DATA'].send(Message('RESET'))
+        self.__pipes['COLLECTOR'].send(Message('RESET'))
 
     def save(self):
         self.__pipes['LOG'].send(Message('SAVE'))
@@ -173,14 +188,14 @@ class Monitor():
         self.__s_log_return = None                                            # Stores the response from the callback
         self.__pipes['WORKER'].send(Message('GETSTATUS'))                     # Send message for incomming request
         self.__pipes['ECU'].send(Message('GETSTATUS'))                        # Send message for incomming request
-        self.__pipes['DATA'].send(Message('GETSTATUS'))                       # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('GETSTATUS'))                  # Send message for incomming request
         self.__pipes['LOG'].send(Message('GETSTATUS'))                        # Send message for incomming request
         while self.__s_ecu_return is None:                                    #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         s['ECU'] = self.__s_ecu_return['STATUS']
         while self.__s_data_return is None:                                   #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
-        s['DATA'] = self.__s_data_returnn['STATUS']
+        s['COLLECTOR'] = self.__s_data_returnn['STATUS']
         while self.__s_worker_return is None:                                 #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         s['WORKER'] = self.__s_ecu_returnn['STATUS']
@@ -207,7 +222,7 @@ class Monitor():
 
     def sum(self, name):
         self.__sum_return = None                                              # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('SUM', NAME = name))                # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('SUM', NAME = name))           # Send message for incomming request
         while self.__sum_return is None:                                      #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__sum_return['SUM']                                       # Return the response from the callback to the caller
@@ -218,7 +233,7 @@ class Monitor():
 
     def avg(self, name):
         self.__avg_return = None                                              # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('AVG', NAME = name))                # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('AVG', NAME = name))           # Send message for incomming request
         while self.__avg_return is None:                                      #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__avg_return['AVG']                                       # Return the response from the callback to the caller
@@ -229,7 +244,7 @@ class Monitor():
 
     def min(self, name):
         self.__min_return = None                                              # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('MIN', NAME = name))                # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('MIN', NAME = name))           # Send message for incomming request
         while self.__MIN_return is None:                                      #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__MIN_return['MIN']                                       # Return the response from the callback to the caller
@@ -240,7 +255,7 @@ class Monitor():
 
     def max(self, name):
         self.__max_return = None                                              # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('MAX', NAME = name))                # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('MAX', NAME = name))           # Send message for incomming request
         while self.__max_return is None:                                      #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__max_return['MAX']                                       # Return the response from the callback to the caller
@@ -251,7 +266,7 @@ class Monitor():
 
     def val(self, name):
         self.__val_return = None                                              # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('VAL', NAME = name))                # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('VAL', NAME = name))           # Send message for incomming request
         while self.__val_return is None:                                      #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__val_return['VAL']                                       # Return the response from the callback to the caller
@@ -262,7 +277,7 @@ class Monitor():
 
     def dataLine(self, name):
         self.__dataline_return = None                                         # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('DATALINE', NAME = name))           # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('DATALINE', NAME = name))      # Send message for incomming request
         while self.__dataline_return is None:                                 #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__dataline_return['LINE']                                 # Return the response from the callback to the caller
@@ -274,7 +289,7 @@ class Monitor():
     @property
     def snapshot(self):
         self.__snapshot_return = None                                         # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('SNAPSHOT'))                        # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('SNAPSHOT'))                   # Send message for incomming request
         while self.__snapshot_return is None:                                 #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__snapshot_return['SNAPSHOT']                             # Return the response from the callback to the caller
@@ -298,7 +313,7 @@ class Monitor():
     @property
     def summary(self):
         self.__summary_return = None                                          # Stores the response from the callback
-        self.__pipes['DATA'].send(Message('SUMMARY'))                         # Send message for incomming request
+        self.__pipes['COLLECTOR'].send(Message('SUMMARY'))                    # Send message for incomming request
         while self.__summary_return is None:                                  #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         return self.__summary_return['SUMMARY']                               # Return the response from the callback to the caller
