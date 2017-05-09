@@ -1,21 +1,24 @@
-from multiprocessing import Process
+from multiprocessing import Process, Event
 from time import time, sleep
 from datetime import datetime
-import threading, gzip, shutil, os, logging
+import threading, gzip, shutil, logging #, os
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
+from eventhandler import EventHandler
 
 logger = logging.getLogger('root')
 
-class DataLogger(threading.Thread):
+class DataLogger(Process):
 
     def __init__(self,
                  controlPipe,
                  dataPipe,
-                 workerPipe):
+                 workerPipe,
+                 events):
 
-        threading.Thread.__init__(self)
+        super(DataLogger, self).__init__()
+        #threading.Thread.__init__(self)
         self.__logName = None                       # File to log to
         self.__logFrequency = 1                     # Time per second to write to the log file
         self.__logHeadings = []                     # List of headings for the log file.
@@ -34,13 +37,17 @@ class DataLogger(threading.Thread):
         self.__logFormat = '%Y%m%d%H%M'             # Log file name format
         self.__pauseLog = False                     # Flag to pause logging
         self.__pid = None                           # Pricess ID of Logging process
+        self.__events = {}
+
+        for e in events:
+            self.__events = EventHandler(events[e], getattr(self, e.lower()))
 
         logger.debug('Logging process initalised')
 
     def run(self):
         self.__running=True
-        self.__pid = os.getpid()
-        logger.info('Starting Logger process on PID {}'.format(self.__pid))
+        #self.__pid = os.getpid()
+        logger.info('Starting Logger process on PID {}'.format(self.pid))
         for p in self.__pipes:
             self.__pipes[p].start()
         try:
@@ -82,6 +89,23 @@ class DataLogger(threading.Thread):
             self.__running = False
             return
 
+    def stop(self, p = None):
+        #Stop logging.    Thread stops - This is final.    Cannot be restarted
+        self.__running=False
+
+    def resume(self, p = None):
+        #Resume Logging
+        logger.info('Logging resumed')
+        self.__paused = self.__pauseLog = False
+        if self.__logName is None:
+            self.__setName()
+
+    def pause(self, p = None):
+        #Pause logging, thread keeps running
+        if not self.__paused:
+            logger.info('Logging paused')
+            self.__paused = True
+
     def frequency(self, p):
         self.__logFrequency = p['FREQUENCY']
 
@@ -110,23 +134,6 @@ class DataLogger(threading.Thread):
     def headings(self, p):
         #Set the log headings
         self.__logHeadings = p['HEADINGS']
-
-    def stop(self, p = None):
-        #Stop logging.    Thread stops - This is final.    Cannot be restarted
-        self.__running=False
-
-    def resume(self, p = None):
-        #Resume Logging
-        logger.info('Logging resumed')
-        self.__paused = self.__pauseLog = False
-        if self.__logName is None:
-            self.__setName()
-
-    def pause(self, p = None):
-        #Pause logging, thread keeps running
-        if not self.__paused:
-            logger.info('Logging paused')
-            self.__paused = True
 
     def save(self, p = None):
         #Compress the logfile

@@ -12,7 +12,7 @@ from configparser import ConfigParser
 
 from general import *
 
-import sys, logging
+import sys, logging, _thread
 
 logger = logging.getLogger('root')
 
@@ -34,13 +34,15 @@ class Monitor():
         loggerWorkerPipe = PipeCont()               # Logger <-> Worker
         gpsControlPipe = PipeCont()                 # GPS <-> Application
 
-        events = {}
+        self.__events = {}
 
-        events['ECU'] = {}
-        for p in ['ECU', 'WORKER', 'COLLECTOR', 'LOG']
-            events[p] = {}
-            for e in ['STOP', 'PAUSE', 'RESUME']
-                events[p][e] = Event()
+        self.__events['ECU'] = {}
+        for p in ['ECU', 'WORKER', 'COLLECTOR', 'LOG']:
+            self.__events[p] = {}
+            for e in ['STOP', 'PAUSE', 'RESUME']:
+                self.__events[p][e] = Event()
+            if p == 'WORKER':
+                self.__events[p]['CONNECTION'] = Event()
 
         workQue = Queue()
         resultQue = Queue()
@@ -55,7 +57,7 @@ class Monitor():
                          ecuWorkerPipe.s,                              # ECU <-> Worker
                          ecuControlPipe.r,                             # ECU <-> Application
                          ecuDataPipe.s,                                # ECU <-> Collector
-                         events['ECU'])                                # Flow control events
+                         self.__events['ECU'])                                # Flow control events
 
         self.__worker = Worker(workQue,
                                resultQue,
@@ -65,7 +67,7 @@ class Monitor():
                                loggerWorkerPipe.s,                     # Worker <-> Logger
                                port,
                                baud,
-                               events['WORKER'])                       # Flow control events
+                               self.__events['WORKER'])                       # Flow control events
 
 
         self.__collector = Collector(ecuDataPipe.r,                    # Collector <-> ECU
@@ -73,20 +75,32 @@ class Monitor():
                                      loggerDataPipe.r,                 # Collector <-> Logger
                                      workerDataPipe.r,                 # Collector <-> Worker
                                      resultQue,
-                                     events['COLLECTOR'])              # Flow control events
+                                     self.__events['COLLECTOR'])              # Flow control events
 
 
         self.__logger = DataLogger(loggerControlPipe.r,                # Logger <-> Application
                                    loggerDataPipe.s,                   # Logger <-> Collector
                                    loggerWorkerPipe.r,                 # Logger <-> Worker
-                                   events['LOG'])                      # Flow control events
+                                   self.__events['LOG'])                      # Flow control events
 
         self.__ecu.start()
         self.__collector.start()
         self.__worker.start()
-        self.__logger.start()
+        #self.__logger.start()
         for p in self.__pipes:
             self.__pipes[p].start()
+        # monitor needs to listen for a connection event triggered by WORKER
+        _thread.start_new_thread(self.event_connection,())
+
+    def event_connection(self):
+        self.__events['WORKER']['CONNECTION'].wait()
+        # Worker has notified us of a change in connection state
+        if self.isConnected:
+            self.resume()
+        else:
+            self.pause()
+        self.__events['WORKER']['CONNECTION'].clear()
+        _thread.start_new_thread(self.event_connection,())
 
     def addQue(self, que, frequency):
         self.__pipes['ECU'].send(Message('ADDQUE',QUE = que, FREQUENCY = frequency))
@@ -102,16 +116,16 @@ class Monitor():
 
     def stop(self):
         # fire all stop events
-        for p in events:
-            events[p]['STOP'].set()
+        for p in self.__events:
+            self.__events[p]['STOP'].set()
 
     def pause(self):
-        events['ECU']['PAUSE'].set()
-        events['LOG']['PAUSE'].set()
+        self.__events['ECU']['PAUSE'].set()
+        self.__events['LOG']['PAUSE'].set()
 
     def resume(self):
-        events['ECU']['RESUME'].set()
-        events['LOG']['RESUME'].set()
+        self.__events['ECU']['RESUME'].set()
+        self.__events['LOG']['RESUME'].set()
 
     def reset(self):
         self.__pipes['COLLECTOR'].send(Message('RESET'))

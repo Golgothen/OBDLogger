@@ -3,11 +3,12 @@ from messages import Message
 from time import sleep
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
+from eventhandler import EventHandler
 
 from kpi import *
 from general import *
 
-import os, logger
+import logger #, os
 
 logger = logging.getLogger('root')
 
@@ -21,7 +22,8 @@ class Collector(Process):
                  controlPipe,                      # Pipe to controlling application
                  logPipe,                          # Pipe to Logger process
                  workerPipe,                       # Pipe to Worker process
-                 que):                             # Result que
+                 que,                              # Result que
+                 events):
 
         super(Collector,self).__init__()
         self.__results = que
@@ -31,19 +33,20 @@ class Collector(Process):
         self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'COLLECTOR.APPLICATION')
         self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'COLLECTOR.LOG')
         self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'COLLECTOR.WORKER')
-        self.__pid = None
         self.__paused = False
         self.__running = False
         self.__frequency = 100
         self.__ready = False
         self.__SCreq = False
         self.name = 'COLLECTOR'
+        self.__events = {}
+        for e in events:
+            self.__events[e] = EventHandler(events[e], getattr(self, e.lower()))
 
     def run(self):
         # Main function for process.    Runs continully until instructed to stop.
         self.__running = True
-        self.__pid = os.getpid()
-        logger.info('Starting Collector process on PID {}'.format(str(self.__pid)))
+        logger.info('Starting Collector process on PID {}'.format(str(self.pid)))
         for p in self.__pipes:
             self.__pipes[p].start()
         try:
@@ -194,14 +197,14 @@ class Collector(Process):
         self.__dirty = False
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
 
-    def pause(self, p = None):
+    def pause(self):
         if not self.__paused:
             logger.info('Pausing Collector process')
             self.__dirty = self.__paused = True
             for d in self.__data:
                 self.__data[d].paused = True
 
-    def resume(self, p = None):
+    def resume(self):
         if self.__paused:
             logger.info('Resuming Collector process')
             self.__paused = False
@@ -210,7 +213,7 @@ class Collector(Process):
             for d in self.__data:
                 self.__data[d].paused = False
 
-    def stop(self, p = None):
+    def stop(self):
         if self.__running:
             logger.debug('Stopping Collector process')
             self.__running = False
@@ -220,7 +223,7 @@ class Collector(Process):
         d['Name'] = self.name
         d['Running'] = self.__running
         d['Paused'] = self.__paused
-        d['PID'] = self.__pid
+        d['PID'] = self.pid
         d['Count'] = len(self.__data)
         d['Length'] = dict()
         for k in self.__data:
