@@ -6,7 +6,7 @@ from logger import DataLogger
 from configparser import ConfigParser
 from threading import Timer
 from multiprocessing import Queue
-from queuehandler import LogListener, QueueHandler
+from queuehandler import LogListener, QueueHandler, obdFilter
 
 import sys, logging
 
@@ -14,6 +14,11 @@ import sys, logging
 log_config = {
     'version': 1,
     'disable_existing_loggers': True,
+    'filters': {
+        'usb-unplugged': {
+            '()': 'queuehandler.obdFilter'
+            }
+    },
     'formatters': {
         'detailed': {
             'class': 'logging.Formatter',
@@ -28,26 +33,27 @@ log_config = {
         'console': {
             'class': 'logging.StreamHandler',
             'level': 'CRITICAL',
-            'formatter': 'detailed'
+            'formatter': 'brief'
         },
         'debug-file': {
             'class': 'logging.FileHandler',
-            'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
+            'filename': (datetime.now().strftime('DEBUG-%Y%m%d')+'.log'),
             'mode': 'w',
             'formatter': 'detailed',
             'level': 'DEBUG'
         },
         'file': {
             'class': 'logging.FileHandler',
-            'filename': 'RUN.log',
+            'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
             'mode': 'w',
             'formatter': 'detailed',
-            'level': 'ERROR'
+            'level': 'WARNING',
+            'filters': ['usb-unplugged']
         }
     },
     'loggers': {
         'root': {
-            'handlers': ['console', 'file']
+            'handlers': ['console', 'file', 'debug-file']
         },
     }
 }

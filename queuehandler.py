@@ -1,6 +1,6 @@
 from multiprocessing import Queue, Process
 
-import logging, logging.handlers, logging.config
+import logging, logging.handlers, logging.config #, logging.Filter
 
 class QueueHandler(logging.Handler):
 
@@ -40,7 +40,7 @@ class LogListener(Process):
                 logger = logging.getLogger(record.name)
                 logger.handle(record)
             except (KeyboardInterrupt, SystemExit):
-                raise
+                break
             except:
                 import sys, traceback
                 print >> sys.stderr, 'Error in logging process!'
@@ -48,3 +48,12 @@ class LogListener(Process):
 
     def stop(self):
         self.__queue.put(None)
+
+class obdFilter(logging.Filter):
+
+    def filter(self, record):
+        if record.getMessage().startswith('[Errno 2] could not open port'):
+            return False
+        if record.getMessage().startswith('Cannot load commands: No connection to car'):
+            return False
+        return True
