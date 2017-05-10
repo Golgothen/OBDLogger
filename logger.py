@@ -5,7 +5,6 @@ import threading, gzip, shutil, logging #, os
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-from eventhandler import EventHandler
 
 logger = logging.getLogger('root')
 
@@ -14,8 +13,7 @@ class DataLogger(Process):
     def __init__(self,
                  controlPipe,
                  dataPipe,
-                 workerPipe,
-                 events):
+                 workerPipe):
 
         super(DataLogger, self).__init__()
         #threading.Thread.__init__(self)
@@ -37,10 +35,6 @@ class DataLogger(Process):
         self.__logFormat = '%Y%m%d%H%M'             # Log file name format
         self.__pauseLog = False                     # Flag to pause logging
         self.__pid = None                           # Pricess ID of Logging process
-        self.__events = {}
-
-        for e in events:
-            self.__events = EventHandler(events[e], getattr(self, e.lower()))
 
         logger.debug('Logging process initalised')
 

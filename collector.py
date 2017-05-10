@@ -3,7 +3,6 @@ from messages import Message
 from time import sleep
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-from eventhandler import EventHandler
 
 from kpi import *
 from general import *
@@ -22,17 +21,16 @@ class Collector(Process):
                  controlPipe,                      # Pipe to controlling application
                  logPipe,                          # Pipe to Logger process
                  workerPipe,                       # Pipe to Worker process
-                 que,                              # Result que
-                 events):
+                 que):                             # Result que
 
         super(Collector,self).__init__()
         self.__results = que
         self.__data = dict()
         self.__pipes = {}
-        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'ECU->COLLECTOR')
-        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'APP->COLLECTOR')
-        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'LOG->COLLECTOR')
-        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'WORKER->COLLECTOR')
+        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'COLLECTOR->ECU')
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'COLLECTOR->APP')
+        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'COLLECTOR->LOG')
+        self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'COLLECTOR->WORKER')
 
         self.__paused = False
         self.__running = False
@@ -40,9 +38,6 @@ class Collector(Process):
         self.__ready = False
         self.__SCreq = False
         self.name = 'COLLECTOR'
-        self.__events = {}
-        for e in events:
-            self.__events[e] = EventHandler(events[e], getattr(self, e.lower()))
 
     def run(self):
         # Main function for process.    Runs continully until instructed to stop.
@@ -62,7 +57,7 @@ class Collector(Process):
                 else:                                                               # Not ready?
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
                         self.__SCreq = True                                         # Only send the above request once
-                        self.reset()                                              # Empty data dictionary and request a list of supported commands
+                        self.reset()                                                # Empty data dictionary and request a list of supported commands
                         sleep(1.0 / self.__frequency)
                 sleep(1.0 / self.__frequency)                                       # Release CPU
             logger.info('Collector process stopped')                                # Running has been set to False

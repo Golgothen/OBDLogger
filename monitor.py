@@ -1,4 +1,4 @@
-from multiprocessing import Queue, Event
+from multiprocessing import Queue
 #from threading import Thread
 from ecu import ECU
 from worker import Worker
@@ -38,50 +38,38 @@ class Monitor():
 
         self.__events = {}
 
-        self.__events['ECU'] = {}
-        for p in ['ECU', 'WORKER', 'COLLECTOR', 'LOG', 'GPS']:
-            self.__events[p] = {}
-            for e in ['STOP', 'PAUSE', 'RESUME']:
-                self.__events[p][e] = Event()
-            if p == 'WORKER':
-                self.__events[p]['CONNECTION'] = Event()
-
         workQue = Queue()
         resultQue = Queue()
 
         self.__pipes = {}
-        self.__pipes['ECU'] = PipeWatcher(self, ecuControlPipe.s, 'APP->ECU')
-        self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'APP->WORKER')
-        self.__pipes['DATA'] = PipeWatcher(self, collectorControlPipe.s, 'APP->COLLECTOR')
-        self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'APP->LOG')
-        self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'APP->GPS')
+        self.__pipes['ECU'] = PipeWatcher(self, ecuControlPipe.s, 'ECU->APP')
+        self.__pipes['WORKER'] = PipeWatcher(self, workerControlPipe.s, 'WORKER->APP')
+        self.__pipes['COLLECTOR'] = PipeWatcher(self, collectorControlPipe.s, 'COLLECTOR->APP')
+        self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'LOG->APP')
+        self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'GPS->APP')
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
                          ecuControlPipe.r,                             # ECU <-> Application
-                         ecuDataPipe.s,                                # ECU <-> Collector
-                         self.__events['ECU'])                                # Flow control events
+                         ecuDataPipe.s)                                # ECU <-> Collector
 
         self.__worker = Worker(workQue,
                                resultQue,
                                ecuWorkerPipe.r,                        # Worker <-> ECU
                                workerControlPipe.r,                    # Worker <-> Application
                                workerDataPipe.s,                       # Worker <-> Collector
-                               loggerWorkerPipe.s,                     # Worker <-> Logger
-                               self.__events['WORKER'])                       # Flow control events
+                               loggerWorkerPipe.s)                     # Worker <-> Logger
 
         self.__collector = Collector(ecuDataPipe.r,                    # Collector <-> ECU
                                      collectorControlPipe.r,           # Collector <-> Application
                                      loggerDataPipe.r,                 # Collector <-> Logger
                                      workerDataPipe.r,                 # Collector <-> Worker
-                                     resultQue,
-                                     self.__events['COLLECTOR'])              # Flow control events
+                                     resultQue)
 
 
         self.__logger = DataLogger(loggerControlPipe.r,                # Logger <-> Application
                                    loggerDataPipe.s,                   # Logger <-> Collector
-                                   loggerWorkerPipe.r,                 # Logger <-> Worker
-                                   self.__events['LOG'])                      # Flow control events
+                                   loggerWorkerPipe.r)                 # Logger <-> Worker
 
         self.__gps = GPS(resultQue,
                          gpsControlPipe.r)                             # GPS <-> Application
@@ -97,17 +85,12 @@ class Monitor():
         for p in self.__pipes:
             self.__pipes[p].start()
         # monitor needs to listen for a connection event triggered by WORKER
-        _thread.start_new_thread(self.event_connection,())
 
-    def event_connection(self):
-        self.__events['WORKER']['CONNECTION'].wait()
-        # Worker has notified us of a change in connection state
+    def connection(self):
         if self.isConnected:
             self.resume()
         else:
             self.pause()
-        self.__events['WORKER']['CONNECTION'].clear()
-        _thread.start_new_thread(self.event_connection,())
 
     def addQue(self, que, frequency):
         self.__pipes['ECU'].send(Message('ADDQUE',QUE = que, FREQUENCY = frequency))
@@ -127,14 +110,15 @@ class Monitor():
             self.__events[p]['STOP'].set()
 
     def pause(self):
-        self.__events['ECU']['PAUSE'].set()
-        self.__events['LOG']['PAUSE'].set()
-        self.__events['GPS']['PAUSE'].set()
+        self.__pipes['ECU'].send(Message('PAUSE'))
+        self.__pipes['LOG'].send(Message('PAUSE'))
+        self.__pipes['GPS'].send(Message('PAUSE'))
 
     def resume(self):
-        self.__events['ECU']['RESUME'].set()
-        self.__events['LOG']['RESUME'].set()
-        self.__events['GPS']['RESUME'].set()
+        logger.info('Resuming co-processes')
+        self.__pipes['ECU'].send(Message('RESUME'))
+        self.__pipes['LOG'].send(Message('RESUME'))
+        self.__pipes['GPS'].send(Message('RESUME'))
 
     def reset(self):
         self.__pipes['COLLECTOR'].send(Message('RESET'))
@@ -218,13 +202,13 @@ class Monitor():
         s['ECU'] = self.__s_ecu_return['STATUS']
         while self.__s_data_return is None:                                   #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
-        s['COLLECTOR'] = self.__s_data_returnn['STATUS']
+        s['COLLECTOR'] = self.__s_data_return['STATUS']
         while self.__s_worker_return is None:                                 #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
-        s['WORKER'] = self.__s_ecu_returnn['STATUS']
+        s['WORKER'] = self.__s_worker_return['STATUS']
         while self.__s_log_return is None:                                    #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
-        s['LOG'] = self.__s_ecu_returnn['STATUS']
+        s['LOG'] = self.__s_log_return['STATUS']
         return s                                                              # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
@@ -325,10 +309,10 @@ class Monitor():
 
         if self.__gpsEnabled:
             #self.__pipes['GPS'].send(Message('RESUME'))
-            self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']))
+            self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING']))
         else:
             self.__pipes['GPS'].send(Message('PAUSE'))
-            self.__pipes['LOG'].send(Message('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING','CLIMB']))
+            self.__pipes['LOG'].send(Message('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING']))
 
     @property
     def snapshot(self):

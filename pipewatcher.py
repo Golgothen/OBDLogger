@@ -36,8 +36,10 @@ class PipeWatcher(Thread):
                         self.send(response)
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
+        #except (AttributeError):
+        #    logger.critical('
         except:
-            logger.critical('Unhandled exception occured in PipeWatcher thread {}: {}'.format(self.name, sys.exc_info))
+            logger.critical('Unhandled exception occured in PipeWatcher thread {}: {}'.format(self.name, sys.exc_info()))
 
     # Public method to allow the parent to send messages to the pipe
     def send(self, msg):

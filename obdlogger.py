@@ -42,6 +42,13 @@ log_config = {
             'formatter': 'detailed',
             'level': 'DEBUG'
         },
+        'info-file': {
+            'class': 'logging.FileHandler',
+            'filename': (datetime.now().strftime('INFO-%Y%m%d')+'.log'),
+            'mode': 'w',
+            'formatter': 'detailed',
+            'level': 'INFO'
+        },
         'file': {
             'class': 'logging.FileHandler',
             'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
@@ -53,7 +60,7 @@ log_config = {
     },
     'loggers': {
         'root': {
-            'handlers': ['console', 'file', 'debug-file']
+            'handlers': ['console', 'file', 'info-file']
         },
     }
 }
@@ -218,7 +225,7 @@ if __name__ == '__main__':
                                 break
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
-                #logger.info(ecu.status())
+                logger.info(ecu.status)
                 printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
             while not ecu.isConnected:

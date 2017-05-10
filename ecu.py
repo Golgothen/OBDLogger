@@ -6,7 +6,6 @@ from multiprocessing import Process, Queue, Pipe, Event
 from messages import Message
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-from eventhandler import EventHandler
 from general import *
 
 config = loadConfig()
@@ -17,7 +16,11 @@ logger = logging.getLogger('root')
 
 class ECU(Process):
 
-    def __init__(self, que, workerPipe, controlPipe, dataPipe, events):
+    def __init__(self,
+                 que,
+                 workerPipe,
+                 controlPipe,
+                 dataPipe):
 
         super(ECU,self).__init__()                     # Initalise the new process
         self.__Que = dict()
@@ -26,14 +29,10 @@ class ECU(Process):
         self.__pipes = {}
         self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'ECU->WORKER')                          # Communication pipe to the worker process
         self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'ECU->APP')                         # Communication pipe to the controlling process
-        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'ECU->COLLECTOR')                            # Communication pipe to the collector process
+        self.__pipes['COLLECTOR'] = PipeWatcher(self, dataPipe, 'ECU->COLLECTOR')                            # Communication pipe to the collector process
         self.__paused = True
         self.__name = 'ECU'
         self.__running = False
-
-        self.__events = {}
-        for e in events:
-            self.__events[e] = EventHandler(events[e], getattr(self, e.lower()))
 
     def run(self):
 
@@ -54,22 +53,28 @@ class ECU(Process):
             logger.critical('Unhandled exception occured in ECU process: {}'.format(sys.exc_info))
 
 
-    def stop(self):
+    def stop(self, p = None):
         self.__shutdown()
 
-    def pause(self):
+    def pause(self, p = None):
         if not self.__paused:
             logger.info('Pausing ECU')
             self.__paused = True
             for q in self.__Que:
                 if self.__Que[q].isAlive(): self.__Que[q].paused = True
 
-    def resume(self):
+    def resume(self, p = None):
         if self.__paused:
             logger.info('Resuming ECU')
             self.__paused = False
             for q in self.__Que:
                 if self.__Que[q].isAlive(): self.__Que[q].paused = False
+
+    def connection(self, p):
+        if p['STATUS']:
+            self.resume()
+        else:
+            self.pause()
 
     def __shutdown(self):
         logger.info('Stopping ECU process')

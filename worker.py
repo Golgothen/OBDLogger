@@ -4,7 +4,7 @@ from time import sleep
 from messages import Message
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-from eventhandler import EventHandler
+#from eventhandler import EventHandler
 
 from general import *
 import logging, obd, _thread #, os
@@ -22,26 +22,24 @@ class Worker(Process):
                  ecuPipe,                        # Worker <-> ECU
                  controlPipe,                    # Worker <-> Application
                  dataPipe,                       # Worker <-> Collector
-                 logPipe,                        # Worker <-> Logger
-                 events):
+                 logPipe):                       # Worker <-> Logger
 
         super(Worker,self).__init__()
         #self.daemon=False
         self.name = 'WORKER'
         self.__frequency = 50
         self.__running = False
-        self.__paused = True
+        self.__paused = False
         self.__pollCount = 0.0
         self.__pollRate = 0.0
         self.__workQue = workQue                 # Message queue object
         self.__resultQue = resultQue
         self.__firstPoll = None
-        #self.__pid = None
         self.__pipes = {}
-        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'ECU->WORKER')
-        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'APP->WORKER')
-        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'COLLECTOR->WORKER')
-        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'LOG->WORKER')
+        self.__pipes['ECU'] = PipeWatcher(self, ecuPipe, 'WORKER->ECU')
+        self.__pipes['APPLICATION'] = PipeWatcher(self, controlPipe, 'WORKER->APP')
+        self.__pipes['DATA'] = PipeWatcher(self, dataPipe, 'WORKER->COLLECTOR')
+        self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'WORKER->LOG')
         self.__baud = config.getint('Application','OBD Baud')
         self.__port = getBlockPath(config.get('Application','OBD Vendor ID'),config.get('Application','OBD Product ID'))
         logger.info('ELM device found at /dev/{}'.format(self.__port))
@@ -51,23 +49,16 @@ class Worker(Process):
         self.__supported_commands = []
         self.__maxQueLength = 0
 
-        self.__events = {}
-        for e in events:
-            if e == 'CONNECTION':
-                self.__events[e] = events[e]
-            else:
-                self.__events[e] = EventHandler(events[e],getattr(self, e.lower()))
-
         for c in obd.commands[1]:
             if c.name[:4] != 'PIDS':
                 self.__commands.append(c.name)
+
         self.__connect()
         logger.debug('Worker process initalised')
 
     def run(self):
 
         self.__running = True
-        #self.__pid = os.getpid()
         logger.info('Starting Worker process on PID {}'.format(self.pid))
         # Start watcher threads for pipes
         for p in self.__pipes:
@@ -103,7 +94,7 @@ class Worker(Process):
             self.__running = False
             return
         except:
-            logger.critical('Unhandled exception occured in Worker process: {}'.format(sys.exc_info))
+            logger.critical('Unhandled exception occured in Worker process: {}'.format(sys.exc_info()))
 
 
     def pause(self):
@@ -142,7 +133,7 @@ class Worker(Process):
         d['Paused'] = self.__paused
         d['Connected'] = self.__isConnected()
         if self.__isConnected():                                            #todo: uncomment after testing
-            d['Interface'] = self.__interface.status()
+            #d['Interface'] = self.__interface.status()
             d['Supported Commands'] = self.__supported_commands
         d['Que Length'] = self.__workQue.qsize()
         d['Max Que Length'] = self.__maxQueLength
@@ -180,8 +171,8 @@ class Worker(Process):
         self.__supported_commands.append('INTAKE_TEMP')
 
     def __isConnected(self):
-        connected = False    # TODO: uncomment after testing
-        #connected = True      # TODO: comment after testing
+        #connected = False    # TODO: uncomment after testing
+        connected = True      # TODO: comment after testing
         #self.resume()       # TODO: comment after testing
         # TODO - uncomment after testing
         #if self.__interface is not None:
@@ -190,12 +181,11 @@ class Worker(Process):
         #        self.resume()
         #    else:
         #        self.pause()
-        self.__connected = True                             # TODO - Delete after testing
+        #self.__connected = True                             # TODO - Delete after testing
         if self.__connected != connected:
             #Connection status has changed
             logger.info('Connection status has chnged from {} to {}'.format(self.__connected, connected))
             self.__connected = connected
-            self.__events['CONNECTION'].set()
-            #self.__pipes['ECU'].send(Message('CONNECTION', STATUS = self.__connected))
+            self.__pipes['ECU'].send(Message('CONNECTION', STATUS = self.__connected))
         return self.__connected
 
