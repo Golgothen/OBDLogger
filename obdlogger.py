@@ -5,17 +5,62 @@ from monitor import Monitor
 from logger import DataLogger
 from configparser import ConfigParser
 from threading import Timer
+from multiprocessing import Queue
+from queuehandler import LogListener, QueueHandler
 
 import sys, logging
 
-logger = logging.getLogger('root')
-logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
-file_handler = logging.FileHandler('./'+logName) # sends output to file
-#file_handler = logging.StreamHandler() # sends output to stderr
-file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
-logger.addHandler(file_handler)
+# Configuration for the listener
+log_config = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'formatters': {
+        'detailed': {
+            'class': 'logging.Formatter',
+            'format': '%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'
+            },
+        'brief': {
+            'class': 'logging.Formatter',
+            'format': '%(asctime)-16s: %(message)s'
+        }
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'CRITICAL',
+            'formatter': 'detailed'
+        },
+        'debug-file': {
+            'class': 'logging.FileHandler',
+            'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
+            'mode': 'w',
+            'formatter': 'detailed',
+            'level': 'DEBUG'
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': 'RUN.log',
+            'mode': 'w',
+            'formatter': 'detailed',
+            'level': 'ERROR'
+        }
+    },
+    'loggers': {
+        'root': {
+            'handlers': ['console', 'file']
+        },
+    }
+}
 
-logger.setLevel(logging.WARNING)
+# Start the log listener
+logQueue = Queue()
+listener = LogListener(logQueue, log_config)
+listener.start()
+
+# Configure logger for the rest of the application
+logger = logging.getLogger('root')
+logger.addHandler(QueueHandler(logQueue))
+logger.setLevel(logging.DEBUG)
 
 currentIdleScreen = 0
 snapshot=dict()
@@ -196,6 +241,8 @@ if __name__ == '__main__':
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
+        listener.stop()
+
         ecu.stop()
         timer.cancel()
         print('Done.')
