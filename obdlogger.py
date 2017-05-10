@@ -4,32 +4,82 @@ from general import *
 from monitor import Monitor
 from logger import DataLogger
 from configparser import ConfigParser
+from threading import Timer
+from multiprocessing import Queue
+from queuehandler import LogListener, QueueHandler, obdFilter
 
 import sys, logging
 
+# Configuration for the listener
+log_config = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'filters': {
+        'usb-unplugged': {
+            '()': 'queuehandler.obdFilter'
+            }
+    },
+    'formatters': {
+        'detailed': {
+            'class': 'logging.Formatter',
+            'format': '%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'
+            },
+        'brief': {
+            'class': 'logging.Formatter',
+            'format': '%(asctime)-16s: %(message)s'
+        }
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'level': 'CRITICAL',
+            'formatter': 'brief'
+        },
+        'debug-file': {
+            'class': 'logging.FileHandler',
+            'filename': (datetime.now().strftime('DEBUG-%Y%m%d')+'.log'),
+            'mode': 'w',
+            'formatter': 'detailed',
+            'level': 'DEBUG'
+        },
+        'file': {
+            'class': 'logging.FileHandler',
+            'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
+            'mode': 'w',
+            'formatter': 'detailed',
+            'level': 'WARNING',
+            'filters': ['usb-unplugged']
+        }
+    },
+    'loggers': {
+        'root': {
+            'handlers': ['console', 'file', 'debug-file']
+        },
+    }
+}
+
+# Start the log listener
+logQueue = Queue()
+listener = LogListener(logQueue, log_config)
+listener.start()
+
+# Configure logger for the rest of the application
 logger = logging.getLogger('root')
-logName = (datetime.now().strftime('RUN-%Y-%m-%d')+'.log')
-file_handler = logging.FileHandler('./'+logName) # sends output to file
-#file_handler = logging.StreamHandler() # sends output to stderr
-file_handler.setFormatter(logging.Formatter('%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'))
-logger.addHandler(file_handler)
+logger.addHandler(QueueHandler(logQueue))
+logger.setLevel(logging.DEBUG)
 
-logger.setLevel(logging.INFO)
-
-lastScreenUpdate = datetime.now()
 currentIdleScreen = 0
 snapshot=dict()
+timer = None
 
 def printIdleScreen():
     global lastScreenUpdate
     global currentIdleScreen
     global config
+    global timer
 
     #os.system('clear')
-    screentime=datetime.now()-lastScreenUpdate
-    if screentime.seconds>=config.getfloat('Application', 'Idle Screen Time'):
-        currentIdleScreen+=1
-        lastScreenUpdate=datetime.now()
+    currentIdleScreen+=1
     if currentIdleScreen>2:
         currentIdleScreen=0
     if currentIdleScreen==0:
@@ -44,6 +94,8 @@ def printIdleScreen():
             printHistory()
         else:
             printTrip()
+    timer = Timer(config.getfloat('Application', 'Idle Screen Time'), printIdleScreen)
+    timer.start()
 
 def printTrip():
     sys.stdout.write(' Last Trip:                   ')
@@ -140,6 +192,7 @@ if __name__ == '__main__':
             while ecu.isConnected:
                 if not journey:
                     journey=True
+                    timer.cancel()
                     for q in config.get('Application', 'Queues').split(','):
                         if config.has_option('Queue {}'.format(q), 'Reconfigure on Restart') and \
                            config.has_option('Queue {}'.format(q), 'Commands'):
@@ -171,6 +224,7 @@ if __name__ == '__main__':
             while not ecu.isConnected:
                 if journey:
                     journey=False
+                    printIdleScreen()
                     ecu.pause()
                     disconnected = datetime.now()
                     if ecu.sum('DURATION') == 0:
@@ -190,11 +244,13 @@ if __name__ == '__main__':
                         ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
-                printIdleScreen()
                 #logger.info(ecu.status())
-                sleep(1)
+                sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
+        listener.stop()
+
         ecu.stop()
+        timer.cancel()
         print('Done.')
 

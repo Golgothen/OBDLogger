@@ -2,7 +2,7 @@
 *.pyc
 
 # Runtime logs
-RUN*.log
+*.log
 
 # Python cache
 __pycache__
@@ -10,6 +10,4 @@ __pycache__
 # Log files
 logs/*
 
-# Config file
-obdlogger.cfg
 
