@@ -53,10 +53,10 @@ log_config = {
         #    'handlers': ['console', 'file'],
         #    'level': 'DEBUG'
         #},
-        #'root.logger': {
-        #    'level': 'INFO',
-        #    'handlers': ['console', 'file'],
-        #},
+        'root.worker': {
+            'level': 'INFO',
+            'handlers': ['console', 'file'],
+        },
         #'root.gps': {
         #    'level': 'INFO'
         #},
@@ -78,8 +78,8 @@ log.addHandler(QueueHandler(logQueue))
 log.setLevel(logging.DEBUG)
 
 # Configure logger for the rest of the application to use child loggers
-logger = log.getChild(__name__)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger().getChild(__name__)
+#logger.setLevel(logging.DEBUG)
 currentIdleScreen = 0
 snapshot=dict()
 timer = None
