@@ -5,11 +5,12 @@ from pipewatcher import PipeWatcher
 from configparser import ConfigParser
 
 from kpi import *
+
 from general import *
 
 import logger #, os
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses
@@ -48,7 +49,6 @@ class Collector(Process):
         try:
             while self.__running:                                                   # Running set to False by STOP command
                 if self.__ready:                                                    # Ready set to True when data dictonary has been built
-                    logger.debug('Collector is ready')
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
                         while self.__results.qsize() > 0:                           # Loop while there are results in the que
                             m = self.__results.get()                                # Pull result message from que
@@ -64,7 +64,7 @@ class Collector(Process):
         except (KeyboardInterrupt, SystemExit):                                     # Pick up interrups and system shutdown
             self.__running = False                                                  # Set Running to false, causing the above loop to exit
         except:
-            logger.critical('Unhandled exception occured in Collector process: {}'.format(sys.exc_info))
+            logger.critical('Unhandled exception occured in Collector process: {}'.format(sys.exc_info()))
 
     def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values
@@ -254,9 +254,9 @@ class Collector(Process):
     def dataline(self, p):
         temp = config.get('Data Layout',p['NAME'])
         for d in self.__data:
-            for f in ['VAL','MIN','MAX','SUM','AVG','LOG']:
+            for f in ['VAL', 'MIN', 'MAX', 'SUM', 'AVG', 'LOG']:
                 if '{}.{}'.format(d,f) in temp:
                     temp=temp.replace('{}.{}'.format(d,f),
                                       '{}'.format(self.__data[d].format(f)))
-                    temp=temp.replace('*',' ')
+        temp=temp.replace('*',' ')
         return Message('DATA_LINE', LINE = temp)

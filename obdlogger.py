@@ -22,7 +22,7 @@ log_config = {
     'formatters': {
         'detailed': {
             'class': 'logging.Formatter',
-            'format': '%(asctime)-16s:%(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'
+            'format': '%(asctime)-16s:%(name)-20s %(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'
             },
         'brief': {
             'class': 'logging.Formatter',
@@ -35,33 +35,35 @@ log_config = {
             'level': 'CRITICAL',
             'formatter': 'brief'
         },
-        'debug-file': {
-            'class': 'logging.FileHandler',
-            'filename': (datetime.now().strftime('DEBUG-%Y%m%d')+'.log'),
-            'mode': 'w',
-            'formatter': 'detailed',
-            'level': 'DEBUG'
-        },
-        'info-file': {
-            'class': 'logging.FileHandler',
-            'filename': (datetime.now().strftime('INFO-%Y%m%d')+'.log'),
-            'mode': 'w',
-            'formatter': 'detailed',
-            'level': 'INFO'
-        },
         'file': {
             'class': 'logging.FileHandler',
             'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
             'mode': 'w',
             'formatter': 'detailed',
-            'level': 'WARNING',
-            'filters': ['usb-unplugged']
+            #'level': 'INFO'
         }
     },
     'loggers': {
-        'root': {
-            'handlers': ['console', 'file', 'info-file']
+        '': {
+            'handlers': ['console', 'file'],
+            'level': 'ERROR',
+            'propagate': True
         },
+        #'root.fmt': {
+        #    'handlers': ['console', 'file'],
+        #    'level': 'DEBUG'
+        #},
+        #'root.logger': {
+        #    'level': 'INFO',
+        #    'handlers': ['console', 'file'],
+        #},
+        #'root.gps': {
+        #    'level': 'INFO'
+        #},
+        #'root.messages': {
+        #    'handlers': ['console', 'file'],
+        #    'level': 'DEBUG'
+        #},
     }
 }
 
@@ -70,11 +72,14 @@ logQueue = Queue()
 listener = LogListener(logQueue, log_config)
 listener.start()
 
-# Configure logger for the rest of the application
-logger = logging.getLogger('root')
-logger.addHandler(QueueHandler(logQueue))
-logger.setLevel(logging.DEBUG)
+# Create the root logger with handlers
+log = logging.getLogger()
+log.addHandler(QueueHandler(logQueue))
+log.setLevel(logging.DEBUG)
 
+# Configure logger for the rest of the application to use child loggers
+logger = log.getChild(__name__)
+logger.setLevel(logging.DEBUG)
 currentIdleScreen = 0
 snapshot=dict()
 timer = None
@@ -85,7 +90,7 @@ def printIdleScreen():
     global config
     global timer
 
-    #os.system('clear')
+    os.system('clear')
     currentIdleScreen+=1
     if currentIdleScreen>2:
         currentIdleScreen=0
@@ -153,7 +158,7 @@ def printFullTable():
                     lines.append(ecu.dataLine('LP100K'))
             else:
                 lines.append(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
-    #os.system('clear')
+    os.system('clear')
     for l in lines:
         sys.stdout.write(l)
     sys.stdout.flush()
@@ -180,8 +185,6 @@ if __name__ == '__main__':
 
         ecu.logPath(config.get('Application', 'LogPath'))
         logHeadings = config.get('Application', 'Log Headings').split(',')
-
-        #ecu.gpsEnable = config.getboolean('Application','GPS Enabled')
 
         for q in config.get('Application', 'Queues').split(','):
             ecu.addQue(q, config.getfloat('Queue {}'.format(q), 'Frequency'))
@@ -225,7 +228,7 @@ if __name__ == '__main__':
                                 break
                     ecu.logHeadings(logHeadings)
                     ecu.resume()
-                logger.info(ecu.status)
+                #logger.info(ecu.status['GPS'])
                 printFullTable()
                 sleep(config.getfloat('Application', 'Busy Screen Time'))
             while not ecu.isConnected:

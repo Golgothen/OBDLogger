@@ -9,7 +9,8 @@ from configparser import ConfigParser
 from general import *
 import logging, obd, _thread #, os
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
+logger.setLevel(logging.DEBUG)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')

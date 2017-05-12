@@ -16,7 +16,7 @@ from general import *
 
 import sys, logging, _thread
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
@@ -105,9 +105,11 @@ class Monitor():
         self.__pipes['ECU'].send(Message('DELETEAFTERPOLL',QUE = que, FLAG = flag))
 
     def stop(self):
-        # fire all stop events
-        for p in self.__events:
-            self.__events[p]['STOP'].set()
+        self.__pipes['ECU'].send(Message('STOP'))
+        self.__pipes['COLLECTOR'].send(Message('STOP'))
+        self.__pipes['WORKER'].send(Message('STOP'))
+        self.__pipes['LOG'].send(Message('STOP'))
+        self.__pipes['GPS'].send(Message('STOP'))
 
     def pause(self):
         self.__pipes['ECU'].send(Message('PAUSE'))
@@ -193,10 +195,12 @@ class Monitor():
         self.__s_data_return = None                                           # Stores the response from the callback
         self.__s_worker_return = None                                         # Stores the response from the callback
         self.__s_log_return = None                                            # Stores the response from the callback
+        self.__s_gps_return = None                                            # Stores the response from the callback
         self.__pipes['WORKER'].send(Message('GETSTATUS'))                     # Send message for incomming request
         self.__pipes['ECU'].send(Message('GETSTATUS'))                        # Send message for incomming request
         self.__pipes['COLLECTOR'].send(Message('GETSTATUS'))                  # Send message for incomming request
         self.__pipes['LOG'].send(Message('GETSTATUS'))                        # Send message for incomming request
+        self.__pipes['GPS'].send(Message('GETSTATUS'))                        # Send message for incomming request
         while self.__s_ecu_return is None:                                    #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         s['ECU'] = self.__s_ecu_return['STATUS']
@@ -209,6 +213,9 @@ class Monitor():
         while self.__s_log_return is None:                                    #
             sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
         s['LOG'] = self.__s_log_return['STATUS']
+        while self.__s_gps_return is None:                                    #
+            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        s['GPS'] = self.__s_gps_return['STATUS']
         return s                                                              # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
@@ -226,6 +233,10 @@ class Monitor():
     # Callback function must be lower case of the message it is to respond to
     def logstatus(self, p):                                                   # Callback function for IsConnected
        self.__s_log_return = p                                                # Store the response returned for the caller to find
+
+    # Callback function must be lower case of the message it is to respond to
+    def gpsstatus(self, p):                                                   # Callback function for IsConnected
+       self.__s_gps_return = p                                                # Store the response returned for the caller to find
 
     def sum(self, name):
         self.__sum_return = None                                              # Stores the response from the callback
@@ -309,10 +320,10 @@ class Monitor():
 
         if self.__gpsEnabled:
             #self.__pipes['GPS'].send(Message('RESUME'))
-            self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING']))
+            self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = ['LATITUDE','LONGITUDE','ALTITUDE','GPS_SPD','HEADING']))
         else:
             self.__pipes['GPS'].send(Message('PAUSE'))
-            self.__pipes['LOG'].send(Message('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LOGITUDE','ALTITUDE','GPS_SPEED','HEADING']))
+            self.__pipes['LOG'].send(Message('REMOVE_HEADINGS', HEADINGS = ['LATITUDE','LONGITUDE','ALTITUDE','GPS_SPD','HEADING']))
 
     @property
     def snapshot(self):

@@ -18,7 +18,6 @@ def formatSeconds(d):
 
 def formatLatitude(d):
     if d < 0: heading = 'S'
-    elif d == 0: heading = '0'
     else: heading = 'N'
     minor, deg = modf(abs(d))
     minor, min = modf(minor*60)
@@ -28,7 +27,6 @@ def formatLatitude(d):
 
 def formatLongitude(d):
     if d < 0: heading = 'W'
-    elif d == 0: heading = '0'
     else: heading = 'E'
     minor, deg = modf(abs(d))
     minor, min = modf(minor*60)
@@ -229,8 +227,8 @@ def loadDefaults():
     config.set('Data Layout','AIR_TEMP',       '*Air C : AMBIANT_AIR_TEMP.VAL/AMBIANT_AIR_TEMP.MAX :')
     config.set('Data Layout','FUEL_RAIL',      '**Rail : FUEL_RAIL_PRESSURE_DIRECT.VAL/FUEL_RAIL_PRESSURE_DIRECT.MAX :')
     config.set('Data Layout','INTAKE_TEMP',    'Intake : INTAKE_TEMP.VAL/INTAKE_TEMP.MAX :')
-    config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL           :')
-    config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL           :')
+    config.set('Data Layout','LATITUDE',       '***Lat : LATITUDE.VAL :')
+    config.set('Data Layout','LONGITUDE',      '***Lon : LONGITUDE.VAL :')
     config.set('Data Layout','ALTITUDE',       '***Alt : ALTITUDE.VAL/ALTITUDE.MIN/ALTITUDE.MAX   :')
     config.set('Data Layout','GPS_SPD',        'GPS Kh : GPS_SPD.VAL/ GPS_SPD.MAX/ GPS_SPD.AVG :')
     config.set('Data Layout','HEADING',        '*Track : HEADING.VAL           :')

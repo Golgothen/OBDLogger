@@ -12,7 +12,7 @@ config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 
 class ECU(Process):
 

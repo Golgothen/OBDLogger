@@ -1,7 +1,7 @@
 from multiprocessing import Pipe
 import logging
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 
 class PipeCont():
     def __init__(self):

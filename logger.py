@@ -1,12 +1,12 @@
 from multiprocessing import Process, Event
 from time import time, sleep
 from datetime import datetime
-import threading, gzip, shutil, logging #, os
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
+import threading, gzip, shutil, logging #, os
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 
 class DataLogger(Process):
 
@@ -50,7 +50,7 @@ class DataLogger(Process):
                 if self.__logName is None:
                     logger.debug('Logger name not set. Pausing')
                     self.pause()
-                logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
+                #logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                 if not self.__paused:
                     if self.__refreshRequired:
                         if not self.__refreshRequested:

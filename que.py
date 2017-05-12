@@ -6,7 +6,7 @@ from time import sleep
 #from copy import copy
 #from general import *
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 
 class Que(Thread):
 

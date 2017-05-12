@@ -1,5 +1,8 @@
 from general import *
 from datetime import datetime
+import logging
+
+logger = logging.getLogger('root').getChild(__name__)
 
 class FMT():
 
@@ -49,6 +52,7 @@ class FMT():
         return str
 
     def __call__(self, v):
+        #logger.debug('Type = {}'.format(self.type))
         if v is None:                                             # Null values
             return ' ' * (self.length - len(self.none)) + self.none
         if self.type == 'd' and type(v) is datetime:              # Dates
@@ -56,8 +60,10 @@ class FMT():
         elif self.type == 't':                                    # Time counters
             return self.fmtstr.format(formatSeconds(v))           # Return it immediately. No further processing required
         elif self.type == 'lat':                                  # Latitude
+            logger.debug(self.fmtstr)
             return self.fmtstr.format(formatLatitude(v))          # Return it immediately. No further processing required
         elif self.type == 'lon':                                  # Longitude
+            logger.debug(self.fmtstr)
             return self.fmtstr.format(formatLongitude(v))         # Return it immediately. No further processing required
         else:                                                     # everything else
             if type(v) in [float, int]:
@@ -86,3 +92,12 @@ class FMT():
             self.precision = p
             self.commas = c
         return tmp
+
+    def clone(self):
+        return FMT(LENGTH = self.length,
+                   PRECISION = self.precision,
+                   TYPE = self.type,
+                   ALIGNMENT = self.alignment,
+                   COMMAS = self.commas,
+                   TRUNCATE = self.truncate,
+                   NONE = self.none)

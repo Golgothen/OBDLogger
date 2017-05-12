@@ -6,7 +6,7 @@ from general import *
 
 import logging
 
-logger = logging.getLogger('root')
+logger = logging.getLogger('root').getChild(__name__)
 config = loadConfig()
 
 
@@ -19,7 +19,7 @@ class KPI(object):
         self.__func = None
         self.__screen = None
         self.__log = 'VAL'
-        self.__formats = dict()
+        self.formats = dict()
         self.__values = dict()
         self.__history = dict()
         self.__values['VAL'] = None
@@ -35,24 +35,24 @@ class KPI(object):
         for k in kwargs:
             if k == 'FUNCTION':
                 self.__func = kwargs[k]
-            elif k == 'SCREEN':
-                self.__screen = kwargs[k]
+            #elif k == 'SCREEN':
+            #    self.__screen = kwargs[k]
             elif k == 'LOG':
                 self.__log = kwargs[k]
             elif k[:4] == 'FMT_':
                 if k[4:] == 'ALL':
                     for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
-                        self.__formats[f] = kwargs[k]
+                        self.formats[f] = kwargs[k].clone()
                 else:
-                    self.__formats[k[4:]] = kwargs[k]
+                    self.formats[k[4:]] = kwargs[k]
             else:
                 self.__parameters[k] = kwargs[k]
 
         for f in self.__values:
-            if f not in self.__formats:
-                self.__formats[f] = FMT()
-        if 'LOG' not in self.__formats:
-            self.__formats['LOG'] = FMT()
+            if f not in self.formats:
+                self.formats[f] = FMT()
+        if 'LOG' not in self.formats:
+            self.formats['LOG'] = FMT()
 
         self.__count = 0
         self.__avgsum = 0
@@ -76,7 +76,7 @@ class KPI(object):
 
     @property
     def log(self):
-        return self.__formats['LOG'](self.__values[self.__log])
+        return self.formats['LOG'](self.__values[self.__log])
 
     @log.setter
     def log(self, v):
@@ -138,20 +138,20 @@ class KPI(object):
 
     def format(self, f):
         if f == 'LOG':
-            return self.__formats['LOG'](self.__values[self.__log])
+            return self.formats['LOG'](self.__values[self.__log])
         else:
             self.__values['VAL'] = self.val
-            return self.__formats[f](self.__values[f])
+            return self.formats[f](self.__values[f])
 
     def setFormat(self, f, **kwargs):
         if f == 'ALL':
             for field in ['VAL','MIN','MAX','AVG','SUM','LOG']:
                 for k in kwargs:
-                    setattr(self.__formats[field], k.lower(), kwargs[k])
+                    setattr(self.formats[field], k.lower(), kwargs[k])
         else:
-            if f in self.__formats:
+            if f in self.formats:
                 for k in kwargs:
-                    setattr(self.__formats[f], k.lower(), kwargs[k])
+                    setattr(self.formats[f], k.lower(), kwargs[k])
             else:
                 raise KeyError('Field {} not found in __values[]. Must be VAL, MIN, MAX, AVG, SUM or LOG.'.format(f))
 
@@ -160,12 +160,12 @@ class KPI(object):
         templist = [x[1] for x in filterlist]
         if len(templist) > 0:
             if formatted:
-                return self.__formats[field].fmtstr.format(sum(templist) / len(templist))
+                return self.formats[field].fmtstr.format(sum(templist) / len(templist))
             else:
                 return sum(templist) / len(templist)
         else:
             if formatted:
-                return self.__formats[field].fmtdtr.format(0)
+                return self.formats[field].fmtdtr.format(0)
             else:
                 return 0
 
