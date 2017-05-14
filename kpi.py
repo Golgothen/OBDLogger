@@ -6,9 +6,7 @@ from general import *
 
 import logging
 
-logger = logging.getLogger('root').getChild(__name__)
-config = loadConfig()
-
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 

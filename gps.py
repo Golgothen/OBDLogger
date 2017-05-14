@@ -8,7 +8,7 @@ from general import *
 
 import logging, sys
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application', 'Pipe Timeout')
@@ -51,6 +51,7 @@ class GPS(Process):
                     if new_data:
                         logger.debug('New Data')
                         self.__stream.unpack(new_data)
+                        logger.debug('Stream values: {},{},{},{}'.format(self.__stream.lat,self.__stream.lon,self.__stream.speed,self.__stream.alt))
                         if not self.__paused:
                             logger.debug('Inserting values to queue')
                             self.__pollCount += 1
@@ -67,7 +68,7 @@ class GPS(Process):
             self.__gpsd.close()
             return
         except:
-            logger.critical('Unhandled exception occured in GPS process: {}'.format(sys.exc_info()))
+            logger.critical('Unhandled exception occured in GPS process:', exc_info = True, stack_info = True)
 
 
     def pause(self, p = None):

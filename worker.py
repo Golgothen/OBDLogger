@@ -8,8 +8,8 @@ from configparser import ConfigParser
 from general import *
 import logging, obd, _thread #, os
 
-logger = logging.getLogger('root').getChild(__name__)
-logger.setLevel(logging.DEBUG)
+logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger.setLevel(logging.DEBUG)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
@@ -93,8 +93,8 @@ class Worker(Process):
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
             return
-        #except:
-        #    logger.critical('Unhandled exception occured in Worker process: {}'.format(sys.exc_info()))
+        except:
+            logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)
 
 
     def pause(self):
@@ -144,7 +144,7 @@ class Worker(Process):
 
     def __connect(self):
         if self.__port is None:
-            logging.error('Could not find ELM device.  Check connection and settings.')
+            logger.error('Could not find ELM device.  Check connection and settings.')
             self.__interface = None
             return
         self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)

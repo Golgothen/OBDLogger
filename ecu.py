@@ -12,7 +12,7 @@ config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class ECU(Process):
 
@@ -50,7 +50,7 @@ class ECU(Process):
         except (KeyboardInterrupt, SystemExit):
             self.__shutdown()
         except:
-            logger.critical('Unhandled exception occured in ECU process: {}'.format(sys.exc_info))
+            logger.critical('Unhandled exception occured in ECU process:', exc_info = True, stack_info = True)
 
 
     def stop(self, p = None):

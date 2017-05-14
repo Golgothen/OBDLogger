@@ -2,7 +2,7 @@ from general import *
 from datetime import datetime
 import logging
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class FMT():
 

@@ -13,7 +13,7 @@ import sys, logging
 # Configuration for the listener
 log_config = {
     'version': 1,
-    'disable_existing_loggers': True,
+    #'disable_existing_loggers': True,
     'filters': {
         'usb-unplugged': {
             '()': 'queuehandler.obdFilter'
@@ -40,30 +40,18 @@ log_config = {
             'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
             'mode': 'w',
             'formatter': 'detailed',
-            #'level': 'INFO'
         }
     },
     'loggers': {
-        '': {
-            'handlers': ['console', 'file'],
-            'level': 'ERROR',
-            'propagate': True
-        },
-        #'root.fmt': {
-        #    'handlers': ['console', 'file'],
-        #    'level': 'DEBUG'
-        #},
-        'root.worker': {
-            'level': 'INFO',
+        'obdlogger': {
             'handlers': ['console', 'file'],
         },
-        #'root.gps': {
-        #    'level': 'INFO'
-        #},
-        #'root.messages': {
-        #    'handlers': ['console', 'file'],
-        #    'level': 'DEBUG'
-        #},
+        'obdlogger.worker': {
+            'level': 'CRITICAL',
+        },
+        'obdlogger.gps': {
+            'level': 'DEBUG'
+        },
     }
 }
 
@@ -78,7 +66,7 @@ log.addHandler(QueueHandler(logQueue))
 log.setLevel(logging.DEBUG)
 
 # Configure logger for the rest of the application to use child loggers
-logger = logging.getLogger().getChild(__name__)
+logger = logging.getLogger().getChild('obdlogger')
 #logger.setLevel(logging.DEBUG)
 currentIdleScreen = 0
 snapshot=dict()

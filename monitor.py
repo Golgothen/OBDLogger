@@ -16,7 +16,7 @@ from general import *
 
 import sys, logging, _thread
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')

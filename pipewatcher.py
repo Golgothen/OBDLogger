@@ -8,7 +8,7 @@ import logging, sys
 # Watcher thread to monitor for incomming messages on a pipe.
 # One thread per pipe.
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 
 class PipeWatcher(Thread):
@@ -36,10 +36,8 @@ class PipeWatcher(Thread):
                         self.send(response)
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
-        #except (AttributeError):
-        #    logger.critical('
         except:
-            logger.critical('Unhandled exception occured in PipeWatcher thread {}: {}'.format(self.name, sys.exc_info()))
+            logger.critical('Unhandled exception occured in PipeWatcher thread {}:'.format(self.name), exc_info = True, stack_info = True)
 
     # Public method to allow the parent to send messages to the pipe
     def send(self, msg):

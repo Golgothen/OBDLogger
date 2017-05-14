@@ -38,7 +38,8 @@ class LogListener(Process):
                 if record is None:
                     break
                 logger = logging.getLogger(record.name)
-                logger.handle(record)
+                if logger.isEnabledFor(record.levelno):
+                    logger.handle(record)
             except (KeyboardInterrupt, SystemExit):
                 break
             except:

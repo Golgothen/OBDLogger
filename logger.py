@@ -4,9 +4,9 @@ from datetime import datetime
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-import threading, gzip, shutil, logging #, os
+import threading, gzip, shutil, logging, traceback #, os
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class DataLogger(Process):
 
@@ -82,8 +82,8 @@ class DataLogger(Process):
         except (KeyboardInterrupt, SystemExit):
             self.__running = False
             return
-        except:
-            logger.critical('Unhandled exception occured in Logger process: {}'.format(sys.exc_info))
+        except :
+            logger.critical('Unhandled exception occured in Logger process: ', exc_info = True, stack_info = True)
 
 
     def stop(self, p = None):

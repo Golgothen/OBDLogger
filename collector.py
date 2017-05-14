@@ -10,7 +10,7 @@ from general import *
 
 import logger #, os
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses
@@ -64,7 +64,7 @@ class Collector(Process):
         except (KeyboardInterrupt, SystemExit):                                     # Pick up interrups and system shutdown
             self.__running = False                                                  # Set Running to false, causing the above loop to exit
         except:
-            logger.critical('Unhandled exception occured in Collector process: {}'.format(sys.exc_info()))
+            logger.critical('Unhandled exception occured in Collector process:',exc_info = True, trace_info = True)
 
     def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values

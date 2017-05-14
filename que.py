@@ -6,7 +6,7 @@ from time import sleep
 #from copy import copy
 #from general import *
 
-logger = logging.getLogger('root').getChild(__name__)
+logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class Que(Thread):
 
@@ -52,7 +52,7 @@ class Que(Thread):
         except (KeyboarInterrupt, SystemExit):
             self.running = False
         except:
-            logger.critical('Unhandled exception occured in Queue Thread {}: {}'.format(self.name, sys.exc_info))
+            logger.critical('Unhandled exception occured in Queue Thread {}:'.format(self.name), exc_info = True, stack_info = True)
 
 
     def setFrequency(self, frequency):
