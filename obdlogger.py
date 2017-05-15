@@ -45,7 +45,7 @@ log_config = {
     'loggers': {
         'obdlogger': {
             'handlers': ['console', 'file'],
-            'level': 'INFO'
+            'level': 'ERROR'
         },
         #'obdlogger.worker': {
         #    'level': 'CRITICAL',
