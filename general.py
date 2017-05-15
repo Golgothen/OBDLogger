@@ -158,6 +158,7 @@ def loadDefaults():
     config.set('Application','GPS Product ID','ea60')
     config.set('Application','GPS Vendor ID','10c4')
     config.set('Application','Data Screen Size','23')
+    config.set('Application','Mode','TESTING')
 
     for q in config.get('Application','Queues').split(','):
         config.add_section('Queue {}'.format(q))
@@ -194,8 +195,8 @@ def loadDefaults():
     config.set('Data Screen','Line 6','DISTANCE')
     config.set('Data Screen','Line 7','TIME')
     config.set('Data Screen','Line 8','FUEL')
-    config.set('Data Screen','Line 9','LPH')
-    config.set('Data Screen','Line 10','GEAR')
+    config.set('Data Screen','Line 9','GEAR')
+    config.set('Data Screen','Line 10','LPH')
     config.set('Data Screen','Line 11','MAF')
     config.set('Data Screen','Line 12','FAM')
     config.set('Data Screen','Line 13','VOLTAGE')

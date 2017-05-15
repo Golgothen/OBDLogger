@@ -77,7 +77,7 @@ class DataLogger(Process):
                     #self.logFrequency-=1
                 else:
                     sleep(sleeptime)
-                    timer = time()
+                timer = time()
             except (KeyboardInterrupt, SystemExit):
                 self.__running = False
                 continue

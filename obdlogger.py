@@ -45,11 +45,12 @@ log_config = {
     'loggers': {
         'obdlogger': {
             'handlers': ['console', 'file'],
+            'level': 'INFO'
         },
-        'obdlogger.worker': {
-            'level': 'CRITICAL',
-        },
-        #'obdlogger.gps': {
+        #'obdlogger.worker': {
+        #    'level': 'CRITICAL',
+        #},
+        #'obdlogger.message': {
         #    'level': 'DEBUG'
         #},
     }

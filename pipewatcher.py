@@ -29,7 +29,7 @@ class PipeWatcher(Thread):
             try:
                 while self.__pipe.poll(None):  # Block indefinately waiting for a message
                     m = self.__pipe.recv()
-                    logger.info('{} {} with {}'.format(self.name, m.message, m.params))
+                    logger.debug('{} {} with {}'.format(self.name, m.message, m.params))
                     response = getattr(self.__parent, m.message.lower())(m.params)
                     if response is not None:
                         logger.debug('{} response.'.format(response.message))

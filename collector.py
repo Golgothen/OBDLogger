@@ -34,8 +34,8 @@ class Collector(Process):
         self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'COLLECTOR->WORKER')
 
         self.__paused = False
-        self.__running = False
-        self.__frequency = 100
+        #self.__running = False
+        #self.__frequency = 100
         self.__ready = False
         self.__SCreq = False
         self.name = 'COLLECTOR'
@@ -46,22 +46,24 @@ class Collector(Process):
         logger.info('Starting Collector process on PID {}'.format(str(self.pid)))
         for p in self.__pipes:
             self.__pipes[p].start()
-        while self.__running:
+        while True: #self.__running:
             try:                                                                    # Running set to False by STOP command
                 if self.__ready:                                                    # Ready set to True when data dictonary has been built
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
-                        while self.__results.qsize() > 0:                           # Loop while there are results in the que
-                            m = self.__results.get()                                # Pull result message from que
-                            self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
-                    sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
+                        #while self.__results.qsize() > 0:                           # Loop while there are results in the que
+                        m = self.__results.get()                                    # Pull result message from que
+                        if m is None:
+                            break
+                        self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
+                    #sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
                 else:                                                               # Not ready?
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
                         self.__SCreq = True                                         # Only send the above request once
                         self.reset()                                                # Empty data dictionary and request a list of supported commands
-                        sleep(1.0 / self.__frequency)
-                sleep(1.0 / self.__frequency)                                       # Release CPU
+                        sleep(0.01)
+                #sleep(1.0 / self.__frequency)                                       # Release CPU
             except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
-                self.__running = False                                              # Set Running to false, causing the above loop to exit
+                self.__results.put(None)                                              # Set Running to false, causing the above loop to exit
                 continue
             except:
                 logger.critical('Unhandled exception occured in Collector process:',exc_info = True, trace_info = True)
@@ -78,19 +80,20 @@ class Collector(Process):
         return Message('SNAP_SHOT', SNAPSHOT = data)
 
     def sum(self, p):
-        return Message('GETSUM', SUM = self.__data[p['NAME']].sum)
+        return Message('GETSUM', SUM = 0.0 if p['NAME'] not in self.__data else self.__data[p['NAME']].sum)
 
     def avg(self, p):
-        return Message('GETAVG', AVG = self.__data[p['NAME']].avg)
+        return Message('GETAVG', AVG = 0.0 if p['NAME'] not in self.__data else self.__data[p['NAME']].avg)
 
     def min(self, p):
-        return Message('GETMIN', MIN = self.__data[p['NAME']].min)
+        return Message('GETMIN', MIN = None if p['NAME'] not in self.__data else self.__data[p['NAME']].min)
 
     def max(self, p):
-        return Message('GETMAX', MAX = self.__data[p['NAME']].max)
+        return Message('GETMAX', MAX = None if p['NAME'] not in self.__data else self.__data[p['NAME']].max)
 
     def val(self, p):
-        return Message('GETVAL', VAL = self.__data[p['NAME']].val)
+        if p['NAME'] in self.__data:
+            return Message('GETVAL', VAL = None if p['NAME'] not in self.__data else self.__data[p['NAME']].val)
 
     def reset(self, p = None):
         self.__ready = False
@@ -183,7 +186,9 @@ class Collector(Process):
 
         self.__data['ALTITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 5, COMMAS = False, PRECISION = 0))
         self.__data['LATITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 19, TYPE = 'lat'))
+        self.__data['LATITUDE'].setFormat('LOG', TYPE = 'f', LENGTH = 9, PRECISION = 5)
         self.__data['LONGITUDE'] = KPI(FMT_ALL = FMT(LENGTH = 19, TYPE = 'lon'))
+        self.__data['LONGITUDE'].setFormat('LOG', TYPE = 'f', LENGTH = 9, PRECISION = 5)
         self.__data['GPS_SPD'] = KPI(FMT_ALL = FMT(LENGTH=5, PRECISION = 1))
         self.__data['HEADING'] = KPI(FMT_ALL = FMT())
 
@@ -199,10 +204,6 @@ class Collector(Process):
             if d in ['CONTROL_MODULE_VOLTAGE']:
                 self.__data[d].setFormat('ALL', LENGTH = 5, PRECISION = 2)
             self.__data[d].setFormat('LOG', COMMAS = False)
-
-        # Log Latitude and Longitude as decimals
-        self.__data['LATITUDE'].setFormat('LOG', TYPE = 'f', LENGTH = 9, PRECISION = 5)
-        self.__data['LONGITUDE'].setFormat('LOG', TYPE = 'f', LENGTH = 9, PRECISION = 5)
 
         self.__ready = True
         self.__dirty = False
@@ -227,12 +228,12 @@ class Collector(Process):
     def stop(self):
         if self.__running:
             logger.debug('Stopping Collector process')
-            self.__running = False
+            self.__results.put(None)
 
     def getstatus(self, p = None):
         d = dict()
         d['Name'] = self.name
-        d['Running'] = self.__running
+        #d['Running'] = self.__running
         d['Paused'] = self.__paused
         d['PID'] = self.pid
         d['Count'] = len(self.__data)
