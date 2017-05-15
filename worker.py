@@ -63,8 +63,8 @@ class Worker(Process):
         # Start watcher threads for pipes
         for p in self.__pipes:
             self.__pipes[p].start()
-        try:
-            while self.__running:
+        while self.__running:
+            try:
                 if not self.__isConnected():
                     self.__paused = True
                     self.__firstPoll = None
@@ -88,13 +88,13 @@ class Worker(Process):
                                 #self.__resultQue.put(Message(m, VALUE = 0.0))                                                 # todo: delete after testing
                         self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
                 sleep(1.0 / self.__frequency)
-            logger.info('Worker process stopping')
-            return
-        except (KeyboardInterrupt, SystemExit):
-            self.__running = False
-            return
-        except:
-            logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)
+            except (KeyboardInterrupt, SystemExit):
+                self.__running = False
+                continue
+            except:
+                logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)
+                continue
+        logger.info('Worker process stopping')
 
 
     def pause(self):

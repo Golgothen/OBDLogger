@@ -44,13 +44,13 @@ class DataLogger(Process):
         logger.info('Starting Logger process on PID {}'.format(self.pid))
         for p in self.__pipes:
             self.__pipes[p].start()
-        try:
-            timer=time()
-            while self.__running:
+        timer=time()
+        while self.__running:
+            try:
                 if self.__logName is None:
                     logger.debug('Logger name not set. Pausing')
                     self.pause()
-                #logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
+                logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                 if not self.__paused:
                     if self.__refreshRequired:
                         if not self.__refreshRequested:
@@ -78,12 +78,14 @@ class DataLogger(Process):
                 else:
                     sleep(sleeptime)
                     timer = time()
-            logger.info('Logging process stopped')
-        except (KeyboardInterrupt, SystemExit):
-            self.__running = False
-            return
-        except :
-            logger.critical('Unhandled exception occured in Logger process: ', exc_info = True, stack_info = True)
+            except (KeyboardInterrupt, SystemExit):
+                self.__running = False
+                continue
+            except :
+                logger.critical('Unhandled exception occured in Logger process: ', exc_info = True, stack_info = True)
+                continue
+        logger.info('Logging process stopped')
+
 
 
     def stop(self, p = None):

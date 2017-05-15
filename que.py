@@ -30,8 +30,8 @@ class Que(Thread):
         self.running = True
         self.__lastPolled = datetime.now()
         logger.info('Que {} starting'.format(self.name))
-        try:
-            while self.running:
+        while self.running:
+            try:
                 self.__lastPolled = datetime.now()
                 if self.ready and not self.paused:
                     self.pauseReady = False
@@ -48,11 +48,13 @@ class Que(Thread):
                     if self.paused:
                         self.pauseReady = True
                     sleep(0.5)
-            logger.info('Que {} stopped'.format(self.name))
-        except (KeyboarInterrupt, SystemExit):
-            self.running = False
-        except:
-            logger.critical('Unhandled exception occured in Queue Thread {}:'.format(self.name), exc_info = True, stack_info = True)
+            except (KeyboarInterrupt, SystemExit):
+                self.running = False
+                continue
+            except:
+                logger.critical('Exception caught in Queue Thread {}:'.format(self.name), exc_info = True, stack_info = True)
+                continue
+        logger.info('Que {} stopped'.format(self.name))
 
 
     def setFrequency(self, frequency):

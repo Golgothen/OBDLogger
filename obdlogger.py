@@ -22,7 +22,7 @@ log_config = {
     'formatters': {
         'detailed': {
             'class': 'logging.Formatter',
-            'format': '%(asctime)-16s:%(name)-20s %(levelname)-8s[%(module)-12s.%(funcName)-20s:%(lineno)-5s] %(message)s'
+            'format': '%(asctime)-16s:%(name)-20s %(levelname)-8s[%(module)-13s.%(funcName)-20s:%(lineno)-5s] %(message)s'
             },
         'brief': {
             'class': 'logging.Formatter',

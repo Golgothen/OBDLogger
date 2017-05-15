@@ -46,8 +46,8 @@ class Collector(Process):
         logger.info('Starting Collector process on PID {}'.format(str(self.pid)))
         for p in self.__pipes:
             self.__pipes[p].start()
-        try:
-            while self.__running:                                                   # Running set to False by STOP command
+        while self.__running:
+            try:                                                                    # Running set to False by STOP command
                 if self.__ready:                                                    # Ready set to True when data dictonary has been built
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
                         while self.__results.qsize() > 0:                           # Loop while there are results in the que
@@ -60,11 +60,13 @@ class Collector(Process):
                         self.reset()                                                # Empty data dictionary and request a list of supported commands
                         sleep(1.0 / self.__frequency)
                 sleep(1.0 / self.__frequency)                                       # Release CPU
-            logger.info('Collector process stopped')                                # Running has been set to False
-        except (KeyboardInterrupt, SystemExit):                                     # Pick up interrups and system shutdown
-            self.__running = False                                                  # Set Running to false, causing the above loop to exit
-        except:
-            logger.critical('Unhandled exception occured in Collector process:',exc_info = True, trace_info = True)
+            except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
+                self.__running = False                                              # Set Running to false, causing the above loop to exit
+                continue
+            except:
+                logger.critical('Unhandled exception occured in Collector process:',exc_info = True, trace_info = True)
+        logger.info('Collector process stopped')                                    # Running has been set to False
+
 
     def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values

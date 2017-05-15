@@ -25,8 +25,8 @@ class PipeWatcher(Thread):
     def run(self):
         self.__running = True
         logger.info('Starting listener thread {}'.format(self.name))
-        try:
-            while self.__running:
+        while self.__running:
+            try:
                 while self.__pipe.poll(None):  # Block indefinately waiting for a message
                     m = self.__pipe.recv()
                     logger.info('{} {} with {}'.format(self.name, m.message, m.params))
@@ -34,10 +34,12 @@ class PipeWatcher(Thread):
                     if response is not None:
                         logger.debug('{} response.'.format(response.message))
                         self.send(response)
-        except (KeyboardInterrupt, SystemExit):
-            self.__running = False
-        except:
-            logger.critical('Unhandled exception occured in PipeWatcher thread {}:'.format(self.name), exc_info = True, stack_info = True)
+            except (KeyboardInterrupt, SystemExit):
+                self.__running = False
+                continue
+            except:
+                logger.critical('Exception caught in PipeWatcher thread {}:'.format(self.name), exc_info = True, stack_info = True)
+                continue
 
     # Public method to allow the parent to send messages to the pipe
     def send(self, msg):

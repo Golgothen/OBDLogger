@@ -41,16 +41,20 @@ class ECU(Process):
         logger.info('Starting ECU process on PID {}'.format(self.pid))
         for p in self.__pipes:
             self.__pipes[p].start()
-        try:
-            while self.__running:
+        while self.__running:
+            try:
                 for q in self.__Que:
                     self.__Que[q].paused = self.__paused
                 sleep(0.1)
-            self.__shutdown()
-        except (KeyboardInterrupt, SystemExit):
-            self.__shutdown()
-        except:
-            logger.critical('Unhandled exception occured in ECU process:', exc_info = True, stack_info = True)
+            except (KeyboardInterrupt, SystemExit):
+                #self.__shutdown()
+                self.__running = False
+                continue
+            except:
+                logger.critical('Exception caught in ECU process:', exc_info = True, stack_info = True)
+                continue
+        self.__shutdown()
+
 
 
     def stop(self, p = None):
