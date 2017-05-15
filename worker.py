@@ -143,6 +143,7 @@ class Worker(Process):
         return Message('WORKERSTATUS', STATUS = d)
 
     def __connect(self):
+        logger.debug('ELM device on {}'.format(self.__port))
         if self.__port is None:
             logger.error('Could not find ELM device.  Check connection and settings.')
             self.__interface = None
@@ -180,6 +181,7 @@ class Worker(Process):
         #self.resume()       # TODO: comment after testing
         # TODO - uncomment after testing
         if self.__interface is not None:
+            logger.debug('OBD Status = {}'.format(self.__interface.status()))
             if self.__interface.status() == 'Car Connected':
                 connected = True
                 self.resume()

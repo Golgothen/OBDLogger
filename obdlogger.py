@@ -47,7 +47,7 @@ log_config = {
             'handlers': ['console', 'file'],
         },
         'obdlogger.worker': {
-            'level': 'CRITICAL',
+            'level': 'DEBUG',
         },
         'obdlogger.gps': {
             'level': 'DEBUG'
