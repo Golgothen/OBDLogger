@@ -10,4 +10,6 @@ __pycache__
 # Log files
 logs/*
 
+# Config settings
+obdlogger.cfg
 
