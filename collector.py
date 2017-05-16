@@ -61,7 +61,7 @@ class Collector(Process):
                         sleep(0.01)
                 sleep(1.0 / self.__frequency)                                       # Release CPU
             except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
-                self.__results.put(None)                                              # Set Running to false, causing the above loop to exit
+                self.__running = False                                              # Set Running to false, causing the above loop to exit
                 continue
             except:
                 logger.critical('Unhandled exception occured in Collector process:',exc_info = True, stack_info = True)

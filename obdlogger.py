@@ -8,21 +8,21 @@ from threading import Timer
 from multiprocessing import Queue
 from queuehandler import LogListener, QueueHandler, obdFilter
 
-import sys, logging
+import sys, logging, logging.handlers
 
 # Configuration for the listener
 log_config = {
     'version': 1,
     #'disable_existing_loggers': True,
-    #'filters': {
-    #    'usb-unplugged': {
-    #        '()': 'queuehandler.obdFilter'
-    #        }
-    #},
+    'filters': {
+        'usb-unplugged': {
+            '()': 'queuehandler.obdFilter'
+            }
+    },
     'formatters': {
         'detailed': {
             'class': 'logging.Formatter',
-            'format': '%(asctime)-16s:%(name)-20s %(levelname)-8s[%(module)-13s.%(funcName)-20s:%(lineno)-5s] %(message)s'
+            'format': '%(asctime)-16s:%(name)-21s %(levelname)-8s[%(module)-13s.%(funcName)-20s:%(lineno)-5s] %(message)s'
             },
         'brief': {
             'class': 'logging.Formatter',
@@ -40,19 +40,24 @@ log_config = {
             'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
             'mode': 'w',
             'formatter': 'detailed',
+        },
+        'filerotate': {
+            'class': 'logging.handlers.TimedRotatingFileHandler',
+            'filename': 'run.log',
+            'when': 'midnight',
+            'interval':1,
+            'formatter': 'detailed',
+            'level': 'INFO'
         }
     },
     'loggers': {
         'obdlogger': {
-            'handlers': ['console', 'file'],
-            'level': 'ERROR'
-        },
-        'obdlogger.worker': {
-            'level': 'CRITICAL',
-        },
-        'obdlogger.message': {
+            'handlers': ['console', 'filerotate'],
             'level': 'DEBUG'
         },
+        #'obdlogger.worker': {
+        #    'level': 'ERROR',
+        #},
     }
 }
 
@@ -249,7 +254,8 @@ if __name__ == '__main__':
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
-        listener.stop()
+        #listener.stop()
+        logQueue.put(None)
         ecu.stop()
         timer.cancel()
         print('Done.')
