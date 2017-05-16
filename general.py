@@ -8,6 +8,9 @@ from math import modf
 
 ###
 
+def getScreenSize():
+    return tuple(map(int, os.popen('stty size', 'r').read().split()))
+
 def formatSeconds(d):
     hours, remainder = divmod(d, 3600)
     minutes, seconds = divmod(remainder, 60)

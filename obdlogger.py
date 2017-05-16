@@ -1,6 +1,5 @@
 from time import sleep
 from datetime import datetime
-from general import *
 from monitor import Monitor
 from logger import DataLogger
 from configparser import ConfigParser
@@ -9,6 +8,8 @@ from multiprocessing import Queue
 from queuehandler import LogListener, QueueHandler, obdFilter
 
 import sys, logging, logging.handlers
+
+from general import *
 
 # Configuration for the listener
 log_config = {
@@ -105,14 +106,14 @@ def printIdleScreen():
     timer.start()
 
 def printTrip():
-    sys.stdout.write(' Last Trip:                   ')
-    sys.stdout.write('------------------------------')
-    sys.stdout.write('         Avg. Speed: {:8.2f} '.format(tripstats['AVG_SPEED']))
-    sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(tripstats['AVG_LP100K']))
-    sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(tripstats['DISTANCE']))
-    sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(tripstats['FUEL']))
-    sys.stdout.write('   Avg. Engine Load: {:8.2f} '.format(tripstats['AVG_LOAD']))
-    sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(tripstats['DURATION'])))
+    sys.stdout.write(' Last Trip:                   \n')
+    sys.stdout.write('------------------------------\n')
+    sys.stdout.write('         Avg. Speed: {:8.2f} \n'.format(tripstats['AVG_SPEED']))
+    sys.stdout.write('        Avg. L/100K: {:8.2f} \n'.format(tripstats['AVG_LP100K']))
+    sys.stdout.write('  Distance Traveled: {:8,.1f} \n'.format(tripstats['DISTANCE']))
+    sys.stdout.write('      Fuel Consumed: {:8.2f} \n'.format(tripstats['FUEL']))
+    sys.stdout.write('   Avg. Engine Load: {:8.2f} \n'.format(tripstats['AVG_LOAD']))
+    sys.stdout.write('           Duration: {:>8} \n'.format(formatSeconds(tripstats['DURATION'])))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(tripstats['IDLE_TIME'])))
     sys.stdout.flush()
 
@@ -130,21 +131,23 @@ def printHistory():
     sys.stdout.flush()
 
 def printTank():
-    sys.stdout.write(' Tank History:                ')
-    sys.stdout.write('------------------------------')
-    sys.stdout.write('         Avg. Speed: {:8.2f} '.format(sum(tank['AVG_SPEED'])/len(tank['AVG_SPEED'])))
-    sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
-    sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(tank['DISTANCE'])))
+    sys.stdout.write(' Tank History:                \n')
+    sys.stdout.write('------------------------------\n')
+    sys.stdout.write('         Avg. Speed: {:8.2f} \n'.format(sum(tank['AVG_SPEED'])/len(tank['AVG_SPEED'])))
+    sys.stdout.write('        Avg. L/100K: {:8.2f} \n'.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
+    sys.stdout.write('  Distance Traveled: {:8,.1f} \n'.format(sum(tank['DISTANCE'])))
     if sum(tank['AVG_LP100K']) > 0:
-        sys.stdout.write('           Est. DTE: {:8.1f} '.format((config.getfloat('Vehicle', 'Tank Capacity')-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
-    sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(sum(tank['FUEL'])))
-    sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(tank['DURATION']))))
+        sys.stdout.write('           Est. DTE: {:8.1f} \n'.format((config.getfloat('Vehicle', 'Tank Capacity')-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
+    sys.stdout.write('      Fuel Consumed: {:8.2f} \n'.format(sum(tank['FUEL'])))
+    sys.stdout.write('           Duration: {:>8} \n'.format(formatSeconds(sum(tank['DURATION']))))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
 
 def printFullTable():
     lines = []
-    for l in range(config.getint('Application','Data Screen Size')):
+    d = config.getint('Application','Data Screen Size')
+    if d > getScreenSize()[0]: d = getScreenSize()[0]
+    for l in range(d):
         if config.has_option('Data Screen','Line {}'.format(l)):
             if config.get('Data Screen','Line {}'.format(l)) == 'LP100K':
                 if ecu.val('SPEED') == 0:
@@ -156,7 +159,10 @@ def printFullTable():
     if config.get('Application','Mode')!='TESTING':
         os.system('clear')
     for l in lines:
-        sys.stdout.write(l)
+        if getScreenSize()[1] > 30:
+            sys.stdout.write(l + '\n')
+        else:
+            sys.stdout.write(l)
     sys.stdout.flush()
 
 if __name__ == '__main__':
