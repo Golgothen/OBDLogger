@@ -131,15 +131,15 @@ def printHistory():
     sys.stdout.flush()
 
 def printTank():
-    sys.stdout.write(' Tank History:                \n')
-    sys.stdout.write('------------------------------\n')
-    sys.stdout.write('         Avg. Speed: {:8.2f} \n'.format(sum(tank['AVG_SPEED'])/len(tank['AVG_SPEED'])))
-    sys.stdout.write('        Avg. L/100K: {:8.2f} \n'.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
-    sys.stdout.write('  Distance Traveled: {:8,.1f} \n'.format(sum(tank['DISTANCE'])))
+    sys.stdout.write(' Tank History:                ')
+    sys.stdout.write('------------------------------')
+    sys.stdout.write('         Avg. Speed: {:8.2f} '.format(sum(tank['AVG_SPEED'])/len(tank['AVG_SPEED'])))
+    sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K'])))
+    sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(sum(tank['DISTANCE'])))
     if sum(tank['AVG_LP100K']) > 0:
-        sys.stdout.write('           Est. DTE: {:8.1f} \n'.format((config.getfloat('Vehicle', 'Tank Capacity')-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
-    sys.stdout.write('      Fuel Consumed: {:8.2f} \n'.format(sum(tank['FUEL'])))
-    sys.stdout.write('           Duration: {:>8} \n'.format(formatSeconds(sum(tank['DURATION']))))
+        sys.stdout.write('           Est. DTE: {:8.1f} '.format((config.getfloat('Vehicle', 'Tank Capacity')-sum(tank['FUEL']))/(sum(tank['AVG_LP100K'])/len(tank['AVG_LP100K']))*100 ))
+    sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(sum(tank['FUEL'])))
+    sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(sum(tank['DURATION']))))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(sum(tank['IDLE_TIME']))))
     sys.stdout.flush()
 

@@ -1,4 +1,4 @@
-from multiprocessing import Queue
+from multiprocessing import Queue, Event
 #from threading import Thread
 from ecu import ECU
 from worker import Worker
@@ -47,6 +47,22 @@ class Monitor():
         self.__pipes['COLLECTOR'] = PipeWatcher(self, collectorControlPipe.s, 'COLLECTOR->APP')
         self.__pipes['LOG'] = PipeWatcher(self, loggerControlPipe.s, 'LOG->APP')
         self.__pipes['GPS'] = PipeWatcher(self, gpsControlPipe.s, 'GPS->APP')
+
+        self.__event = {}
+        self.__event['ISCONNECTED'] = Event()
+        self.__event['GETQUEUES'] = Event()
+        self.__event['GETCOMMANDS'] = Event()
+        self.__event['SUPPORTED_COMMANDS'] = Event()
+        self.__event['GETSTATUS'] = Event()
+        self.__event['SUM'] = Event()
+        self.__event['AVG'] = Event()
+        self.__event['MIN'] = Event()
+        self.__event['MAX'] = Event()
+        self.__event['VAL'] = Event()
+        self.__event['DATALINE'] = Event()
+        self.__event['LOGNAME'] = Event()
+        self.__event['SNAPSHOT'] = Event()
+        self.__event['SUMMARY'] = Event()
 
         self.__ecu = ECU(workQue,
                          ecuWorkerPipe.s,                              # ECU <-> Worker
@@ -150,49 +166,53 @@ class Monitor():
     def isConnected(self):
         self.__connected_return = None                                        # Stores the response from the callback
         self.__pipes['WORKER'].send(Message('CONNECTED'))                     # Send message for incomming request
-        while self.__connected_return is None:                                #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['ISCONNECTED'].wait()
+        self.__event['ISCONNECTED'].clear()
         return self.__connected_return['STATUS']                              # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def connected(self, p):                                                   # Callback function for IsConnected
-       self.__connected_return = p                                            # Store the response returned for the caller to find
+        self.__connected_return = p                                            # Store the response returned for the caller to find
+        self.__event['ISCONNECTED'].set()
 
     @property
     def queues(self):
         self.__queues_return = None                                           # Stores the response from the callback
         self.__pipes['ECU'].send(Message('GETQUEUES'))                        # Send message for incomming request
-        while self.__queues_return is None:                                   #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['GETQUEUES'].wait()
+        self.__event['GETQUEUES'].clear()
         return self.__queues_return['QUEUES']                                 # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getqueues(self, p):                                                   # Callback function for IsConnected
-       self.__queues_return = p                                               # Store the response returned for the caller to find
+        self.__queues_return = p                                               # Store the response returned for the caller to find
+        self.__event['GETQUEUES'].set()
 
     @property
     def commands(self):
         self.__commands_return = None                                         # Stores the response from the callback
         self.__pipes['WORKER'].send(Message('GETCOMMANDS'))                   # Send message for incomming request
-        while self.__commands_return is None:                                 #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['GETCOMMANDS'].wait()
+        self.__event['GETCOMMANDS'].clear()
         return self.__commands_return['COMMANDS']                             # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getcommands(self, p):                                                 # Callback function for IsConnected
-       self.__commands_return = p                                             # Store the response returned for the caller to find
+        self.__commands_return = p                                             # Store the response returned for the caller to find
+        self.__event['GETCOMMANDS'].set()
 
     @property
     def supportedCommands(self):
         self.__s_commands_return = None                                       # Stores the response from the callback
         self.__pipes['WORKER'].send(Message('SUPPORTED_COMMANDS'))            # Send message for incomming request
-        while self.__s_commands_return is None:                               #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['SUPPORTED_COMMANDS'].wait()
+        self.__event['SUPPORTED_COMMANDS'].clear()
         return self.__s_commands_return['SUPPORTED_COMMANDS']                 # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def supported_commands(self, p):                                          # Callback function for IsConnected
-       self.__s_commands_return = p                                           # Store the response returned for the caller to find
+        self.__s_commands_return = p                                           # Store the response returned for the caller to find
+        self.__event['SUPPORTED_COMMANDS'].set()
 
     @property
     def status(self):
@@ -203,112 +223,123 @@ class Monitor():
         self.__s_log_return = None                                            # Stores the response from the callback
         self.__s_gps_return = None                                            # Stores the response from the callback
         self.__pipes['WORKER'].send(Message('GETSTATUS'))                     # Send message for incomming request
-        self.__pipes['ECU'].send(Message('GETSTATUS'))                        # Send message for incomming request
-        self.__pipes['COLLECTOR'].send(Message('GETSTATUS'))                  # Send message for incomming request
-        self.__pipes['LOG'].send(Message('GETSTATUS'))                        # Send message for incomming request
-        self.__pipes['GPS'].send(Message('GETSTATUS'))                        # Send message for incomming request
-        while self.__s_ecu_return is None:                                    #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
-        s['ECU'] = self.__s_ecu_return['STATUS']
-        while self.__s_data_return is None:                                   #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
-        s['COLLECTOR'] = self.__s_data_return['STATUS']
-        while self.__s_worker_return is None:                                 #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['GETSTATUS'].wait()
+        self.__event['GETSTATUS'].clear()
         s['WORKER'] = self.__s_worker_return['STATUS']
-        while self.__s_log_return is None:                                    #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__pipes['ECU'].send(Message('GETSTATUS'))                        # Send message for incomming request
+        self.__event['GETSTATUS'].wait()
+        self.__event['GETSTATUS'].clear()
+        s['ECU'] = self.__s_ecu_return['STATUS']
+        self.__pipes['COLLECTOR'].send(Message('GETSTATUS'))                  # Send message for incomming request
+        self.__event['GETSTATUS'].wait()
+        self.__event['GETSTATUS'].clear()
+        s['COLLECTOR'] = self.__s_data_return['STATUS']
+        self.__pipes['LOG'].send(Message('GETSTATUS'))                        # Send message for incomming request
+        self.__event['GETSTATUS'].wait()
+        self.__event['GETSTATUS'].clear()
         s['LOG'] = self.__s_log_return['STATUS']
-        while self.__s_gps_return is None:                                    #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__pipes['GPS'].send(Message('GETSTATUS'))                        # Send message for incomming request
+        self.__event['GETSTATUS'].wait()
+        self.__event['GETSTATUS'].clear()
         s['GPS'] = self.__s_gps_return['STATUS']
         return s                                                              # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def workerstatus(self, p):                                                # Callback function for IsConnected
-       self.__s_worker_return = p                                             # Store the response returned for the caller to find
+        self.__s_worker_return = p                                             # Store the response returned for the caller to find
+        self.__event['GETSTATUS'].set()
 
     # Callback function must be lower case of the message it is to respond to
     def ecustatus(self, p):                                                   # Callback function for IsConnected
-       self.__s_ecu_return = p                                                # Store the response returned for the caller to find
+        self.__s_ecu_return = p                                                # Store the response returned for the caller to find
+        self.__event['GETSTATUS'].set()
 
     # Callback function must be lower case of the message it is to respond to
     def datastatus(self, p):                                                  # Callback function for IsConnected
-       self.__s_data_return = p                                               # Store the response returned for the caller to find
+        self.__s_data_return = p                                               # Store the response returned for the caller to find
+        self.__event['GETSTATUS'].set()
 
     # Callback function must be lower case of the message it is to respond to
     def logstatus(self, p):                                                   # Callback function for IsConnected
-       self.__s_log_return = p                                                # Store the response returned for the caller to find
+        self.__s_log_return = p                                                # Store the response returned for the caller to find
+        self.__event['GETSTATUS'].set()
 
     # Callback function must be lower case of the message it is to respond to
     def gpsstatus(self, p):                                                   # Callback function for IsConnected
-       self.__s_gps_return = p                                                # Store the response returned for the caller to find
+        self.__s_gps_return = p                                                # Store the response returned for the caller to find
+        self.__event['GETSTATUS'].set()
 
     def sum(self, name):
         self.__sum_return = None                                              # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('SUM', NAME = name))           # Send message for incomming request
-        while self.__sum_return is None:                                      #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['SUM'].wait()
+        self.__event['SUM'].clear()
         return self.__sum_return['SUM']                                       # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getsum(self, p):                                                      # Callback function for IsConnected
-       self.__sum_return = p                                                  # Store the response returned for the caller to find
+        self.__sum_return = p                                                  # Store the response returned for the caller to find
+        self.__event['SUM'].set()
 
     def avg(self, name):
         self.__avg_return = None                                              # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('AVG', NAME = name))           # Send message for incomming request
-        while self.__avg_return is None:                                      #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['AVG'].wait()
+        self.__event['AVG'].clear()
         return self.__avg_return['AVG']                                       # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getavg(self, p):                                                      # Callback function for IsConnected
-       self.__avg_return = p                                                  # Store the response returned for the caller to find
+        self.__avg_return = p                                                  # Store the response returned for the caller to find
+        self.__event['AVG'].set()
 
     def min(self, name):
         self.__min_return = None                                              # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('MIN', NAME = name))           # Send message for incomming request
-        while self.__MIN_return is None:                                      #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['MIN'].wait()
+        self.__event['MIN'].clear()
         return self.__MIN_return['MIN']                                       # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getmin(self, p):                                                      # Callback function for IsConnected
-       self.__min_return = p                                                  # Store the response returned for the caller to find
+        self.__min_return = p                                                  # Store the response returned for the caller to find
+        self.__event['MIN'].set()
 
     def max(self, name):
         self.__max_return = None                                              # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('MAX', NAME = name))           # Send message for incomming request
-        while self.__max_return is None:                                      #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['MAX'].wait()
+        self.__event['MAX'].clear()
         return self.__max_return['MAX']                                       # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getmax(self, p):                                                      # Callback function for IsConnected
-       self.__max_return = p                                                  # Store the response returned for the caller to find
+        self.__max_return = p                                                  # Store the response returned for the caller to find
+        self.__event['MAX'].set()
 
     def val(self, name):
         self.__val_return = None                                              # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('VAL', NAME = name))           # Send message for incomming request
-        while self.__val_return is None:                                      #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['VAL'].wait()
+        self.__event['VAL'].clear()
         return self.__val_return['VAL']                                       # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getval(self, p):                                                      # Callback function for IsConnected
-       self.__val_return = p                                                  # Store the response returned for the caller to find
+        self.__val_return = p                                                  # Store the response returned for the caller to find
+        self.__event['VAL'].set()
 
     def dataLine(self, name):
         self.__dataline_return = None                                         # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('DATALINE', NAME = name))      # Send message for incomming request
-        while self.__dataline_return is None:                                 #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['DATALINE'].wait()
+        self.__event['DATALINE'].clear()
         return self.__dataline_return['LINE']                                 # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def data_line(self, p):                                                   # Callback function for IsConnected
-       self.__dataline_return = p                                             # Store the response returned for the caller to find
+        self.__dataline_return = p                                             # Store the response returned for the caller to find
+        self.__event['DATALINE'].set()
 
     @property
     def gpsEnable(self):
@@ -317,12 +348,12 @@ class Monitor():
     @gpsEnable.setter
     def gpsEnable(self, v):
         self.__gpsEnabled = v
-#        if getBlockPath(
-#               config.get('Application', 'GPS Vendor ID'),
-#               config.get('Application', 'GPS Product ID')
-#           ) is None:
-#            logger.info('GPS Device not found.  Disabling GPS.')
-#            self.__gpsEnabled = False
+        if getBlockPath(
+               config.get('Application', 'GPS Vendor ID'),
+               config.get('Application', 'GPS Product ID')
+           ) is None:
+            logger.warning('GPS Device not found.  Disabling GPS.')
+            self.__gpsEnabled = False
 
         if self.__gpsEnabled:
             #self.__pipes['GPS'].send(Message('RESUME'))
@@ -335,34 +366,37 @@ class Monitor():
     def snapshot(self):
         self.__snapshot_return = None                                         # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('SNAPSHOT'))                   # Send message for incomming request
-        while self.__snapshot_return is None:                                 #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['SNAPSHOT'].wait()
+        self.__event['SNAPSHOT'].clear()
         return self.__snapshot_return['SNAPSHOT']                             # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def snap_shot(self, p):                                                   # Callback function for IsConnected
-       self.__snapshot_return = p                                             # Store the response returned for the caller to find
+        self.__snapshot_return = p                                             # Store the response returned for the caller to find
+        self.__event['SNAPSHOT'].set()
 
     @property
     def logName(self):
         self.__logname_return = None                                          # Stores the response from the callback
         self.__pipes['LOG'].send(Message('LOGNAME'))                          # Send message for incomming request
-        while self.__logname_return is None:                                  #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['LOGNAME'].wait()
+        self.__event['LOGNAME'].clear()
         return self.__logname_return['NAME']                                  # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def log_name(self, p):                                                    # Callback function for IsConnected
-       self.__logname_return = p                                              # Store the response returned for the caller to find
+        self.__logname_return = p                                              # Store the response returned for the caller to find
+        self.__event['LOGNAME'].set()
 
     @property
     def summary(self):
         self.__summary_return = None                                          # Stores the response from the callback
         self.__pipes['COLLECTOR'].send(Message('SUMMARY'))                    # Send message for incomming request
-        while self.__summary_return is None:                                  #
-            sleep(0.001)                                                      # Wait here until the callback puts a response in *_return
+        self.__event['SUMMARY'].wait()
+        self.__event['SUMMARY'].clear()
         return self.__summary_return['SUMMARY']                               # Return the response from the callback to the caller
 
     # Callback function must be lower case of the message it is to respond to
     def getsummary(self, p):                                                  # Callback function for IsConnected
-       self.__summary_return = p                                              # Store the response returned for the caller to find
+        self.__summary_return = p                                              # Store the response returned for the caller to find
+        self.__event['SUMMARY'].set()

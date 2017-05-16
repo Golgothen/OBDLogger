@@ -33,6 +33,8 @@ class ECU(Process):
         self.__paused = True
         self.__name = 'ECU'
         self.__running = False
+        self.__state_change_event = Event()
+
 
     def run(self):
 
@@ -43,9 +45,10 @@ class ECU(Process):
             self.__pipes[p].start()
         while self.__running:
             try:
+                self.__state_change_event.wait()
+                self.__state_change_event.clear()
                 for q in self.__Que:
                     self.__Que[q].paused = self.__paused
-                sleep(0.1)
             except (KeyboardInterrupt, SystemExit):
                 #self.__shutdown()
                 self.__running = False
@@ -61,18 +64,14 @@ class ECU(Process):
         self.__shutdown()
 
     def pause(self, p = None):
-        if not self.__paused:
-            logger.info('Pausing ECU')
-            self.__paused = True
-            for q in self.__Que:
-                if self.__Que[q].isAlive(): self.__Que[q].paused = True
+        logger.info('Pausing ECU')
+        self.__paused = True
+        self.__state_change_event.set()
 
     def resume(self, p = None):
-        if self.__paused:
-            logger.info('Resuming ECU')
-            self.__paused = False
-            for q in self.__Que:
-                if self.__Que[q].isAlive(): self.__Que[q].paused = False
+        logger.info('Resuming ECU')
+        self.__paused = False
+        self.__state_change_event.set()
 
     def connection(self, p):
         if p['STATUS']:

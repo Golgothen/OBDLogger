@@ -75,7 +75,7 @@ class Worker(Process):
                     if self.__firstPoll is None:
                         self.__firstPoll = datetime.now()
                     if not self.__paused and self.__running:
-                        while self.__workQue.qsize() > 0:
+                        #while self.__workQue.qsize() > 0:
                             if self.__workQue.qsize() > self.__maxQueLength:
                                 self.__maxQueLength = self.__workQue.qsize()
                             m = self.__workQue.get()
@@ -91,11 +91,11 @@ class Worker(Process):
                                     if not q.is_null():
                                         logger.debug('{} - {}'.format(m, q.value))
                                         self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
-                        self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
-                sleep(1.0 / self.__frequency)
+                            self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
+                #sleep(1.0 / self.__frequency)
             except (KeyboardInterrupt, SystemExit):
                 self.__running = False
-                self.__resultQue.put(None)
+                #self.__resultQue.put(None)
                 continue
             except:
                 logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)

@@ -1,4 +1,4 @@
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Queue, Event
 from messages import Message
 from time import sleep
 from pipewatcher import PipeWatcher
@@ -40,6 +40,8 @@ class Collector(Process):
         self.__SCreq = False
         self.name = 'COLLECTOR'
 
+        self.__reset_complete = Event()
+
     def run(self):
         # Main function for process.    Runs continully until instructed to stop.
         self.__running = True
@@ -58,7 +60,8 @@ class Collector(Process):
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
                         self.__SCreq = True                                         # Only send the above request once
                         self.reset()                                                # Empty data dictionary and request a list of supported commands
-                        sleep(0.01)
+                        self.__reset_complete.wait()
+                        self.__reset_complete.clear()
                 sleep(1.0 / self.__frequency)                                       # Release CPU
             except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
                 self.__running = False                                              # Set Running to false, causing the above loop to exit
@@ -101,6 +104,7 @@ class Collector(Process):
     def supported_commands(self, p):
         self.__SCreq = False
         if p['SUPPORTED_COMMANDS'] == []:
+            self.__reset_complete.set()
             return
         for f in p['SUPPORTED_COMMANDS']:
             self.__data[f] = KPI()
@@ -206,6 +210,7 @@ class Collector(Process):
         self.__ready = True
         self.__dirty = False
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
+        self.__reset_complete.set()
 
     def pause(self):
         if not self.__paused:

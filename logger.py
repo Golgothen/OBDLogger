@@ -35,12 +35,12 @@ class DataLogger(Process):
         self.__logFormat = '%Y%m%d%H%M'             # Log file name format
         self.__pauseLog = False                     # Flag to pause logging
         self.__pid = None                           # Pricess ID of Logging process
+        self.__snapshot_ready = Event()
 
         logger.debug('Logging process initalised')
 
     def run(self):
         self.__running=True
-        #self.__pid = os.getpid()
         logger.info('Starting Logger process on PID {}'.format(self.pid))
         for p in self.__pipes:
             self.__pipes[p].start()
@@ -53,12 +53,10 @@ class DataLogger(Process):
                 logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                 if not self.__paused:
                     if self.__refreshRequired:
-                        if not self.__refreshRequested:
-                            logger.debug('Getting snapshot')
-                            self.__pipes['DATA'].send(Message('SNAPSHOT'))
-                            self.__refreshRequested = True
-                            sleep(0.001)
-                        continue
+                        logger.debug('Getting snapshot')
+                        self.__pipes['DATA'].send(Message('SNAPSHOT'))
+                        self.__snapshot_ready.wait()
+                        self.__snapshot_ready.clear()
                     line=''
                     logger.debug('Recording data')
                     for l in self.__logHeadings:
@@ -70,7 +68,6 @@ class DataLogger(Process):
                     with open(self.__logName + '.log','ab') as f:
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
                     self.__refreshRequired = True
-                    self.__refreshRequested = False
                 sleeptime=(1.0 / self.__logFrequency) - (time() - timer)
                 if sleeptime < 0:
                     logger.warning('Logger sleep time reached zero. Concider reducing log frequency')
@@ -117,6 +114,7 @@ class DataLogger(Process):
     def snap_shot(self, p):
         self.__data = p['SNAPSHOT']
         self.__refreshRequired = False
+        self.__snapshot_ready.set()
 
     def __setName(self):
         if self.__logHeadings == []:
