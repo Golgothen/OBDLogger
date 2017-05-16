@@ -4,7 +4,7 @@ from datetime import datetime
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-import threading, gzip, shutil, logging, traceback #, os
+import threading, gzip, shutil, logging, traceback, os
 
 logger = logging.getLogger('obdlogger').getChild(__name__)
 

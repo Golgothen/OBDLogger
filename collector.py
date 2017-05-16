@@ -34,8 +34,8 @@ class Collector(Process):
         self.__pipes['WORKER'] = PipeWatcher(self, workerPipe, 'COLLECTOR->WORKER')
 
         self.__paused = False
-        #self.__running = False
-        #self.__frequency = 100
+        self.__running = False
+        self.__frequency = 100
         self.__ready = False
         self.__SCreq = False
         self.name = 'COLLECTOR'
@@ -46,27 +46,25 @@ class Collector(Process):
         logger.info('Starting Collector process on PID {}'.format(str(self.pid)))
         for p in self.__pipes:
             self.__pipes[p].start()
-        while True: #self.__running:
+        while self.__running:
             try:                                                                    # Running set to False by STOP command
                 if self.__ready:                                                    # Ready set to True when data dictonary has been built
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
-                        #while self.__results.qsize() > 0:                           # Loop while there are results in the que
-                        m = self.__results.get()                                    # Pull result message from que
-                        if m is None:
-                            break
-                        self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
-                    #sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
+                        while self.__results.qsize() > 0:                           # Loop while there are results in the que
+                            m = self.__results.get()                                    # Pull result message from que
+                            self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
+                    sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
                 else:                                                               # Not ready?
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
                         self.__SCreq = True                                         # Only send the above request once
                         self.reset()                                                # Empty data dictionary and request a list of supported commands
                         sleep(0.01)
-                #sleep(1.0 / self.__frequency)                                       # Release CPU
+                sleep(1.0 / self.__frequency)                                       # Release CPU
             except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
                 self.__results.put(None)                                              # Set Running to false, causing the above loop to exit
                 continue
             except:
-                logger.critical('Unhandled exception occured in Collector process:',exc_info = True, trace_info = True)
+                logger.critical('Unhandled exception occured in Collector process:',exc_info = True, stack_info = True)
         logger.info('Collector process stopped')                                    # Running has been set to False
 
 
@@ -228,7 +226,7 @@ class Collector(Process):
     def stop(self):
         if self.__running:
             logger.debug('Stopping Collector process')
-            self.__results.put(None)
+            self.__running = False
 
     def getstatus(self, p = None):
         d = dict()

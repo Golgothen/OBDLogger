@@ -110,11 +110,11 @@ class Monitor():
         self.__pipes['WORKER'].send(Message('STOP'))
         self.__pipes['LOG'].send(Message('STOP'))
         self.__pipes['GPS'].send(Message('STOP'))
-        self.__ecu.join()
-        self.__collector.join()
-        self.__worker.join()
-        self.__logger.join()
-        self.__gps.join()
+        #self.__ecu.join()
+        #self.__collector.join()
+        #self.__worker.join()
+        #self.__logger.join()
+        #self.__gps.join()
 
 
     def pause(self):

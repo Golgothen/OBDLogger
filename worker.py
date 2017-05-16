@@ -176,8 +176,9 @@ class Worker(Process):
             self.__supported_commands.append('INTAKE_TEMP')
         else:
             if self.__port is None:
-                logger.error('Could not find ELM device.  Check connection and settings.')
+                #logger.error('Could not find ELM device.  Check connection and settings.')
                 self.__interface = None
+                sleep(0.1)
                 return
             self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
             logger.info('Worker connection status = {}'.format(self.__interface.status()))

@@ -14,11 +14,11 @@ import sys, logging
 log_config = {
     'version': 1,
     #'disable_existing_loggers': True,
-    'filters': {
-        'usb-unplugged': {
-            '()': 'queuehandler.obdFilter'
-            }
-    },
+    #'filters': {
+    #    'usb-unplugged': {
+    #        '()': 'queuehandler.obdFilter'
+    #        }
+    #},
     'formatters': {
         'detailed': {
             'class': 'logging.Formatter',
@@ -47,12 +47,12 @@ log_config = {
             'handlers': ['console', 'file'],
             'level': 'ERROR'
         },
-        #'obdlogger.worker': {
-        #    'level': 'CRITICAL',
-        #},
-        #'obdlogger.message': {
-        #    'level': 'DEBUG'
-        #},
+        'obdlogger.worker': {
+            'level': 'CRITICAL',
+        },
+        'obdlogger.message': {
+            'level': 'DEBUG'
+        },
     }
 }
 
@@ -79,7 +79,8 @@ def printIdleScreen():
     global config
     global timer
 
-    os.system('clear')
+    if config.get('Application','Mode') != 'TESTING':
+        os.system('clear')
     currentIdleScreen+=1
     if currentIdleScreen>2:
         currentIdleScreen=0
@@ -147,7 +148,8 @@ def printFullTable():
                     lines.append(ecu.dataLine('LP100K'))
             else:
                 lines.append(ecu.dataLine(config.get('Data Screen','Line {}'.format(l))))
-    os.system('clear')
+    if config.get('Application','Mode')!='TESTING':
+        os.system('clear')
     for l in lines:
         sys.stdout.write(l)
     sys.stdout.flush()
@@ -248,7 +250,6 @@ if __name__ == '__main__':
 
     except (KeyboardInterrupt, SystemExit):
         listener.stop()
-
         ecu.stop()
         timer.cancel()
         print('Done.')
