@@ -181,7 +181,7 @@ class Worker(Process):
                 sleep(0.1)
                 return
             self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
-            logger.info('Worker connection status = {}'.format(self.__interface.status()))
+            logger.debug('Worker connection status = {}'.format(self.__interface.status()))
             if self.__interface.status() == 'Car Connected':
                 for c in self.__interface.supported_commands:
                     if c.mode == 1 and c.name[:4] != 'PIDS':
