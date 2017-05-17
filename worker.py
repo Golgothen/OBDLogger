@@ -79,6 +79,8 @@ class Worker(Process):
                             if self.__workQue.qsize() > self.__maxQueLength:
                                 self.__maxQueLength = self.__workQue.qsize()
                             m = self.__workQue.get()
+                            if m is None:
+                                break
                             if self.__isConnected():
                                 if not self.__testing:
                                     q = self.__interface.query(obd.commands[m])
@@ -95,7 +97,7 @@ class Worker(Process):
                 #sleep(1.0 / self.__frequency)
             except (KeyboardInterrupt, SystemExit):
                 self.__running = False
-                #self.__resultQue.put(None)
+                self.__resultQue.put(None)
                 continue
             except:
                 logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)

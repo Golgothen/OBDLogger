@@ -22,39 +22,40 @@ log_config = {
     },
     'formatters': {
         'detailed': {
-            'class': 'logging.Formatter',
-            'format': '%(asctime)-16s:%(name)-21s %(levelname)-8s[%(module)-13s.%(funcName)-20s:%(lineno)-5s] %(message)s'
+            'class':       'logging.Formatter',
+            'format':      '%(asctime)-16s:%(name)-21s %(levelname)-8s[%(module)-13s.%(funcName)-20s:%(lineno)-5s] %(message)s'
             },
         'brief': {
-            'class': 'logging.Formatter',
-            'format': '%(asctime)-16s: %(message)s'
+            'class':       'logging.Formatter',
+            'format':      '%(asctime)-16s: %(message)s'
         }
     },
     'handlers': {
         'console': {
-            'class': 'logging.StreamHandler',
-            'level': 'CRITICAL',
-            'formatter': 'brief'
+            'class':       'logging.StreamHandler',
+            'level':       'CRITICAL',
+            'formatter':   'brief'
         },
         'file': {
-            'class': 'logging.FileHandler',
-            'filename': (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
-            'mode': 'w',
-            'formatter': 'detailed',
+            'class':       'logging.FileHandler',
+            'filename':    (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
+            'mode':        'w',
+            'formatter':   'detailed',
         },
         'filerotate': {
-            'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': 'run.log',
-            'when': 'midnight',
-            'interval':1,
-            'formatter': 'detailed',
-            'level': 'INFO'
+            'class':       'logging.handlers.TimedRotatingFileHandler',
+            'filename':    'run.log',
+            'when':        'midnight',
+            'interval':    1,
+            'formatter':   'detailed',
+            'level':       'INFO',
+            #'backupcount': 10
         }
     },
     'loggers': {
         'obdlogger': {
-            'handlers': ['console', 'filerotate'],
-            'level': 'DEBUG'
+            'handlers':    ['console', 'filerotate'],
+            'level':       'DEBUG'
         },
         #'obdlogger.worker': {
         #    'level': 'ERROR',
@@ -78,6 +79,8 @@ logger = logging.getLogger().getChild('obdlogger')
 currentIdleScreen = 0
 snapshot=dict()
 timer = None
+
+termSize = getScreenSize()
 
 def printIdleScreen():
     global lastScreenUpdate
@@ -106,14 +109,14 @@ def printIdleScreen():
     timer.start()
 
 def printTrip():
-    sys.stdout.write(' Last Trip:                   \n')
-    sys.stdout.write('------------------------------\n')
-    sys.stdout.write('         Avg. Speed: {:8.2f} \n'.format(tripstats['AVG_SPEED']))
-    sys.stdout.write('        Avg. L/100K: {:8.2f} \n'.format(tripstats['AVG_LP100K']))
-    sys.stdout.write('  Distance Traveled: {:8,.1f} \n'.format(tripstats['DISTANCE']))
-    sys.stdout.write('      Fuel Consumed: {:8.2f} \n'.format(tripstats['FUEL']))
-    sys.stdout.write('   Avg. Engine Load: {:8.2f} \n'.format(tripstats['AVG_LOAD']))
-    sys.stdout.write('           Duration: {:>8} \n'.format(formatSeconds(tripstats['DURATION'])))
+    sys.stdout.write(' Last Trip:                   ')
+    sys.stdout.write('------------------------------')
+    sys.stdout.write('         Avg. Speed: {:8.2f} '.format(tripstats['AVG_SPEED']))
+    sys.stdout.write('        Avg. L/100K: {:8.2f} '.format(tripstats['AVG_LP100K']))
+    sys.stdout.write('  Distance Traveled: {:8,.1f} '.format(tripstats['DISTANCE']))
+    sys.stdout.write('      Fuel Consumed: {:8.2f} '.format(tripstats['FUEL']))
+    sys.stdout.write('   Avg. Engine Load: {:8.2f} '.format(tripstats['AVG_LOAD']))
+    sys.stdout.write('           Duration: {:>8} '.format(formatSeconds(tripstats['DURATION'])))
     sys.stdout.write('          Idle Time: {:>8} '.format(formatSeconds(tripstats['IDLE_TIME'])))
     sys.stdout.flush()
 
@@ -145,8 +148,10 @@ def printTank():
 
 def printFullTable():
     lines = []
+    global termSize
+
     d = config.getint('Application','Data Screen Size')
-    if d > getScreenSize()[0]: d = getScreenSize()[0]
+    if d > termSize[0]: d = termSize[0]
     for l in range(d):
         if config.has_option('Data Screen','Line {}'.format(l)):
             if config.get('Data Screen','Line {}'.format(l)) == 'LP100K':
@@ -159,7 +164,7 @@ def printFullTable():
     if config.get('Application','Mode')!='TESTING':
         os.system('clear')
     for l in lines:
-        if getScreenSize()[1] > 30:
+        if termSize[1] > 30:
             sys.stdout.write(l + '\n')
         else:
             sys.stdout.write(l)

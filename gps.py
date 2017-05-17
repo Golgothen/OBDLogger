@@ -43,8 +43,8 @@ class GPS(Process):
         logger.info('Starting GPS process on PID {}'.format(self.pid))
         self.__pipes['GPS'].start()
         self.__running = True
-        try:
-            while self.__running:
+        while self.__running:
+            try:
                 logger.debug('Running = {}, Paused = {}'.format(self.__running, self.__paused))
                 t = time()
                 for new_data in self.__gpsd:
@@ -61,14 +61,14 @@ class GPS(Process):
                             self.__resultQue.put(Message('HEADING', VALUE =  None if type(self.__stream.track) is not float else self.__stream.track))
                             self.__resultQue.put(Message('GPS_SPD', VALUE =  None if type(self.__stream.speed) is not float else self.__stream.speed*3.6)) # GPS reports speed in m/s
                     sleep(1)
-            logger.info('GPS process stopping')
-            return
-        except (KeyboardInterrupt, SystemExit):
-            self.__running = False
-            self.__gpsd.close()
-            return
-        except:
-            logger.critical('Unhandled exception occured in GPS process:', exc_info = True, stack_info = True)
+            except (KeyboardInterrupt, SystemExit):
+                self.__running = False
+                self.__gpsd.close()
+                return
+            except:
+                logger.critical('Unhandled exception occured in GPS process:', exc_info = True, stack_info = True)
+                continue
+        logger.info('GPS process stopping')
 
 
     def pause(self, p = None):

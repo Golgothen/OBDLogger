@@ -55,6 +55,8 @@ class Collector(Process):
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
                         #while self.__results.qsize() > 0:                           # Loop while there are results in the que
                         m = self.__results.get()                                    # Pull result message from que
+                        if m is None:
+                            break
                         self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
                         #sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
                 else:                                                               # Not ready?
@@ -66,9 +68,11 @@ class Collector(Process):
                 #sleep(1.0 / self.__frequency)                                       # Release CPU
             except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
                 self.__running = False                                              # Set Running to false, causing the above loop to exit
+                self.__results.put(None)
                 continue
             except:
                 logger.critical('Unhandled exception occured in Collector process:',exc_info = True, stack_info = True)
+                continue
         logger.info('Collector process stopped')                                    # Running has been set to False
 
 
