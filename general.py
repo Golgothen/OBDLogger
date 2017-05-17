@@ -161,7 +161,7 @@ def loadDefaults():
     config.set('Application','GPS Product ID','ea60')
     config.set('Application','GPS Vendor ID','10c4')
     config.set('Application','Data Screen Size','23')
-    config.set('Application','Mode','TESTING')
+    config.set('Application','Mode','NORMAL')
 
     for q in config.get('Application','Queues').split(','):
         config.add_section('Queue {}'.format(q))
