@@ -271,3 +271,5 @@ if __name__ == '__main__':
         timer.cancel()
         print('Done.')
 
+    except:
+        logger.critical('Unhandled exception in __main__',exc_info = True, stack_info = True)

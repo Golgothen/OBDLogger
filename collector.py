@@ -57,7 +57,8 @@ class Collector(Process):
                         m = self.__results.get()                                    # Pull result message from que
                         if m is None:
                             break
-                        self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
+                        if m.message in self.__data:
+                            self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
                         #sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
                 else:                                                               # Not ready?
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
@@ -148,6 +149,11 @@ class Collector(Process):
                                                 )
 
             if 'RPM' in self.__data:
+                self.__data['IDLE_TIME'] =   KPI(FUNCTION = idleTime,
+                                                 SPEED = self.__data['SPEED'],
+                                                 RPM = self.__data['RPM'],
+                                                 FMT_ALL = FMT(TYPE = 't')
+                                                )
                 self.__data['DRIVE_RATIO'] = KPI(FUNCTION = driveRatio,
                                                  SPEED = self.__data['SPEED'],
                                                  RPM = self.__data['RPM']
@@ -157,11 +163,6 @@ class Collector(Process):
                                                  FMT_ALL = FMT(TYPE = 's',
                                                                ALIGNMENT = '>'
                                                               )
-                                                )
-                self.__data['IDLE_TIME'] =   KPI(FUNCTION = idleTime,
-                                                 SPEED = self.__data['SPEED'],
-                                                 RPM = self.__data['RPM'],
-                                                 FMT_ALL = FMT(TYPE = 't')
                                                 )
 
             if 'LPH' in self.__data:
@@ -218,20 +219,18 @@ class Collector(Process):
         self.__reset_complete.set()
 
     def pause(self):
-        if not self.__paused:
-            logger.info('Pausing Collector process')
-            self.__dirty = self.__paused = True
-            for d in self.__data:
-                self.__data[d].paused = True
+        logger.info('Pausing Collector process')
+        self.__dirty = self.__paused = True
+        for d in self.__data:
+            self.__data[d].paused = True
 
     def resume(self):
-        if self.__paused:
-            logger.info('Resuming Collector process')
-            self.__paused = False
-            if self.__dirty:
-                logger.warning('Collector resumed without reset - Data set may have changed')
-            for d in self.__data:
-                self.__data[d].paused = False
+        logger.info('Resuming Collector process')
+        self.__paused = False
+        if self.__dirty:
+            logger.warning('Collector resumed without reset - Data set may have changed')
+        for d in self.__data:
+            self.__data[d].paused = False
 
     def stop(self):
         if self.__running:
