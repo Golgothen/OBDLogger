@@ -1,6 +1,7 @@
 import os, csv, logging, sys, subprocess
 from configparser import ConfigParser
 from math import modf
+from datetime import datetime
 
 ###
 
@@ -74,13 +75,13 @@ def readLastTrip(file):
             reader = csv.DictReader(f, fieldnames = headings)
             for row in reader:
                 for h in row:
-                    if h = 'DATE':
+                    if h == 'DATE':
                         data[h] = row[h]
                     else:
                         data[h] = float(row[h])
     else:
         for h in headings:
-            if h = 'DATE':
+            if h == 'DATE':
                 data[h] = str(datetime.now())
             else:
                 data[h] = 0.0

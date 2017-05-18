@@ -279,7 +279,7 @@ if __name__ == '__main__':
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
-        #listener.stop()
+        listener.stop()
         logQueue.put(None)
         ecu.stop()
         timer.cancel()
@@ -287,3 +287,8 @@ if __name__ == '__main__':
 
     except:
         logger.critical('Unhandled exception in __main__',exc_info = True, stack_info = True)
+        listener.stop()
+        logQueue.put(None)
+        ecu.stop()
+        timer.cancel()
+        print('Done.')
