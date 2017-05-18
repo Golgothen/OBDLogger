@@ -186,6 +186,14 @@ if __name__ == '__main__':
         tank = readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
         if tank is None: tank = blankHist()
 
+        if not config.getboolean('Application', 'Last Trip Written To History'):
+            history = addTrip(history, tripstats)
+            tank = addTrip(tank, tripstats)
+            writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
+            writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
+            config.set('Application', 'Last Trip Written To History', 'True')
+            saveConfig(config)
+
         printIdleScreen()
 
         ecu = Monitor()
@@ -249,14 +257,20 @@ if __name__ == '__main__':
                     else:
                         tripstats = ecu.summary
                         writeLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv', tripstats)
+                        history = readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
+                        history = addTrip(history, tripstats)
+                        tank = readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
+                        tank = addTrip(history, tripstats)
+                        config.set('Application', 'Last Trip Written To History', 'False')
+                        saveConfig(config)
                 if disconnected is not None:
                     if (datetime.now()-disconnected).total_seconds() > config.getfloat('Application', 'Trip Timeout'):
                         ecu.save()
                         logger.info('Finalising trip....')
                         writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
                         writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
-                        history=readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
-                        tank=readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
+                        config.set('Application', 'Last Trip Written To History', 'True')
+                        saveConfig(config)
                         disconnected = None
                         ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
