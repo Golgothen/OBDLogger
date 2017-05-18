@@ -68,16 +68,22 @@ def readCSV(file):
 
 def readLastTrip(file):
     data = dict()
-    headings = ['AVG_LP100K', 'DISTANCE', 'AVG_SPEED', 'FUEL', 'AVG_LOAD', 'DURATION', 'IDLE_TIME']
+    headings = ['DATE', 'AVG_LP100K', 'DISTANCE', 'AVG_SPEED', 'FUEL', 'AVG_LOAD', 'DURATION', 'IDLE_TIME']
     if os.path.isfile(file):
         with open(file) as f:
             reader = csv.DictReader(f, fieldnames = headings)
             for row in reader:
                 for h in row:
-                    data[h] = float(row[h])
+                    if h = 'DATE':
+                        data[h] = row[h]
+                    else:
+                        data[h] = float(row[h])
     else:
         for h in headings:
-            data[h] = 0.0
+            if h = 'DATE':
+                data[h] = str(datetime.now())
+            else:
+                data[h] = 0.0
     return data
 
 def writeLastTrip(file, data):
@@ -86,6 +92,7 @@ def writeLastTrip(file, data):
         os.makedirs(os.path.split(file)[0])
     with open(file,'wb') as f:
         f.write(bytes(
+            str(data['DATE']) + ',' +
             str(data['AVG_LP100K']) + ',' +
             str(data['DISTANCE']) + ',' +
             str(data['AVG_SPEED']) + ',' +
@@ -115,6 +122,13 @@ def writeTripHistory(file, data):
             str(data['DURATION']) + ',' +
             str(data['IDLE_TIME']) + '\n',
         'UTF-8'))
+
+def addTrip(data_out, data_in):
+    headings = ['DATE', 'AVG_LP100K', 'DISTANCE', 'AVG_SPEED', 'FUEL', 'AVG_LOAD', 'DURATION', 'IDLE_TIME']
+    for h in headings:
+        data_out[h].append(data_in[h])
+    return data_out
+
 
 def printxy(x, y, text):
     sys.stdout.write("\x1b7\x1b[%d;%df%s\x1b8" % (x, y, text))
@@ -162,6 +176,7 @@ def loadDefaults():
     config.set('Application','GPS Vendor ID','10c4')
     config.set('Application','Data Screen Size','23')
     config.set('Application','Mode','NORMAL')
+    config.set('Application','Last Trip Written To History','True')
 
     for q in config.get('Application','Queues').split(','):
         config.add_section('Queue {}'.format(q))
