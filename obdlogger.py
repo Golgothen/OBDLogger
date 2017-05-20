@@ -7,7 +7,7 @@ from threading import Timer
 from multiprocessing import Queue
 from queuehandler import LogListener, QueueHandler, obdFilter
 
-import sys, logging, logging.handlers
+import sys #, logging, logging.handlers
 
 from general import *
 
@@ -64,17 +64,17 @@ log_config = {
 }
 
 # Start the log listener
-logQueue = Queue()
-listener = LogListener(logQueue, log_config)
-listener.start()
+#logQueue = Queue()
+#listener = LogListener(logQueue, log_config)
+#listener.start()
 
 # Create the root logger with handlers
-log = logging.getLogger()
-log.addHandler(QueueHandler(logQueue))
-log.setLevel(logging.DEBUG)
+#log = logging.getLogger()
+#log.addHandler(QueueHandler(logQueue))
+#log.setLevel(logging.DEBUG)
 
 # Configure logger for the rest of the application to use child loggers
-logger = logging.getLogger().getChild('obdlogger')
+#logger = logging.getLogger().getChild('obdlogger')
 #logger.setLevel(logging.DEBUG)
 currentIdleScreen = 0
 snapshot=dict()
@@ -209,7 +209,7 @@ if __name__ == '__main__':
                 for c in config.get('Queue {}'.format(q), 'Commands').split(','):
                     ecu.addCommand(q, c)
 
-        logger.debug('Starting...')
+        #logger.debug('Starting...')
 
         disconnected=None
         journey = False
@@ -266,29 +266,29 @@ if __name__ == '__main__':
                 if disconnected is not None:
                     if (datetime.now()-disconnected).total_seconds() > config.getfloat('Application', 'Trip Timeout'):
                         ecu.save()
-                        logger.info('Finalising trip....')
+                        #logger.info('Finalising trip....')
                         writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
                         writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
                         config.set('Application', 'Last Trip Written To History', 'True')
                         saveConfig(config)
                         disconnected = None
                         ecu.reset()
-                logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
+                #logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 #logger.info(ecu.status())
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
-        listener.stop()
-        logQueue.put(None)
+        #listener.stop()
+        #logQueue.put(None)
         ecu.stop()
         timer.cancel()
         print('Done.')
 
     except:
-        logger.critical('Unhandled exception in __main__',exc_info = True, stack_info = True)
-        listener.stop()
-        logQueue.put(None)
+        #logger.critical('Unhandled exception in __main__',exc_info = True, stack_info = True)
+        #listener.stop()
+        #logQueue.put(None)
         ecu.stop()
         timer.cancel()
         print('Done.')

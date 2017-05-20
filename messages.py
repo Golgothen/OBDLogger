@@ -1,7 +1,7 @@
 from multiprocessing import Pipe
-import logging
+#import logging
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class PipeCont():
     def __init__(self):
@@ -13,4 +13,4 @@ class Message():
         self.params = dict()
         for k in kwargs:
             self.params[k] = kwargs[k]
-        logger.debug('Message: {} : {}'.format(self.message, self.params))
+        #logger.debug('Message: {} : {}'.format(self.message, self.params))

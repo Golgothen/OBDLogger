@@ -6,9 +6,9 @@ from pipewatcher import PipeWatcher
 
 from general import *
 
-import logging, sys
+#import logging, sys
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application', 'Pipe Timeout')
@@ -37,23 +37,23 @@ class GPS(Process):
         self.__pipes = {}
         self.__pipes['GPS'] = PipeWatcher(self, controlPipe, 'APP->GPS')
 
-        logger.debug('GPS process initalised')
+        #logger.debug('GPS process initalised')
 
     def run(self):
-        logger.info('Starting GPS process on PID {}'.format(self.pid))
+        #logger.info('Starting GPS process on PID {}'.format(self.pid))
         self.__pipes['GPS'].start()
         self.__running = True
         while self.__running:
             try:
-                logger.debug('Running = {}, Paused = {}'.format(self.__running, self.__paused))
+                #logger.debug('Running = {}, Paused = {}'.format(self.__running, self.__paused))
                 t = time()
                 for new_data in self.__gpsd:
                     if new_data:
-                        logger.debug('New Data')
+                        #logger.debug('New Data')
                         self.__stream.unpack(new_data)
-                        logger.debug('Stream values: {},{},{},{}'.format(self.__stream.lat,self.__stream.lon,self.__stream.speed,self.__stream.alt))
+                        #logger.debug('Stream values: {},{},{},{}'.format(self.__stream.lat,self.__stream.lon,self.__stream.speed,self.__stream.alt))
                         if not self.__paused:
-                            logger.debug('Inserting values to queue')
+                            #logger.debug('Inserting values to queue')
                             self.__pollCount += 1
                             self.__resultQue.put(Message('ALTITUDE', VALUE = None if type(self.__stream.alt) is not float else self.__stream.alt))
                             self.__resultQue.put(Message('LATITUDE', VALUE =  None if type(self.__stream.lat) is not float else self.__stream.lat))
@@ -66,19 +66,19 @@ class GPS(Process):
                 self.__gpsd.close()
                 return
             except:
-                logger.critical('Unhandled exception occured in GPS process:', exc_info = True, stack_info = True)
+                #logger.critical('Unhandled exception occured in GPS process:', exc_info = True, stack_info = True)
                 continue
-        logger.info('GPS process stopping')
+        #logger.info('GPS process stopping')
 
 
     def pause(self, p = None):
         self.__paused = True
-        logger.info('GPS process paused = {}'.format(self.__paused))
+        #logger.info('GPS process paused = {}'.format(self.__paused))
 
     def resume(self, p = None):
-        logger.debug('GPS process resuming')
+        #logger.debug('GPS process resuming')
         self.__paused = False
-        logger.debug('GPS process paused = {}'.format(self.__paused))
+        #logger.debug('GPS process paused = {}'.format(self.__paused))
 
     def getstatus(self, p = None):
         #returns a dict of que status
@@ -92,6 +92,6 @@ class GPS(Process):
         return Message('GPSSTATUS', STATUS = d)
 
     def stop(self, p = None):
-        #logger.info('Stopping GPS process')
+        ##logger.info('Stopping GPS process')
         self.__running = False
 

@@ -14,9 +14,9 @@ from configparser import ConfigParser
 
 from general import *
 
-import sys, logging, _thread
+import sys, _thread
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
@@ -139,7 +139,7 @@ class Monitor():
         self.__pipes['GPS'].send(Message('PAUSE'))
 
     def resume(self):
-        logger.info('Resuming co-processes')
+        #logger.info('Resuming co-processes')
         self.__pipes['ECU'].send(Message('RESUME'))
         self.__pipes['LOG'].send(Message('RESUME'))
         self.__pipes['GPS'].send(Message('RESUME'))
@@ -352,7 +352,7 @@ class Monitor():
                config.get('Application', 'GPS Vendor ID'),
                config.get('Application', 'GPS Product ID')
            ) is None:
-            logger.warning('GPS Device not found.  Disabling GPS.')
+            #logger.warning('GPS Device not found.  Disabling GPS.')
             self.__gpsEnabled = False
 
         if self.__gpsEnabled:

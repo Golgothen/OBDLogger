@@ -6,9 +6,9 @@ from pipewatcher import PipeWatcher
 from configparser import ConfigParser
 
 from general import *
-import logging, obd, _thread #, os
+import obd, _thread #, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 #logger.setLevel(logging.DEBUG)
 
 config = loadConfig()
@@ -42,7 +42,7 @@ class Worker(Process):
         self.__pipes['LOG'] = PipeWatcher(self, logPipe, 'WORKER->LOG')
         self.__baud = config.getint('Application','OBD Baud')
         self.__port = getBlockPath(config.get('Application','OBD Vendor ID'),config.get('Application','OBD Product ID'))
-        logger.info('ELM device found at /dev/{}'.format(self.__port))
+        #logger.info('ELM device found at /dev/{}'.format(self.__port))
         #self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
         self.__connected = False
         self.__commands = []
@@ -56,12 +56,12 @@ class Worker(Process):
                 self.__commands.append(c.name)
 
         self.__connect()
-        logger.debug('Worker process initalised')
+        #logger.debug('Worker process initalised')
 
     def run(self):
 
         self.__running = True
-        logger.info('Starting Worker process on PID {}'.format(self.pid))
+        #logger.info('Starting Worker process on PID {}'.format(self.pid))
         # Start watcher threads for pipes
         for p in self.__pipes:
             self.__pipes[p].start()
@@ -91,7 +91,7 @@ class Worker(Process):
                                     self.__resultQue.put(Message(m, VALUE = 0.0))
                                 else:
                                     if not q.is_null():
-                                        logger.debug('{} - {}'.format(m, q.value))
+                                        #logger.debug('{} - {}'.format(m, q.value))
                                         self.__resultQue.put(Message(m, VALUE=q.value.magnitude))
                             self.__pollRate = self.__pollCount / (datetime.now() - self.__firstPoll).total_seconds()
                 #sleep(1.0 / self.__frequency)
@@ -100,27 +100,27 @@ class Worker(Process):
                 self.__resultQue.put(None)
                 continue
             except:
-                logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)
+                #logger.critical('Unhandled exception occured in Worker process:', exc_info = True, stack_info = True)
                 continue
-        logger.info('Worker process stopping')
+        #logger.info('Worker process stopping')
 
 
     def pause(self):
         # Pause event will be set by monitor, which will also pause Logger
         if not self.__paused:
-            logger.debug('Pausing worker process')
+            #logger.debug('Pausing worker process')
             self.__paused = True
             #self.__pipes['LOG'].send(Message("PAUSE"))
 
     def resume(self):
         # Resume event will be set my monitor, which will also resume logger
         if self.__paused:
-            logger.debug('Resuming worker process')
+            #logger.debug('Resuming worker process')
             self.__paused = False
             #self.__pipes['LOG'].send(Message("RESUME"))
 
     def stop(self):
-        logger.info('Stopping worker process')
+        #logger.info('Stopping worker process')
         self.__running = False
 
     def getcommands(self, p = None):
@@ -156,10 +156,10 @@ class Worker(Process):
         return Message('WORKERSTATUS', STATUS = d)
 
     def __connect(self):
-        logger.debug('ELM device on {}'.format(self.__port))
+        #logger.debug('ELM device on {}'.format(self.__port))
         self.__supported_commands = []
         if self.__testing:
-            logger.info('Worker connection status = Fake OBD')
+            #logger.info('Worker connection status = Fake OBD')
             self.__supported_commands.append('RPM')
             self.__supported_commands.append('SPEED')
             self.__supported_commands.append('MAF')
@@ -178,12 +178,12 @@ class Worker(Process):
             self.__supported_commands.append('INTAKE_TEMP')
         else:
             if self.__port is None:
-                #logger.error('Could not find ELM device.  Check connection and settings.')
+                ##logger.error('Could not find ELM device.  Check connection and settings.')
                 self.__interface = None
                 sleep(0.1)
                 return
             self.__interface = obd.OBD('/dev/' + self.__port, self.__baud)
-            logger.debug('Worker connection status = {}'.format(self.__interface.status()))
+            #logger.debug('Worker connection status = {}'.format(self.__interface.status()))
             if self.__interface.status() == 'Car Connected':
                 for c in self.__interface.supported_commands:
                     if c.mode == 1 and c.name[:4] != 'PIDS':
@@ -196,7 +196,7 @@ class Worker(Process):
         else:
             connected = False
             if self.__interface is not None:
-                logger.debug('OBD Status = {}'.format(self.__interface.status()))
+                #logger.debug('OBD Status = {}'.format(self.__interface.status()))
                 if self.__interface.status() == 'Car Connected':
                     connected = True
                     self.resume()
@@ -204,7 +204,7 @@ class Worker(Process):
                     self.pause()
         if self.__connected != connected:
             #Connection status has changed
-            logger.info('Connection status has chnged from {} to {}'.format(self.__connected, connected))
+            #logger.info('Connection status has chnged from {} to {}'.format(self.__connected, connected))
             self.__connected = connected
             self.__pipes['ECU'].send(Message('CONNECTION', STATUS = self.__connected))
         return self.__connected

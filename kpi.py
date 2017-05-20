@@ -4,9 +4,9 @@ import math
 from fmt import FMT
 from general import *
 
-import logging
+#import logging
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 

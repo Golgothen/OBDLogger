@@ -1,4 +1,4 @@
-import os, logging, sys
+import os #, logging, sys
 from threading import Thread
 from multiprocessing import Queue
 from datetime import datetime
@@ -6,7 +6,7 @@ from time import sleep
 #from copy import copy
 #from general import *
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class Que(Thread):
 
@@ -23,13 +23,13 @@ class Que(Thread):
         self.daemon=True
         self.name=name
         self.deleteAfterPoll = False
-        logger.debug('Que {} declared'.format(self.name))
+        #logger.debug('Que {} declared'.format(self.name))
 
 
     def run(self):
         self.running = True
         self.__lastPolled = datetime.now()
-        logger.info('Que {} starting'.format(self.name))
+        #logger.info('Que {} starting'.format(self.name))
         while self.running:
             try:
                 self.__lastPolled = datetime.now()
@@ -52,16 +52,16 @@ class Que(Thread):
                 self.running = False
                 continue
             except:
-                logger.critical('Exception caught in Queue Thread {}:'.format(self.name), exc_info = True, stack_info = True)
+                #logger.critical('Exception caught in Queue Thread {}:'.format(self.name), exc_info = True, stack_info = True)
                 continue
-        logger.info('Que {} stopped'.format(self.name))
+        #logger.info('Que {} stopped'.format(self.name))
 
 
     def setFrequency(self, frequency):
         self.__frequency = frequency
 
     def addCommand(self, command, override):
-        logger.info('Appending command {} to que {}'.format(command, self.name))
+        #logger.info('Appending command {} to que {}'.format(command, self.name))
         self.paused = True                         # Pause the que when making changes
         while not self.pauseReady:                 # Wait for pause ready flag to ensure dict will not be accessed
             sleep(0.01)
@@ -76,12 +76,12 @@ class Que(Thread):
         return l
 
     def removeCommand(self, command):
-        logger.debug('Removing sensor {} from que {}'.format(command, self.name))
+        #logger.debug('Removing sensor {} from que {}'.format(command, self.name))
         if command in self.__commands:
             del self.__commands[command]
             if len(self.__commands)==0:
                 self.ready=False
-                logger.info('Que {} not ready due to zero length'.format(self.name))
+                #logger.info('Que {} not ready due to zero length'.format(self.name))
 
     def status(self):
         #returns a dict of que status
