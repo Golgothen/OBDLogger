@@ -12,7 +12,7 @@ config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class ECU(Process):
 
@@ -40,7 +40,7 @@ class ECU(Process):
 
         self.__running = True
         #self.__pid = os.getpid()
-        logger.info('Starting ECU process on PID {}'.format(self.pid))
+        #logger.info('Starting ECU process on PID {}'.format(self.pid))
         for p in self.__pipes:
             self.__pipes[p].start()
         while self.__running:
@@ -54,7 +54,7 @@ class ECU(Process):
                 self.__running = False
                 continue
             except:
-                logger.critical('Exception caught in ECU process:', exc_info = True, stack_info = True)
+                #logger.critical('Exception caught in ECU process:', exc_info = True, stack_info = True)
                 continue
         self.__shutdown()
 
@@ -64,12 +64,12 @@ class ECU(Process):
         self.__shutdown()
 
     def pause(self, p = None):
-        logger.info('Pausing ECU')
+        #logger.info('Pausing ECU')
         self.__paused = True
         self.__state_change_event.set()
 
     def resume(self, p = None):
-        logger.info('Resuming ECU')
+        #logger.info('Resuming ECU')
         self.__paused = False
         self.__state_change_event.set()
 
@@ -80,14 +80,14 @@ class ECU(Process):
             self.pause()
 
     def __shutdown(self):
-        logger.info('Stopping ECU process')
+        #logger.info('Stopping ECU process')
         self.__running = False
         for q in self.__Que:
-            logger.info('Stopping Que {}'.format(q))
+            #logger.info('Stopping Que {}'.format(q))
             self.__Que[q].running = False
-            logger.debug('Stop Wait Que {}'.format(q))
+            #logger.debug('Stop Wait Que {}'.format(q))
             _thread.start_new_thread(self.__Que[q].join,())
-        logger.info('ECU Stopped')
+        #logger.info('ECU Stopped')
 
     def supported_commands(self, p = None):
         return Message('SUPPORTED_COMMANDS', SUPPORTED_COMMANDS = self.__supportedcommands)
@@ -95,11 +95,11 @@ class ECU(Process):
     def addque(self, p):
         #Adds a que to the ECU.
         if p['QUE'] in self.__Que:
-            logger.debug('Que {} already exists'.format(p['QUE']))
+            #logger.debug('Que {} already exists'.format(p['QUE']))
             return
         self.__Que[p['QUE']] = Que(p['QUE'], p['FREQUENCY'], self.__workerQue)
         if self.__running:
-            logger.info('Starting Que {}'.format(p['QUE']))
+            #logger.info('Starting Que {}'.format(p['QUE']))
             self.__Que[p['QUE']].start()
 
     def getqueues(self, p = None):
@@ -133,7 +133,7 @@ class ECU(Process):
             self.__Que[p['QUE']].removeCommand(p['COMMAND'])
 
     def setfrequency(self, p):
-        logger.debug('Setting que {} frequency to {}'.format(p['QUE'], p['FREQUENCY']))
+        #logger.debug('Setting que {} frequency to {}'.format(p['QUE'], p['FREQUENCY']))
         self.__Que[p['QUE']].setFrequency(p['FREQUENCY'])
 
     def deleteafterpoll(self, p):

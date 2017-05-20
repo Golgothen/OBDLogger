@@ -8,9 +8,9 @@ from kpi import *
 
 from general import *
 
-import logger #, os
+#import logger #, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses
@@ -46,7 +46,7 @@ class Collector(Process):
     def run(self):
         # Main function for process.    Runs continully until instructed to stop.
         self.__running = True
-        logger.info('Starting Collector process on PID {}'.format(str(self.pid)))
+        #logger.info('Starting Collector process on PID {}'.format(str(self.pid)))
         for p in self.__pipes:
             self.__pipes[p].start()
         while self.__running:
@@ -71,9 +71,9 @@ class Collector(Process):
                 self.__results.put(None)
                 continue
             except:
-                logger.critical('Unhandled exception occured in Collector process:',exc_info = True, stack_info = True)
+                #logger.critical('Unhandled exception occured in Collector process:',exc_info = True, stack_info = True)
                 continue
-        logger.info('Collector process stopped')                                    # Running has been set to False
+        #logger.info('Collector process stopped')                                    # Running has been set to False
 
 
     def snapshot(self, p = None):
@@ -214,28 +214,28 @@ class Collector(Process):
 
         self.__ready = True
         self.__dirty = False
-        logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
+        #logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
         self.__reset_complete.set()
 
     def pause(self):
         if not self.__paused:
-            logger.info('Pausing Collector process')
+            #logger.info('Pausing Collector process')
             self.__dirty = self.__paused = True
             for d in self.__data:
                 self.__data[d].paused = True
 
     def resume(self):
         if self.__paused:
-            logger.info('Resuming Collector process')
+            #logger.info('Resuming Collector process')
             self.__paused = False
-            if self.__dirty:
-                logger.warning('Collector resumed without reset - Data set may have changed')
+            #if self.__dirty:
+                #logger.warning('Collector resumed without reset - Data set may have changed')
             for d in self.__data:
                 self.__data[d].paused = False
 
     def stop(self):
         if self.__running:
-            logger.debug('Stopping Collector process')
+            #logger.debug('Stopping Collector process')
             self.__running = False
 
     def getstatus(self, p = None):

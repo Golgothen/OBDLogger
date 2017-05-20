@@ -4,9 +4,9 @@ from datetime import datetime
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-import threading, gzip, shutil, logging, traceback, os
+import threading, gzip, shutil, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+#logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class DataLogger(Process):
 
@@ -37,51 +37,51 @@ class DataLogger(Process):
         self.__pid = None                           # Pricess ID of Logging process
         self.__snapshot_ready = Event()
 
-        logger.debug('Logging process initalised')
+        #logger.debug('Logging process initalised')
 
     def run(self):
         self.__running=True
-        logger.info('Starting Logger process on PID {}'.format(self.pid))
+        #logger.info('Starting Logger process on PID {}'.format(self.pid))
         for p in self.__pipes:
             self.__pipes[p].start()
         timer=time()
         while self.__running:
             try:
                 if self.__logName is None:
-                    logger.debug('Logger name not set. Pausing')
+                    #logger.debug('Logger name not set. Pausing')
                     self.pause()
-                logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
+                #logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                 if not self.__paused:
                     if self.__refreshRequired:
-                        logger.debug('Getting snapshot')
+                        #logger.debug('Getting snapshot')
                         self.__pipes['DATA'].send(Message('SNAPSHOT'))
                         self.__snapshot_ready.wait()
                         self.__snapshot_ready.clear()
                     line=''
-                    logger.debug('Recording data')
+                    #logger.debug('Recording data')
                     for l in self.__logHeadings:
                         if l in self.__data:
                             line += str(self.__data[l]['LOG']).strip() + ','
                         else:
-                            logger.debug('{} is not in snapshot'.format(l))
+                            #logger.debug('{} is not in snapshot'.format(l))
                             line += '-,'
                     with open(self.__logName + '.log','ab') as f:
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
                     self.__refreshRequired = True
                 sleeptime=(1.0 / self.__logFrequency) - (time() - timer)
-                if sleeptime < 0:
-                    logger.warning('Logger sleep time reached zero. Concider reducing log frequency')
+                if sleeptime > 0:
+                    #logger.warning('Logger sleep time reached zero. Concider reducing log frequency')
                     #self.logFrequency-=1
-                else:
+                #else:
                     sleep(sleeptime)
                 timer = time()
             except (KeyboardInterrupt, SystemExit):
                 self.__running = False
                 continue
             except :
-                logger.critical('Unhandled exception occured in Logger process: ', exc_info = True, stack_info = True)
+                #logger.critical('Unhandled exception occured in Logger process: ', exc_info = True, stack_info = True)
                 continue
-        logger.info('Logging process stopped')
+        #logger.info('Logging process stopped')
 
 
 
@@ -91,7 +91,7 @@ class DataLogger(Process):
 
     def resume(self, p = None):
         #Resume Logging
-        logger.info('Logging resumed')
+        #logger.info('Logging resumed')
         self.__paused = self.__pauseLog = False
         if self.__logName is None:
             self.__setName()
@@ -99,7 +99,7 @@ class DataLogger(Process):
     def pause(self, p = None):
         #Pause logging, thread keeps running
         if not self.__paused:
-            logger.info('Logging paused')
+            #logger.info('Logging paused')
             self.__paused = True
 
     def frequency(self, p):
@@ -117,11 +117,11 @@ class DataLogger(Process):
         self.__snapshot_ready.set()
 
     def __setName(self):
-        if self.__logHeadings == []:
-            logger.warning('No column headings have been set.    No log file started.')
-        else:
+        if self.__logHeadings != []:
+            #logger.warning('No column headings have been set.    No log file started.')
+        #else:
             self.__logName=(self.__logPath + datetime.now().strftime(self.__logFormat))
-            logger.debug('Logging started - output: {}.log'.format(self.__logName))
+            #logger.debug('Logging started - output: {}.log'.format(self.__logName))
             line=''
             for l in self.__logHeadings:
                 line+=l+','
@@ -141,7 +141,7 @@ class DataLogger(Process):
                 with gzip.open(self.__logName + '.log.gz', 'wb') as z:
                     shutil.copyfileobj(f, z)
         except:
-            logger.error('Error compressing log file {}'.format(self.__logName))
+            #logger.error('Error compressing log file {}'.format(self.__logName))
             self.__logName = None
             return
         os.remove(self.__logName + '.log')
@@ -151,10 +151,10 @@ class DataLogger(Process):
         #Delete the logfile
         if self.__paused:
             self.__paused = True
-        try:
-            os.remove(self.__logName + '.log')
-        except:
-            logger.warning('Could not delete log file {}'.format(self.__logname))
+        #try:
+        os.remove(self.__logName + '.log')
+        #except:
+            #logger.warning('Could not delete log file {}'.format(self.__logname))
         self.__logName = None
 
     def getstatus(self, p = None):
@@ -171,11 +171,11 @@ class DataLogger(Process):
         for h in p['HEADINGS']:
             if h not in self.__logHeadings:
                 self.__logHeadings.append(h)
-        logger.info('Log headings updated to {}'.format(self.__logHeadings))
+        #logger.info('Log headings updated to {}'.format(self.__logHeadings))
 
     def remove_headings(self, p):
         for h in p['HEADINGS']:
             if h in self.__logHeadings:
                 self.__logHeadings.remove(h)
-        logger.info('Log headings updated to {}'.format(self.__logHeadings))
+        #logger.info('Log headings updated to {}'.format(self.__logHeadings))
 
