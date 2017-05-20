@@ -5,21 +5,26 @@ from logger import DataLogger
 from configparser import ConfigParser
 from threading import Timer
 from multiprocessing import Queue
-from queuehandler import LogListener, QueueHandler, obdFilter
+#from queuehandler import LogListener, QueueHandler, obdFilter
 
-import sys, logging, logging.handlers
+import sys, logging, logging.handlers, logging.config
 
 from general import *
 
+class MyHandler(object):
+    def handle(self, record):
+        logger = logging.getLogger(record.name)
+        logger.handle(record)
+
 # Configuration for the listener
-log_config = {
+listener_config = {
     'version': 1,
     #'disable_existing_loggers': True,
-    'filters': {
-        'usb-unplugged': {
-            '()': 'queuehandler.obdFilter'
-            }
-    },
+    #'filters': {
+    #    'usb-unplugged': {
+    #        '()': 'queuehandler.obdFilter'
+    #        }
+    #},
     'formatters': {
         'detailed': {
             'class':       'logging.Formatter',
@@ -33,7 +38,7 @@ log_config = {
     'handlers': {
         'console': {
             'class':       'logging.StreamHandler',
-            'level':       'CRITICAL',
+            'level':       'INFO',
             'formatter':   'brief'
         },
         'file': {
@@ -53,7 +58,7 @@ log_config = {
         }
     },
     'loggers': {
-        'obdlogger': {
+        'obdlogger.messages': {
             'handlers':    ['console', 'filerotate'],
             'level':       'DEBUG'
         },
@@ -63,14 +68,34 @@ log_config = {
     }
 }
 
-# Start the log listener
 logQueue = Queue()
-listener = LogListener(logQueue, log_config)
+
+worker_config = {
+    'version': 1,
+    #'disable_existing_loggers': True,
+    'handlers': {
+        'queue': {
+            'class': 'logging.handlers.QueueHandler',
+            'queue': logQueue,
+        },
+    },
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['queue']
+    },
+}
+
+# Start the log listener
+#listener = LogListener(logQueue, log_config)
+logging.config.dictConfig(listener_config)
+listener = logging.handlers.QueueListener(logQueue, MyHandler())
+
 listener.start()
 
 # Create the root logger with handlers
+logging.config.dictConfig(worker_config)
 log = logging.getLogger()
-log.addHandler(QueueHandler(logQueue))
+#log.addHandler(QueueHandler(logQueue))
 log.setLevel(logging.DEBUG)
 
 # Configure logger for the rest of the application to use child loggers
