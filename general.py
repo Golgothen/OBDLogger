@@ -1,6 +1,83 @@
-import os, csv, logging, sys, subprocess
+import os, csv, logging, logging.handlers, logging.config, sys, subprocess
 from configparser import ConfigParser
 from math import modf
+from datetime import datetime
+from multiprocessing import Queue
+
+#import sys, logging, logging.handlers, logging.config
+
+class MyHandler(object):
+    def handle(self, record):
+        print(record)
+        logging.getLogger(record.name).handle(record)
+
+logQueue = Queue()
+
+worker_config = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    'handlers': {
+        'queue': {
+            'class': 'logging.handlers.QueueHandler',
+            'queue': logQueue,
+        },
+    },
+    'root': {
+        'level': 'DEBUG',
+        'handlers': ['queue']
+    },
+}
+
+listener_config = {
+    'version': 1,
+    'disable_existing_loggers': True,
+    #'propagate': True,
+    #'filters': {
+    #    'usb-unplugged': {
+    #        '()': 'queuehandler.obdFilter'
+    #        }
+    #},
+    'formatters': {
+        'detailed': {
+            'class':       'logging.Formatter',
+            'format':      '%(asctime)-16s:%(name)-21s:%(levelname)-8s[%(module)-13s.%(funcName)-20s %(lineno)-5s] %(message)s'
+            },
+        'brief': {
+            'class':       'logging.Formatter',
+            'format':      '%(asctime)-16s:%(message)s'
+        }
+    },
+    'handlers': {
+        'console': {
+            'class':       'logging.StreamHandler',
+            'level':       'ERROR',
+            'formatter':   'brief'
+        },
+        #'file': {
+        #    'class':       'logging.FileHandler',
+        #    'filename':    (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
+        #    'mode':        'w',
+        #    'formatter':   'detailed',
+        #},
+        'filerotate': {
+            'class':       'logging.handlers.TimedRotatingFileHandler',
+            'filename':    'run.log',
+            'when':        'midnight',
+            'interval':    1,
+            'formatter':   'detailed',
+            #'level':       'INFO',
+            'backupCount': 10
+        }
+    },
+    'root': {
+        'handlers':    ['console', 'filerotate'],
+        'level':       'DEBUG'
+    },
+    'messages': {
+        'handlers':    ['console', 'filerotate'],
+        'level':       'DEBUG'
+    },
+}
 
 ###
 

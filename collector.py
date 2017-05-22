@@ -8,9 +8,11 @@ from kpi import *
 
 from general import *
 
-import logger #, os
+#import logger #, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger()
+#logger.setLevel(logging.INFO)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses

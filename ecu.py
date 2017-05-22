@@ -1,4 +1,3 @@
-import _thread #, os
 from time import sleep
 from worker import Worker
 from que import Que
@@ -8,11 +7,14 @@ from pipewatcher import PipeWatcher
 from configparser import ConfigParser
 from general import *
 
+import logging, _thread #, os
+
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
 
-
-logger = logging.getLogger('obdlogger').getChild(__name__)
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger()
+logger.setLevel(logging.DEBUG)
 
 class ECU(Process):
 

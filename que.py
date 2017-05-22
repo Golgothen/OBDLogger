@@ -4,9 +4,10 @@ from multiprocessing import Queue
 from datetime import datetime
 from time import sleep
 #from copy import copy
-#from general import *
+from general import *
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger(__name__)
 
 class Que(Thread):
 

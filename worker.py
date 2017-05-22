@@ -8,7 +8,8 @@ from configparser import ConfigParser
 from general import *
 import logging, obd, _thread #, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger(__name__)
 #logger.setLevel(logging.DEBUG)
 
 config = loadConfig()

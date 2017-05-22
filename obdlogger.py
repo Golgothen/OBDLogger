@@ -7,100 +7,11 @@ from threading import Timer
 from multiprocessing import Queue
 #from queuehandler import LogListener, QueueHandler, obdFilter
 
-import sys, logging, logging.handlers, logging.config
+import sys #, logging, logging.handlers, logging.config
 
 from general import *
 
-class MyHandler(object):
-    def handle(self, record):
-        logger = logging.getLogger(record.name)
-        logger.handle(record)
 
-# Configuration for the listener
-listener_config = {
-    'version': 1,
-    #'disable_existing_loggers': True,
-    #'filters': {
-    #    'usb-unplugged': {
-    #        '()': 'queuehandler.obdFilter'
-    #        }
-    #},
-    'formatters': {
-        'detailed': {
-            'class':       'logging.Formatter',
-            'format':      '%(asctime)-16s:%(name)-21s %(levelname)-8s[%(module)-13s.%(funcName)-20s:%(lineno)-5s] %(message)s'
-            },
-        'brief': {
-            'class':       'logging.Formatter',
-            'format':      '%(asctime)-16s: %(message)s'
-        }
-    },
-    'handlers': {
-        'console': {
-            'class':       'logging.StreamHandler',
-            'level':       'INFO',
-            'formatter':   'brief'
-        },
-        'file': {
-            'class':       'logging.FileHandler',
-            'filename':    (datetime.now().strftime('RUN-%Y%m%d')+'.log'),
-            'mode':        'w',
-            'formatter':   'detailed',
-        },
-        'filerotate': {
-            'class':       'logging.handlers.TimedRotatingFileHandler',
-            'filename':    'run.log',
-            'when':        'midnight',
-            'interval':    1,
-            'formatter':   'detailed',
-            'level':       'INFO',
-            #'backupcount': 10
-        }
-    },
-    'loggers': {
-        'obdlogger.messages': {
-            'handlers':    ['console', 'filerotate'],
-            'level':       'DEBUG'
-        },
-        #'obdlogger.worker': {
-        #    'level': 'ERROR',
-        #},
-    }
-}
-
-logQueue = Queue()
-
-worker_config = {
-    'version': 1,
-    #'disable_existing_loggers': True,
-    'handlers': {
-        'queue': {
-            'class': 'logging.handlers.QueueHandler',
-            'queue': logQueue,
-        },
-    },
-    'root': {
-        'level': 'DEBUG',
-        'handlers': ['queue']
-    },
-}
-
-# Start the log listener
-#listener = LogListener(logQueue, log_config)
-logging.config.dictConfig(listener_config)
-listener = logging.handlers.QueueListener(logQueue, MyHandler())
-
-listener.start()
-
-# Create the root logger with handlers
-logging.config.dictConfig(worker_config)
-log = logging.getLogger()
-#log.addHandler(QueueHandler(logQueue))
-log.setLevel(logging.DEBUG)
-
-# Configure logger for the rest of the application to use child loggers
-logger = logging.getLogger().getChild('obdlogger')
-#logger.setLevel(logging.DEBUG)
 currentIdleScreen = 0
 snapshot=dict()
 timer = None
@@ -196,6 +107,14 @@ def printFullTable():
     sys.stdout.flush()
 
 if __name__ == '__main__':
+
+    # Start the log listener
+    logging.config.dictConfig(listener_config)
+    listener = logging.handlers.QueueListener(logQueue, MyHandler())
+    listener.start()
+
+    logger = logging.getLogger()
+    #logger.setLevel(logging.INFO)
 
     tripstats = dict()
     history = dict()

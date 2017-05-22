@@ -6,9 +6,10 @@ from pipewatcher import PipeWatcher
 
 from general import *
 
-import logging, sys
+import logging
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application', 'Pipe Timeout')

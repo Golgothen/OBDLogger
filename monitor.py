@@ -14,9 +14,10 @@ from configparser import ConfigParser
 
 from general import *
 
-import sys, logging, _thread
+import logging, _thread
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')

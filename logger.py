@@ -4,9 +4,12 @@ from datetime import datetime
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-import threading, gzip, shutil, logging, traceback, os
+import threading, gzip, shutil, traceback, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+from general import *
+
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger(__name__)
 
 class DataLogger(Process):
 
