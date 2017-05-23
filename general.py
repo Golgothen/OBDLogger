@@ -8,14 +8,14 @@ from multiprocessing import Queue
 
 class MyHandler(object):
     def handle(self, record):
-        print(record)
+        print(record.name)
         logging.getLogger(record.name).handle(record)
 
 logQueue = Queue()
 
 worker_config = {
     'version': 1,
-    'disable_existing_loggers': True,
+    #'disable_existing_loggers': True,
     'handlers': {
         'queue': {
             'class': 'logging.handlers.QueueHandler',
@@ -23,14 +23,29 @@ worker_config = {
         },
     },
     'root': {
-        'level': 'DEBUG',
+        #'level': 'DEBUG',
         'handlers': ['queue']
     },
+    'loggers': {
+        'messages': {
+            'level':       'INFO',
+            'handlers': ['queue']
+        },
+        'ecu': {
+            'level':       'DEBUG',
+            'handlers': ['queue']
+        },
+        'collector': {
+            'level':       'DEBUG',
+            'handlers': ['queue']
+        },
+    }
 }
 
 listener_config = {
     'version': 1,
-    'disable_existing_loggers': True,
+    #'disable_existing_loggers': True,
+    'respect_handler_level': True,
     #'propagate': True,
     #'filters': {
     #    'usb-unplugged': {
@@ -71,12 +86,22 @@ listener_config = {
     },
     'root': {
         'handlers':    ['console', 'filerotate'],
-        'level':       'DEBUG'
+        #'level':       'DEBUG'
     },
-    'messages': {
-        'handlers':    ['console', 'filerotate'],
-        'level':       'DEBUG'
-    },
+    #'loggers': {
+    #    'messages': {
+    #        'level':       'DEBUG',
+    #        #'handlers': ['queue']
+    #    },
+    #    'ecu': {
+    #        'level':       'DEBUG',
+    #        #'handlers': ['queue']
+    #    },
+    #    'collector': {
+    #        'level':       'DEBUG',
+    #        #'handlers': ['queue']
+    #    },
+    #}
 }
 
 ###

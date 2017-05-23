@@ -11,7 +11,7 @@ from general import *
 #import logger #, os
 
 logging.config.dictConfig(worker_config)
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 #logger.setLevel(logging.INFO)
 
 config = loadConfig()
