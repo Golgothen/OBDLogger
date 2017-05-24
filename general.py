@@ -2,51 +2,78 @@ import os, csv, logging, logging.handlers, logging.config, sys, subprocess
 from configparser import ConfigParser
 from math import modf
 from datetime import datetime
-from multiprocessing import Queue
+from multiprocessing import Queue, Process, Event, current_process
 
 #import sys, logging, logging.handlers, logging.config
 
 class MyHandler(object):
     def handle(self, record):
-        print(record.name)
-        logging.getLogger(record.name).handle(record)
+        #print(record.name)
+        logger = logging.getLogger(record.name)
+        record.processName = '%s (for %s)' % (current_process().name, record.processName)
+        logger.handle(record)
+
+class LogListener(Process):
+    def __init__(self, config):
+        super(LogListener, self).__init__()
+        self.stop_event = Event()
+        self.config = config
+        self.name = 'listener'
+
+    def run(self):
+        try:
+            logging.config.dictConfig(self.config)
+            logger = logging.getLogger()
+            logger.info('Logging system initialised')
+            listener = logging.handlers.QueueListener(logQueue, MyHandler())
+            listener.start()
+            logger.info('Logging system running')
+            self.stop_event.wait()
+            listener.stop()
+            logger.info('Logging system stopped')
+        except (KeyboardInterrupt, SystemExit):
+            listener.stop()
+            logger.info('Logging system stopped')
+
+
+    def stop(self):
+        self.stop_event.set()
 
 logQueue = Queue()
 
 worker_config = {
     'version': 1,
-    #'disable_existing_loggers': True,
+    'disable_existing_loggers': True,
     'handlers': {
         'queue': {
             'class': 'logging.handlers.QueueHandler',
             'queue': logQueue,
         },
     },
+    #'loggers': {
+    #    'messages': {
+    #        'level':       'INFO',
+    #        'handlers': ['queue']
+    #    },
+    #    'ecu': {
+    #        'level':       'DEBUG',
+    #        'handlers': ['queue']
+    #    },
+    #    'collector': {
+    #        'level':       'DEBUG',
+    #        'handlers': ['queue']
+    #    },
+    #},
     'root': {
-        #'level': 'DEBUG',
+        'level': 'DEBUG',
         'handlers': ['queue']
     },
-    'loggers': {
-        'messages': {
-            'level':       'INFO',
-            'handlers': ['queue']
-        },
-        'ecu': {
-            'level':       'DEBUG',
-            'handlers': ['queue']
-        },
-        'collector': {
-            'level':       'DEBUG',
-            'handlers': ['queue']
-        },
-    }
 }
 
 listener_config = {
     'version': 1,
-    #'disable_existing_loggers': True,
+    'disable_existing_loggers': True,
     'respect_handler_level': True,
-    #'propagate': True,
     #'filters': {
     #    'usb-unplugged': {
     #        '()': 'queuehandler.obdFilter'
@@ -55,7 +82,7 @@ listener_config = {
     'formatters': {
         'detailed': {
             'class':       'logging.Formatter',
-            'format':      '%(asctime)-16s:%(name)-21s:%(levelname)-8s[%(module)-13s.%(funcName)-20s %(lineno)-5s] %(message)s'
+            'format':      '%(processName)-s:%(asctime)-16s:%(name)-21s:%(levelname)-8s[%(module)-13s.%(funcName)-20s %(lineno)-5s] %(message)s'
             },
         'brief': {
             'class':       'logging.Formatter',
@@ -80,28 +107,12 @@ listener_config = {
             'when':        'midnight',
             'interval':    1,
             'formatter':   'detailed',
-            #'level':       'INFO',
             'backupCount': 10
         }
     },
     'root': {
         'handlers':    ['console', 'filerotate'],
-        #'level':       'DEBUG'
     },
-    #'loggers': {
-    #    'messages': {
-    #        'level':       'DEBUG',
-    #        #'handlers': ['queue']
-    #    },
-    #    'ecu': {
-    #        'level':       'DEBUG',
-    #        #'handlers': ['queue']
-    #    },
-    #    'collector': {
-    #        'level':       'DEBUG',
-    #        #'handlers': ['queue']
-    #    },
-    #}
 }
 
 ###

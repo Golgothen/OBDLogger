@@ -11,6 +11,9 @@ import sys #, logging, logging.handlers, logging.config
 
 from general import *
 
+# Configure and start the logging listener process
+listener = LogListener(listener_config)
+listener.start()
 
 currentIdleScreen = 0
 snapshot=dict()
@@ -109,11 +112,10 @@ def printFullTable():
 if __name__ == '__main__':
 
     # Start the log listener
-    logging.config.dictConfig(listener_config)
-    listener = logging.handlers.QueueListener(logQueue, MyHandler())
-    listener.start()
-
+    logging.config.dictConfig(worker_config)
     logger = logging.getLogger()
+
+
     #logger.setLevel(logging.INFO)
 
     tripstats = dict()
@@ -209,9 +211,9 @@ if __name__ == '__main__':
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
-        #listener.stop()
-        logQueue.put(None)
         ecu.stop()
         timer.cancel()
+        listener.stop()
+        listener.join()
         print('Done.')
 

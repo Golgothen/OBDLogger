@@ -5,7 +5,6 @@ from general import *
 
 logging.config.dictConfig(worker_config)
 logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
 
 class PipeCont():
     def __init__(self):
