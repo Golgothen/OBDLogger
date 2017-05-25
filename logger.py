@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Process, Event
 from time import time, sleep
 from datetime import datetime
@@ -7,9 +10,6 @@ from configparser import ConfigParser
 import threading, gzip, shutil, traceback, os
 
 from general import *
-
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
 
 class DataLogger(Process):
 

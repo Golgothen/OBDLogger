@@ -1,25 +1,32 @@
+from mplogger import *
+listener = LogListener()
+listener.start()
+
+logging.config.dictConfig(worker_config)
+logger = logging.getLogger('application')
+
 from time import sleep
 from datetime import datetime
 from monitor import Monitor
 from logger import DataLogger
 from configparser import ConfigParser
 from threading import Timer
-from multiprocessing import Queue
+#from multiprocessing import Queue
+
 #from queuehandler import LogListener, QueueHandler, obdFilter
 
-import sys #, logging, logging.handlers, logging.config
+import sys
 
 from general import *
 
 # Configure and start the logging listener process
-listener = LogListener(listener_config)
-listener.start()
 
 currentIdleScreen = 0
 snapshot=dict()
 timer = None
 
 termSize = getScreenSize()
+
 
 def printIdleScreen():
     global lastScreenUpdate

@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Process, Queue, Event
 from messages import Message
 from time import sleep
@@ -7,12 +10,6 @@ from configparser import ConfigParser
 from kpi import *
 
 from general import *
-
-#import logger #, os
-
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
-#logger.setLevel(logging.INFO)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses

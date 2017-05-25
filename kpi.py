@@ -1,13 +1,11 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from time import time
 from datetime import datetime
 import math
 from fmt import FMT
 from general import *
-
-import logging
-
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
 
 config = loadConfig()
 

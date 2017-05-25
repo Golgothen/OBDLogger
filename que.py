@@ -1,13 +1,13 @@
-import os, logging, sys
+import logging
+logger = logging.getLogger(__name__)
+
+import os, sys
 from threading import Thread
-from multiprocessing import Queue
+from multiprocessing import Queue, Event
 from datetime import datetime
 from time import sleep
-#from copy import copy
 from general import *
 
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
 
 class Que(Thread):
 
@@ -19,8 +19,10 @@ class Que(Thread):
         self.__frequency = frequency
         self.__que = que
         self.ready = False
-        self.paused = True
-        self.pauseReady = False
+        self.paused = False
+        self.pauseEvent = Event()
+        self.resumeEvent = Event()
+        self.readyEvent = Event()
         self.daemon=True
         self.name=name
         self.deleteAfterPoll = False
@@ -34,9 +36,13 @@ class Que(Thread):
         while self.running:
             try:
                 self.__lastPolled = datetime.now()
-                if self.ready and not self.paused:
-                    self.pauseReady = False
+                if not self.ready:
+                    logger.debug('Not Ready on thread {}'.format(self.name))
+                    self.readyEvent.wait()
+                    self.readyEvent.clear()
+                if not self.paused:
                     for s in self.__commands:
+                        logger.debug('Que {} adding command {} to output queue'.format(self.name, s))
                         self.__que.put(s)
                         if self.deleteAfterPoll:
                             self.removeCommand(s)
@@ -46,10 +52,12 @@ class Que(Thread):
                         else:
                             sleep(1.0/self.__frequency)
                 else:
-                    if self.paused:
-                        self.pauseReady = True
-                    sleep(0.5)
-            except (KeyboarInterrupt, SystemExit):
+                    logger.debug('Pausing thread {}'.format(self.name))
+                    self.pauseEvent.set()
+                    self.resumeEvent.wait()
+                    self.resumeEvent.clear()
+                    logger.debug('Resuming thread {}'.format(self.name))
+            except (KeyboardInterrupt, SystemExit):
                 self.running = False
                 continue
             except:
@@ -61,14 +69,21 @@ class Que(Thread):
     def setFrequency(self, frequency):
         self.__frequency = frequency
 
-    def addCommand(self, command, override):
+    def addCommand(self, command, override = False):
         logger.info('Appending command {} to que {}'.format(command, self.name))
-        self.paused = True                         # Pause the que when making changes
-        while not self.pauseReady:                 # Wait for pause ready flag to ensure dict will not be accessed
-            sleep(0.01)
+        pausedState = self.paused
+        if not self.paused:
+            self.paused = True                         # Pause the que when making changes
+            if self.ready:
+                self.pauseEvent.wait()                      # Wait for pauseWait event to ensure dict will not be accessed
+                self.pauseEvent.clear()
         self.__commands[command]=override
+        if not self.ready:
+            self.readyEvent.set()
         self.ready = True
-        self.paused=False                          # Resume que after update
+        if not pausedState:
+            self.paused=False                          # Resume que after update
+        self.resumeEvent.set()
 
     def getCommands(self):
         l = []
@@ -78,11 +93,16 @@ class Que(Thread):
 
     def removeCommand(self, command):
         logger.debug('Removing sensor {} from que {}'.format(command, self.name))
+        self.paused = True
+        self.pauseEvent.wait()
+        self.pauseEvent.clear()
         if command in self.__commands:
             del self.__commands[command]
             if len(self.__commands)==0:
                 self.ready=False
                 logger.info('Que {} not ready due to zero length'.format(self.name))
+        self.paused = False
+        self.resumeEvent.set()
 
     def status(self):
         #returns a dict of que status

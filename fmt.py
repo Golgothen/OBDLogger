@@ -1,10 +1,8 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from general import *
 from datetime import datetime
-
-import logging
-
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
 
 class FMT():
 

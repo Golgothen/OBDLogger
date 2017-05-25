@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from time import sleep
 from worker import Worker
 from que import Que
@@ -5,15 +8,13 @@ from multiprocessing import Process, Queue, Pipe, Event
 from messages import Message
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
+
 from general import *
 
-import logging, _thread #, os
+import _thread #, os
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
-
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger().getChild(__name__)
 
 class ECU(Process):
 

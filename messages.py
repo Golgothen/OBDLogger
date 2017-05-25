@@ -1,10 +1,11 @@
-from multiprocessing import Pipe
-import logging, logging.config
+import logging
+logger = logging.getLogger(__name__)
 
+from multiprocessing import Pipe
 from general import *
 
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
+#from mplogger import *
+#logging.config.dictConfig(worker_config)
 
 class PipeCont():
     def __init__(self):

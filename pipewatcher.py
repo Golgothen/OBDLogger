@@ -1,17 +1,13 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Pipe
 from threading import Thread
 from messages import Message
 from general import *
 
-#import logging
-
-
 # Watcher thread to monitor for incomming messages on a pipe.
 # One thread per pipe.
-
-logging.config.dictConfig(worker_config)
-logger = logging.getLogger(__name__)
-
 
 class PipeWatcher(Thread):
 
