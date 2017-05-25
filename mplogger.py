@@ -20,7 +20,7 @@ worker_config = {
             'level':       'INFO',
         },
         'gps': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'kpi': {
             'level':       'DEBUG',
@@ -29,16 +29,16 @@ worker_config = {
             'level':       'INFO',
         },
         'monitor': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'pipewatcher': {
             'level':       'INFO',
         },
         'worker': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'ecu': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'que': {
             'level':       'INFO',
@@ -46,9 +46,18 @@ worker_config = {
         'messages': {
             'level':       'INFO',
         },
+        'obd': {
+            'level':       'ERROR',
+        },
+        'elm327': {
+            'level':       'ERROR',
+        },
+        'OBDCommand': {
+            'level':       'ERROR',
+        },
     },
     'root': {
-        'level': 'DEBUG',
+        'level': 'INFO',
         'handlers': ['queue']
     },
 }
@@ -65,7 +74,7 @@ listener_config = {
     'formatters': {
         'detailed': {
             'class':       'logging.Formatter',
-            'format':      '%(processName)-s:%(asctime)-16s:%(name)-21s:%(levelname)-8s[%(module)-13s.%(funcName)-20s %(lineno)-5s] %(message)s'
+            'format':      '%(asctime)-16s:%(name)-21s:%(levelname)-8s[%(module)-13s.%(funcName)-20s %(lineno)-5s] %(message)s'
             },
         'brief': {
             'class':       'logging.Formatter',
@@ -104,7 +113,7 @@ class MyHandler(object):
         #print(record.name)
         #print(record)
         logger = logging.getLogger(record.name)
-        record.processName = '%s (for %s)' % (current_process().name, record.processName)
+        #record.processName = '%s (for %s)' % (current_process().name, record.processName)
         logger.handle(record)
 
 class LogListener(Process):
