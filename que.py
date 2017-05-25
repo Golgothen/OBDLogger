@@ -19,7 +19,7 @@ class Que(Thread):
         self.__frequency = frequency
         self.__que = que
         self.ready = False
-        self.paused = False
+        self.paused = True
         self.pauseEvent = Event()
         self.resumeEvent = Event()
         self.readyEvent = Event()
@@ -40,6 +40,7 @@ class Que(Thread):
                     logger.debug('Not Ready on thread {}'.format(self.name))
                     self.readyEvent.wait()
                     self.readyEvent.clear()
+                    logger.debug('Ready on thread {}'.format(self.name))
                 if not self.paused:
                     for s in self.__commands:
                         logger.debug('Que {} adding command {} to output queue'.format(self.name, s))

@@ -17,16 +17,16 @@ worker_config = {
             'level':       'DEBUG',
         },
         'fmt': {
-            'level':       'INFO',
+            'level':       'WARNING',
         },
         'gps': {
-            'level':       'INFO',
+            'level':       'WARNING',
         },
         'kpi': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'logger': {
-            'level':       'INFO',
+            'level':       'WARNING',
         },
         'monitor': {
             'level':       'INFO',
@@ -38,10 +38,10 @@ worker_config = {
             'level':       'INFO',
         },
         'ecu': {
-            'level':       'INFO',
+            'level':       'DEBUG',
         },
         'que': {
-            'level':       'INFO',
+            'level':       'DEBUG',
         },
         'messages': {
             'level':       'INFO',
