@@ -1,5 +1,7 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Queue, Event
-#from threading import Thread
 from ecu import ECU
 from worker import Worker
 from collector import Collector
@@ -14,9 +16,8 @@ from configparser import ConfigParser
 
 from general import *
 
-import sys, logging, _thread
+import _thread
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')

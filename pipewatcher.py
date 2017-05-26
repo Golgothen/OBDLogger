@@ -1,15 +1,13 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Pipe
 from threading import Thread
 from messages import Message
-
-import logging, sys
-
+from general import *
 
 # Watcher thread to monitor for incomming messages on a pipe.
 # One thread per pipe.
-
-logger = logging.getLogger('obdlogger').getChild(__name__)
-
 
 class PipeWatcher(Thread):
 

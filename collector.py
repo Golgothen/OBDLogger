@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Process, Queue, Event
 from messages import Message
 from time import sleep
@@ -7,10 +10,6 @@ from configparser import ConfigParser
 from kpi import *
 
 from general import *
-
-import logger #, os
-
-logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')             # Time in seconds to wait for pipe command responses
@@ -217,14 +216,14 @@ class Collector(Process):
         logger.info('Dictionary build complete. {} KPIs added'.format(len(self.__data)))
         self.__reset_complete.set()
 
-    def pause(self):
+    def pause(self, p = None):
         if not self.__paused:
             logger.info('Pausing Collector process')
             self.__dirty = self.__paused = True
             for d in self.__data:
                 self.__data[d].paused = True
 
-    def resume(self):
+    def resume(self, p = None):
         if self.__paused:
             logger.info('Resuming Collector process')
             self.__paused = False
@@ -233,7 +232,7 @@ class Collector(Process):
             for d in self.__data:
                 self.__data[d].paused = False
 
-    def stop(self):
+    def stop(self, p = None):
         if self.__running:
             logger.debug('Stopping Collector process')
             self.__running = False

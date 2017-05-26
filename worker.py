@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Process, Queue, Pipe
 from datetime import datetime
 from time import sleep
@@ -6,10 +9,7 @@ from pipewatcher import PipeWatcher
 from configparser import ConfigParser
 
 from general import *
-import logging, obd, _thread #, os
-
-logger = logging.getLogger('obdlogger').getChild(__name__)
-#logger.setLevel(logging.DEBUG)
+import obd, _thread
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
@@ -105,21 +105,21 @@ class Worker(Process):
         logger.info('Worker process stopping')
 
 
-    def pause(self):
+    def pause(self, p = None):
         # Pause event will be set by monitor, which will also pause Logger
         if not self.__paused:
             logger.debug('Pausing worker process')
             self.__paused = True
             #self.__pipes['LOG'].send(Message("PAUSE"))
 
-    def resume(self):
+    def resume(self, p = None):
         # Resume event will be set my monitor, which will also resume logger
         if self.__paused:
             logger.debug('Resuming worker process')
             self.__paused = False
             #self.__pipes['LOG'].send(Message("RESUME"))
 
-    def stop(self):
+    def stop(self, p = None):
         logger.info('Stopping worker process')
         self.__running = False
 

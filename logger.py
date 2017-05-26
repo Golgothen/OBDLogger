@@ -1,12 +1,15 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Process, Event
 from time import time, sleep
 from datetime import datetime
 from messages import Message, PipeCont
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
-import threading, gzip, shutil, logging, traceback, os
+import threading, gzip, shutil, traceback, os
 
-logger = logging.getLogger('obdlogger').getChild(__name__)
+from general import *
 
 class DataLogger(Process):
 

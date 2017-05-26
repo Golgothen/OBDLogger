@@ -1,3 +1,6 @@
+import logging
+logger = logging.getLogger(__name__)
+
 from multiprocessing import Process, Queue, Pipe
 from time import sleep, time
 from messages import Message
@@ -5,10 +8,6 @@ from gps3 import agps3
 from pipewatcher import PipeWatcher
 
 from general import *
-
-import logging, sys
-
-logger = logging.getLogger('obdlogger').getChild(__name__)
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application', 'Pipe Timeout')

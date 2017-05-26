@@ -1,4 +1,6 @@
-import _thread #, os
+import logging
+logger = logging.getLogger(__name__)
+
 from time import sleep
 from worker import Worker
 from que import Que
@@ -6,13 +8,13 @@ from multiprocessing import Process, Queue, Pipe, Event
 from messages import Message
 from pipewatcher import PipeWatcher
 from configparser import ConfigParser
+
 from general import *
+
+import _thread #, os
 
 config = loadConfig()
 PIPE_TIMEOUT = config.getfloat('Application','Pipe Timeout')
-
-
-logger = logging.getLogger('obdlogger').getChild(__name__)
 
 class ECU(Process):
 
@@ -48,7 +50,10 @@ class ECU(Process):
                 self.__state_change_event.wait()
                 self.__state_change_event.clear()
                 for q in self.__Que:
-                    self.__Que[q].paused = self.__paused
+                    if self.__paused:
+                        self.__Que[q].pause()
+                    else:
+                        self.__Que[q].resume()
             except (KeyboardInterrupt, SystemExit):
                 #self.__shutdown()
                 self.__running = False
