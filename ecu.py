@@ -50,7 +50,10 @@ class ECU(Process):
                 self.__state_change_event.wait()
                 self.__state_change_event.clear()
                 for q in self.__Que:
-                    self.__Que[q].paused = self.__paused
+                    if self.__paused:
+                        self.__Que[q].pause()
+                    else:
+                        self.__Que[q].resume()
             except (KeyboardInterrupt, SystemExit):
                 #self.__shutdown()
                 self.__running = False
