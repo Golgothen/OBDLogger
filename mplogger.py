@@ -38,10 +38,10 @@ worker_config = {
             'level':       'INFO',
         },
         'ecu': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'que': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'messages': {
             'level':       'INFO',
