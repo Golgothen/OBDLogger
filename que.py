@@ -38,6 +38,7 @@ class Que(Thread):
                     self.__readyEvent.wait()
                     self.__readyEvent.clear()
                     logger.debug('Ready on thread {}'.format(self.name))
+                logger.debug('Que {} paused state = {}'.format(self.name, self.__paused))
                 if not self.__paused:
                     for s in self.__commands:
                         lastPolled = time()
@@ -75,8 +76,10 @@ class Que(Thread):
         if not self.__paused:
             self.__paused = True                         # Pause the que when making changes
             if self.__ready:
+                logger.debug('Waiting for main loop to stop on que {}'.format(self.name))
                 self.pauseEvent.wait()                      # Wait for pauseWait event to ensure dict will not be accessed
                 self.pauseEvent.clear()
+        logger.debug('Main loop stopped on que {}'.format(self.name))
         self.__commands[command]=override
         if not self.__ready:
             self.__readyEvent.set()
@@ -84,6 +87,7 @@ class Que(Thread):
         if not pausedState:
             self.__paused=False                          # Resume que after update
         self.resumeEvent.set()
+        logger.debug('Resuming main loop on que {}'.format(self.name))
 
     def getCommands(self):
         l = []
