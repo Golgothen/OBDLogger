@@ -161,7 +161,7 @@ class Monitor():
         self.__pipes['LOG'].send(Message('FREQUENCY', FREQUENCY = frequency))
 
     def logHeadings(self, headings):
-        self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = headings))
+        self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = headings, INSERT = True))
 
     @property
     def isConnected(self):
