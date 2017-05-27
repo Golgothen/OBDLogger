@@ -100,7 +100,6 @@ class Collector(Process):
 
     def reset(self, p = None):
         self.__ready = False
-        self.__data = dict()
         self.__pipes['WORKER'].send(Message('SUPPORTED_COMMANDS'))
 
     def supported_commands(self, p):
@@ -108,8 +107,11 @@ class Collector(Process):
         if p['SUPPORTED_COMMANDS'] == []:
             self.__reset_complete.set()
             return
+        self.__data = dict()
+        exclude = ['STATUS_DRIVE_CYCLE','STATUS','OBD_COMPLIANCE']
         for f in p['SUPPORTED_COMMANDS']:
-            self.__data[f] = KPI()
+            if f not in exclude:
+                self.__data[f] = KPI()
 
         # now add calculates data fields
 
