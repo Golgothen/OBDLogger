@@ -124,7 +124,7 @@ class DataLogger(Process):
             logger.warning('No column headings have been set.    No log file started.')
         else:
             self.__logName=(self.__logPath + datetime.now().strftime(self.__logFormat))
-            logger.debug('Logging started - output: {}.log'.format(self.__logName))
+            logger.info('Logging started - output: {}.log'.format(self.__logName))
             line=''
             for l in self.__logHeadings:
                 line+=l+','
@@ -143,21 +143,21 @@ class DataLogger(Process):
             with open(self.__logName + '.log', 'rb') as f:
                 with gzip.open(self.__logName + '.log.gz', 'wb') as z:
                     shutil.copyfileobj(f, z)
+            os.remove(self.__logName + '.log')
+            self.logName = None
         except:
-            logger.error('Error compressing log file {}'.format(self.__logName))
+            logger.error('Error compressing log file {}'.format(self.__logName), exc_info = True)
             self.__logName = None
-            return
-        os.remove(self.__logName + '.log')
-        self.logName = None
 
     def discard(self, p = None):
         #Delete the logfile
         if self.__paused:
             self.__paused = True
         try:
+            logger.debug('Discarding log file {}'.format(self.__logname))
             os.remove(self.__logName + '.log')
         except:
-            logger.warning('Could not delete log file {}'.format(self.__logname))
+            logger.warning('Could not delete log file {}'.format(self.__logname), exc_info = True)
         self.__logName = None
 
     def getstatus(self, p = None):
@@ -171,9 +171,15 @@ class DataLogger(Process):
         return Message('LOGSTATUS', STATUS = d)
 
     def add_headings(self, p):
-        for h in p['HEADINGS']:
-            if h not in self.__logHeadings:
-                self.__logHeadings.append(h)
+        insert = False
+        if 'INSERT' in p:
+            insert = p['INSERT']
+        for a in range(len(p['HEADINGS'])):
+            if p['HEADINGS'][a] not in self.__logHeadings:
+                if insert:
+                    self.__logHeadings.insert(a, p['HEADINGS'][a])
+                else:
+                    self.__logHeadings.append(p['HEADINGS'][a])
         logger.info('Log headings updated to {}'.format(self.__logHeadings))
 
     def remove_headings(self, p):
