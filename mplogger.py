@@ -26,7 +26,7 @@ worker_config = {
             'level':       'INFO',
         },
         'logger': {
-            'level':       'WARNING',
+            'level':       'INFO',
         },
         'monitor': {
             'level':       'INFO',
