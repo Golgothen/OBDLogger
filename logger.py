@@ -139,12 +139,14 @@ class DataLogger(Process):
         #Compress the logfile
         if not self.__paused:
             self.pause()
+        if self.__logName is None:
+            return
         try:
             with open(self.__logName + '.log', 'rb') as f:
                 with gzip.open(self.__logName + '.log.gz', 'wb') as z:
                     shutil.copyfileobj(f, z)
             os.remove(self.__logName + '.log')
-            self.logName = None
+            self.__logName = None
         except:
             logger.error('Error compressing log file {}'.format(self.__logName), exc_info = True)
             self.__logName = None
@@ -154,10 +156,10 @@ class DataLogger(Process):
         if self.__paused:
             self.__paused = True
         try:
-            logger.debug('Discarding log file {}'.format(self.__logname))
+            logger.debug('Discarding log file {}.log'.format(self.__logName))
             os.remove(self.__logName + '.log')
         except:
-            logger.warning('Could not delete log file {}'.format(self.__logname), exc_info = True)
+            logger.warning('Could not delete log file {}.log'.format(self.__logname), exc_info = True)
         self.__logName = None
 
     def getstatus(self, p = None):

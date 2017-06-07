@@ -196,10 +196,10 @@ if __name__ == '__main__':
                     journey=False
                     printIdleScreen()
                     ecu.pause()
-                    disconnected = datetime.now()
                     if ecu.sum('DURATION') == 0:
                         ecu.discard()
                     else:
+                        disconnected = datetime.now()
                         tripstats = ecu.summary
                         writeLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv', tripstats)
                 if disconnected is not None:
@@ -218,6 +218,8 @@ if __name__ == '__main__':
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
+        ecu.pause()
+        ecu.save()
         ecu.stop()
         timer.cancel()
         listener.stop()
