@@ -50,23 +50,23 @@ class DataLogger(Process):
         timer=time()
         while self.__running:
             try:
-                if self.__logName is None:
-                    logger.debug('Logger name not set. Pausing')
-                    self.pause()
-                logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                 if not self.__paused:
+                    if self.__logName is None:
+                        logger.debug('Logger name not set. Pausing')
+                        self.pause()
+                    #logger.debug('Running: {}, Paused: {}, Required: {}, Requested: {}'.format(self.__running, self.__paused, self.__refreshRequired, self.__refreshRequested))
                     if self.__refreshRequired:
-                        logger.debug('Getting snapshot')
+                        #logger.debug('Getting snapshot')
                         self.__pipes['DATA'].send(Message('SNAPSHOT'))
                         self.__snapshot_ready.wait()
                         self.__snapshot_ready.clear()
                     line=''
-                    logger.debug('Recording data')
+                    #logger.debug('Recording data')
                     for l in self.__logHeadings:
                         if l in self.__data:
                             line += str(self.__data[l]['LOG']).strip() + ','
                         else:
-                            logger.debug('{} is not in snapshot'.format(l))
+                            #logger.debug('{} is not in snapshot'.format(l))
                             line += '-,'
                     with open(self.__logName + '.log','ab') as f:
                         f.write(bytes(line[:len(line)-1]+'\n','UTF-8'))
