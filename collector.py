@@ -76,10 +76,13 @@ class Collector(Process):
     def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values
         data = dict()
-        for d in self.__data:
-            data[d] = dict()
-            for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
-                data[d][f] = self.__data[d].format(f)
+        if not self.__ready:
+            logger.info('SNAPSHOT: Collector not ready')
+        else:
+            for d in self.__data:
+                data[d] = dict()
+                for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                    data[d][f] = self.__data[d].format(f)
         return Message('SNAP_SHOT', SNAPSHOT = data)
 
     def sum(self, p):
