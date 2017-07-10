@@ -82,7 +82,11 @@ class Collector(Process):
             for d in self.__data:
                 data[d] = dict()
                 for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                try:
                     data[d][f] = self.__data[d].format(f)
+                except KeyError:
+                    data[d][f] = None
+
         return Message('SNAP_SHOT', SNAPSHOT = data)
 
     def sum(self, p):
