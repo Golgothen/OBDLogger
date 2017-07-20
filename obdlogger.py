@@ -196,28 +196,30 @@ if __name__ == '__main__':
                     journey=False
                     printIdleScreen()
                     ecu.pause()
-                    disconnected = datetime.now()
                     if ecu.sum('DURATION') == 0:
                         ecu.discard()
                     else:
+                        disconnected = datetime.now()
                         tripstats = ecu.summary
                         writeLastTrip(config.get('Application', 'StatPath') + 'LastTrip.csv', tripstats)
                 if disconnected is not None:
                     if (datetime.now()-disconnected).total_seconds() > config.getfloat('Application', 'Trip Timeout'):
                         ecu.save()
+                        ecu.reset()
                         logger.info('Finalising trip....')
                         writeTripHistory(config.get('Application', 'StatPath') + 'TripHistory.csv', tripstats)
                         writeTripHistory(config.get('Application', 'StatPath') + 'TankHistory.csv', tripstats)
                         history=readCSV(config.get('Application', 'StatPath') + 'TripHistory.csv')
                         tank=readCSV(config.get('Application', 'StatPath') + 'TankHistory.csv')
                         disconnected = None
-                        ecu.reset()
                 logger.debug('No ECU fount at {:%H:%M:%S}... Waiting...'.format(datetime.now()))
                 #assume engine is off
                 #logger.info(ecu.status())
                 sleep(0.1)
 
     except (KeyboardInterrupt, SystemExit):
+        ecu.pause()
+        #ecu.save()
         ecu.stop()
         timer.cancel()
         listener.stop()

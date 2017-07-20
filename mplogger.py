@@ -26,10 +26,10 @@ worker_config = {
             'level':       'INFO',
         },
         'logger': {
-            'level':       'WARNING',
+            'level':       'DEBUG',
         },
         'monitor': {
-            'level':       'INFO',
+            'level':       'DEBUG',
         },
         'pipewatcher': {
             'level':       'INFO',
@@ -38,10 +38,10 @@ worker_config = {
             'level':       'INFO',
         },
         'ecu': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'que': {
-            'level':       'DEBUG',
+            'level':       'INFO',
         },
         'messages': {
             'level':       'INFO',
@@ -54,6 +54,9 @@ worker_config = {
         },
         'OBDCommand': {
             'level':       'ERROR',
+        },
+        'obdlogger': {
+            'level':       'DEBUG',
         },
     },
     'root': {
@@ -123,18 +126,20 @@ class LogListener(Process):
         self.name = 'listener'
 
     def run(self):
-        try:
-            logging.config.dictConfig(listener_config)
-            logger = logging.getLogger('listener')
-            logger.info('Logging system initialised')
-            listener = logging.handlers.QueueListener(shared_logging_queue, MyHandler())
-            listener.start()
-            logger.info('Logging system running')
-            self.__stop_event.wait()
-            listener.stop()
-            logger.info('Logging system stopped')
-        except (KeyboardInterrupt, SystemExit):
-            listener.stop()
+        logging.config.dictConfig(listener_config)
+        logger = logging.getLogger('listener')
+        logger.info('Logging system initialised')
+        listener = logging.handlers.QueueListener(shared_logging_queue, MyHandler())
+        listener.start()
+        logger.info('Logging system running')
+        while True:
+            try:
+                self.__stop_event.wait()
+                listener.stop()
+                logger.info('Logging system stopped')
+            except (KeyboardInterrupt, SystemExit):
+                continue
+                #listener.stop()
         logger.info('Logging system stopped')
 
     def stop(self):

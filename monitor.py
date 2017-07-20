@@ -127,11 +127,17 @@ class Monitor():
         self.__pipes['WORKER'].send(Message('STOP'))
         self.__pipes['LOG'].send(Message('STOP'))
         self.__pipes['GPS'].send(Message('STOP'))
-        #self.__ecu.join()
-        #self.__collector.join()
-        #self.__worker.join()
-        #self.__logger.join()
-        #self.__gps.join()
+        logging.info('Joining processes')
+        self.__collector.join()
+        logging.info('Collector joined')
+        self.__worker.join()
+        logging.info('Worker joined')
+        self.__logger.join()
+        logging.info('Logger joined')
+        self.__gps.join()
+        logging.info('GPS Joined')
+        self.__ecu.join()
+        logging.info('ECU Joined')
 
 
     def pause(self):
@@ -161,7 +167,7 @@ class Monitor():
         self.__pipes['LOG'].send(Message('FREQUENCY', FREQUENCY = frequency))
 
     def logHeadings(self, headings):
-        self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = headings))
+        self.__pipes['LOG'].send(Message('ADD_HEADINGS', HEADINGS = headings, INSERT = True))
 
     @property
     def isConnected(self):

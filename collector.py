@@ -34,7 +34,6 @@ class Collector(Process):
 
         self.__paused = False
         self.__running = False
-        #self.__frequency = 100
         self.__ready = False
         self.__SCreq = False
         self.name = 'COLLECTOR'
@@ -52,19 +51,18 @@ class Collector(Process):
             try:                                                                    # Running set to False by STOP command
                 if self.__ready:                                                    # Ready set to True when data dictonary has been built
                     if not self.__paused:                                           # Paused set True/False by PAUSE/RESUME commands
-                        #while self.__results.qsize() > 0:                           # Loop while there are results in the que
                         m = self.__results.get()                                    # Pull result message from que
                         if m is None:
                             break
+                        if m.message not in self.__data:
+                            continue
                         self.__data[m.message].val = m.params['VALUE']          # Update corresponding KPI with the result value
-                        #sleep(1.0/self.__frequency)                                     # brief sleep so we dont hog the CPU
                 else:                                                               # Not ready?
                     if not self.__SCreq:                                            # Flag if the Supported Commands request has been sent
                         self.__SCreq = True                                         # Only send the above request once
                         self.reset()                                                # Empty data dictionary and request a list of supported commands
                         self.__reset_complete.wait()
                         self.__reset_complete.clear()
-                #sleep(1.0 / self.__frequency)                                       # Release CPU
             except (KeyboardInterrupt, SystemExit):                                 # Pick up interrups and system shutdown
                 self.__running = False                                              # Set Running to false, causing the above loop to exit
                 self.__results.put(None)
@@ -78,10 +76,17 @@ class Collector(Process):
     def snapshot(self, p = None):
         # Returns a dictionary of all KPI current values
         data = dict()
-        for d in self.__data:
-            data[d] = dict()
-            for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
-                data[d][f] = self.__data[d].format(f)
+        if not self.__ready:
+            logger.info('SNAPSHOT: Collector not ready')
+        else:
+            for d in self.__data:
+                data[d] = dict()
+                for f in ['VAL','MIN','MAX','AVG','SUM','LOG']:
+                    try:
+                        data[d][f] = self.__data[d].format(f)
+                    except KeyError:
+                        data[d][f] = None
+
         return Message('SNAP_SHOT', SNAPSHOT = data)
 
     def sum(self, p):
@@ -102,7 +107,6 @@ class Collector(Process):
 
     def reset(self, p = None):
         self.__ready = False
-        self.__data = dict()
         self.__pipes['WORKER'].send(Message('SUPPORTED_COMMANDS'))
 
     def supported_commands(self, p):
@@ -110,8 +114,11 @@ class Collector(Process):
         if p['SUPPORTED_COMMANDS'] == []:
             self.__reset_complete.set()
             return
+        self.__data = dict()
+        exclude = ['STATUS_DRIVE_CYCLE','STATUS','OBD_COMPLIANCE']
         for f in p['SUPPORTED_COMMANDS']:
-            self.__data[f] = KPI()
+            if f not in exclude:
+                self.__data[f] = KPI()
 
         # now add calculates data fields
 
